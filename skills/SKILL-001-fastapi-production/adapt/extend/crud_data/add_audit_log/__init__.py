@@ -108,12 +108,21 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     render_to(_HERE, "audit_log_glue.py.tmpl", dest=glue_file, substitutions={})
     files_created.append(str(glue_file))
 
+    # R5-S1-F5: emit the durable SQL-backed store (opt-in via AUDIT_LOG_DURABLE).
+    store_file = app_dir / "audit_log_store.py"
+    render_to(_HERE, "audit_log_store.py.tmpl", dest=store_file, substitutions={})
+    files_created.append(str(store_file))
+
     # Wire install_audit_log(app) into main.py after app = FastAPI(...).
     # Without this the audit log primitives are copied but never activated.
     files_modified: list[str] = []
     if main_file.exists() and _MAIN_SENTINEL not in main_file.read_text():
         _patch_main(main_file)
         files_modified.append(str(main_file))
+
+    config_file = app_dir / "core" / "config.py"
+    if config_file.exists() and _patch_config(config_file):
+        files_modified.append(str(config_file))
 
     _emit_project_test(project, files_created)
 
@@ -138,13 +147,18 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
             "Shipped adapter: AuditLogAdapter.",
             "Wrote app/audit_log.py and wired install_audit_log(app) in main.py.",
             "Hash-chained, signed, append-only ledger (TEAL_INV_01..06).",
-            "Ledger is IN-MEMORY (InMemoryTamperEvidentAuditLog): it does NOT persist "
-            "across restarts and is per-process. The hash chain is tamper-EVIDENT, not "
-            "durable — back it with a persistent store before relying on the trail.",
+            "Ledger is IN-MEMORY BY DEFAULT (per-process, lost on restart). It is durable "
+            "and cross-worker ONLY WHEN you set AUDIT_LOG_DURABLE=true (see next_steps): "
+            "app/audit_log_store.py (SqlTamperEvidentAuditLog) then persists the same hash "
+            "chain to the audit_log_entries table (created on first use). The hash chain is "
+            "tamper-EVIDENT either way.",
             "Audit log is active on startup — no manual wiring required.",
         ],
         next_steps=[
             "Audit HMAC key derives from SECRET_KEY by default; set AUDIT_LOG_HMAC_SECRET to override (KMS-managed in prod).",
+            "For durability set AUDIT_LOG_DURABLE=true; PostgreSQL needs a SYNC driver "
+            "installed (e.g. `psycopg`) — SQLite works out of the box. The durable store "
+            "self-creates audit_log_entries on first append.",
             "The /audit-logs routes are superuser-only and record the actor from the "
             "authenticated principal; in-process code appends via app.state.audit_log.append(...). "
             "POST /audit-logs/verify (superuser) asserts chain integrity.",
@@ -161,6 +175,26 @@ def _patch_main(main_file: Path) -> None:
     patch_block = render(_HERE, "main_patch.py.tmpl", {})
     patched = src.rstrip("\n") + "\n\n" + patch_block
     main_file.write_text(patched)
+
+
+def _patch_config(config_file: Path) -> bool:
+    """Add ``AUDIT_LOG_DURABLE`` to the Settings class body — idempotent (R5-S1-F5).
+
+    Off by default: the audit log stays the in-memory reference unless an
+    operator opts into the durable SQL-backed store. Inserted after the standard
+    ``ACCESS_TOKEN_EXPIRE_MINUTES`` field when present, else appended.
+    """
+    src = config_file.read_text()
+    if "AUDIT_LOG_DURABLE" in src:
+        return False
+    field = "    AUDIT_LOG_DURABLE: bool = False\n"
+    anchor = "ACCESS_TOKEN_EXPIRE_MINUTES: int = 30"
+    if anchor in src:
+        src = src.replace(anchor, anchor + "\n" + field.rstrip(), 1)
+    else:
+        src = src.rstrip("\n") + "\n" + field + "\n"
+    config_file.write_text(src)
+    return True
 
 
 def _emit_project_test(project: Path, created: list[str]) -> None:

@@ -56,7 +56,8 @@ def install(
     auth_dependency: Callable[..., Any],
     hmac_secret: bytes = b"change-me-to-a-real-kms-key-xxxx",
     prefix: str = "/audit-logs",
-) -> InMemoryTamperEvidentAuditLog:
+    log: Any = None,
+) -> Any:
     """Attach a tamper-evident audit log + auth-gated router to *app*; return log.
 
     Args:
@@ -64,10 +65,15 @@ def install(
         auth_dependency: A FastAPI dependency guarding every route (e.g. the
             app's ``get_current_superuser``). REQUIRED — there is no anonymous
             access to the audit surface.
-        hmac_secret: Signing key for the tamper-evident chain.
+        hmac_secret: Signing key for the tamper-evident chain (used only when
+            *log* is not supplied).
         prefix: Router mount prefix.
+        log: An optional pre-built ``TamperEvidentAuditLog`` implementation
+            (e.g. the durable ``SqlTamperEvidentAuditLog``). When omitted, an
+            in-memory reference log is created — NON-durable, lost on restart.
     """
-    log = InMemoryTamperEvidentAuditLog(HmacReferenceSigner(hmac_secret))
+    if log is None:
+        log = InMemoryTamperEvidentAuditLog(HmacReferenceSigner(hmac_secret))
     router = APIRouter(prefix=prefix, tags=["audit"])
 
     @router.post("/")

@@ -115,6 +115,79 @@ def test_glue_superuser_gates_audit_routes() -> None:
     )
 
 
+def test_durable_store_emitted_and_opt_in_wired() -> None:
+    """R5-S1-F5: a durable SQL-backed store ships and is opt-in via config.
+
+    The tool emits app/audit_log_store.py (SqlTamperEvidentAuditLog), adds the
+    AUDIT_LOG_DURABLE config flag (default False = in-memory, no regression), and
+    the glue builds the durable log only when that flag is set.
+    """
+    project_dir = create_fixture_project(name="al_durable_wire")
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+    store = project_dir / "app" / "audit_log_store.py"
+    assert store.exists(), "durable store app/audit_log_store.py not emitted"
+    store_src = store.read_text()
+    assert "class SqlTamperEvidentAuditLog" in store_src
+    assert "with_for_update" in store_src, "append must serialize the chain (with_for_update)"
+    config = (project_dir / "app" / "core" / "config.py").read_text()
+    assert "AUDIT_LOG_DURABLE" in config, "config must declare the AUDIT_LOG_DURABLE flag"
+    assert "AUDIT_LOG_DURABLE: bool = False" in config, "durable must default OFF (no regression)"
+    glue = (project_dir / "app" / "audit_log.py").read_text()
+    assert "AUDIT_LOG_DURABLE" in glue and "build_durable_audit_log" in glue, (
+        "glue must build the durable store only when AUDIT_LOG_DURABLE is set"
+    )
+
+
+def test_durable_store_persists_and_is_tamper_evident() -> None:
+    """R5-S1-F5: the emitted durable store persists the chain and detects tampering.
+
+    Runs the emitted SqlTamperEvidentAuditLog against a real on-disk SQLite DB:
+    appends survive a fresh store instance (durability), the chain verifies, and
+    a direct row mutation is detected by verify_chain.
+    """
+    import sys
+    import tempfile
+
+    from sqlalchemy import create_engine, text
+
+    project_dir = create_fixture_project(name="al_durable_run")
+    add_audit_log(ToolInput(project_dir=str(project_dir)))
+
+    _orig = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    for m in [k for k in sys.modules if k in ("app", "core") or k.startswith(("app.", "core."))]:
+        del sys.modules[m]
+    try:
+        from app.audit_log_store import SqlTamperEvidentAuditLog
+
+        from core.venous.compliance.TamperEvidentAuditLog.TamperEvidentAuditLog import (
+            HmacReferenceSigner,
+        )
+
+        d = tempfile.mkdtemp()
+        url = f"sqlite:///{d}/audit.db"
+        secret = b"k" * 16
+        log = SqlTamperEvidentAuditLog(HmacReferenceSigner(secret), create_engine(url))
+        log.append("alice", "read", "/patients/1", "success", {"mrn": "x"})
+        log.append("bob", "write", "/patients/2", "success", {})
+        assert log.verify_chain() is True
+        assert len(log.export(1).decode().strip().splitlines()) == 2
+
+        # Durability: a NEW instance over the same DB sees the prior chain.
+        log2 = SqlTamperEvidentAuditLog(
+            HmacReferenceSigner(secret), create_engine(url), create=False
+        )
+        assert log2.verify_chain() is True
+        assert log2.get(2)["actor"] == "bob"
+
+        # Tamper-evidence: mutating a row breaks verification.
+        with create_engine(url).begin() as conn:
+            conn.execute(text("UPDATE audit_log_entries SET actor='mallory' WHERE seq=1"))
+        assert log2.verify_chain() is False
+    finally:
+        sys.path[:] = _orig
+
+
 def test_glue_body_under_20_loc() -> None:
     project_dir = create_fixture_project(name="al_t08")
     add_audit_log(ToolInput(project_dir=str(project_dir)))

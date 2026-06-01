@@ -17,15 +17,7 @@ from core.venous._adapters.fastapi.AuditLogAdapter import install
 
 
 def _audit_hmac_secret() -> bytes:
-    """Resolve the audit-log HMAC key — never hardcoded, never silently absent.
-
-    Precedence:
-      1. AUDIT_LOG_HMAC_SECRET env var (prod / KMS-managed), if set; else
-      2. a domain-separated key derived from the app's SECRET_KEY.
-    SECRET_KEY is required and entropy-checked by Settings (loaded from env or
-    .env), so the audit chain always has a real key and the app still boots in
-    the standard .env workflow — fail-closed, with no hardcoded placeholder.
-    """
+    """Resolve the HMAC key: AUDIT_LOG_HMAC_SECRET if set, else derived from SECRET_KEY."""
     override = os.getenv("AUDIT_LOG_HMAC_SECRET", "").strip()
     if override:
         return override.encode()
@@ -33,5 +25,15 @@ def _audit_hmac_secret() -> bytes:
 
 
 def install_audit_log(app: FastAPI) -> None:
-    """Attach a superuser-gated tamper-evident audit log to *app* (R5-S1-F1/F2)."""
-    install(app, hmac_secret=_audit_hmac_secret(), auth_dependency=get_current_superuser)
+    """Attach a superuser-gated tamper-evident audit log to *app* (R5-S1-F1/F2).
+
+    Durable (SQL-backed) when AUDIT_LOG_DURABLE is set; otherwise an in-memory
+    ledger that does NOT persist across restarts (R5-S1-F5).
+    """
+    secret = _audit_hmac_secret()
+    log = None
+    if getattr(settings, "AUDIT_LOG_DURABLE", False):
+        from app.audit_log_store import build_durable_audit_log
+
+        log = build_durable_audit_log(secret)
+    install(app, hmac_secret=secret, auth_dependency=get_current_superuser, log=log)
