@@ -148,7 +148,11 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
             "Shipped primitives: core.venous.jobs.WorkflowRun + core.venous.jobs.DurableTimer.",
             "Shipped adapter: core.venous._adapters.fastapi.WorkflowAdapter.",
             "Wrote app/workflow.py + app/api/routes/tasks.py (POST 202 / GET / DELETE).",
-            "WorkflowRun enforces id-reuse policy (REJECT by default) and deterministic replay.",
+            "WorkflowRun enforces an id-reuse policy (REJECT by default) and records a "
+            "replayable event history. It does NOT re-execute workflow code or enforce "
+            "replay-determinism — that requires a host runtime (Temporal/DBOS) and is out "
+            "of scope for the reference primitive (workflow code must be deterministic per "
+            "WFR-INV-01/02).",
             "WARNING: task state is in-process (InMemoryWorkflowClient) — does NOT persist "
             "across restarts. Use Temporal/Cadence in production.",
         ],
