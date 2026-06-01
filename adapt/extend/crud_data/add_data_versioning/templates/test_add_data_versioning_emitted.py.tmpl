@@ -45,12 +45,14 @@ def test_history_orders_newest_first() -> None:
 
 
 def test_unique_index_on_content_id_plus_version() -> None:
-    """ContentVersion enforces unique (content_id, version_number)."""
+    """ContentVersion enforces unique (content_id, content_type, version_number)."""
     model = (_project_root() / "app" / "models" / "content_version.py").read_text()
     assert "ix_content_versions_content_id_version" in model
     assert "unique=True" in model, (
-        "unique (content_id, version_number) prevents accidental version overwrites"
+        "unique (content_id, content_type, version_number) keeps per-type version "
+        "sequences independent and prevents accidental version overwrites"
     )
+    assert "content_type" in model, "unique index must include content_type (R5-O2-D3)"
 
 
 # ---------------------------------------------------------------------------

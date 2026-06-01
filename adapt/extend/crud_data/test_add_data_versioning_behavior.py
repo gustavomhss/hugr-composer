@@ -379,3 +379,53 @@ def test_b12_version_create_has_no_author_id(project_dir: Path) -> None:
             )
     finally:
         sys.path[:] = _orig_path
+
+
+@pytest.mark.anyio
+async def test_b13_versions_isolated_by_content_type(project_dir: Path) -> None:
+    """B-13 (R5-O2-D3): two content types sharing a content_id must be isolated.
+
+    Runs the emitted VersioningService against a real in-memory SQLite DB:
+    creates a draft for (article, "5") and (product, "5") — same content_id,
+    different type — and asserts each type's history, version numbering, and
+    payload stay separate. Pre-fix both would have collided (shared history and
+    a 2nd version_number for the product instead of restarting at 1).
+    """
+    from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+
+    _orig_path = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    stale = [k for k in sys.modules if k == "app" or k.startswith("app.")]
+    for key in stale:
+        del sys.modules[key]
+    try:
+        from app.versioning.service import VersioningService
+
+        import app.models  # noqa: F401 — register every table on Base.metadata
+        from app.models.base import Base
+
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+        try:
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+            svc = VersioningService(max_drafts=10)
+            async with AsyncSession(engine) as session:
+                await svc.create_draft(
+                    session, content_id="5", content_type="article", data={"t": "A"}
+                )
+                await svc.create_draft(
+                    session, content_id="5", content_type="product", data={"t": "P"}
+                )
+                article = await svc.get_history(session, "5", "article")
+                product = await svc.get_history(session, "5", "product")
+                assert [v.content_type for v in article] == ["article"], article
+                assert [v.content_type for v in product] == ["product"], product
+                assert article[0].data_json == {"t": "A"}
+                assert product[0].data_json == {"t": "P"}
+                # version numbers are per content item — both restart at 1, not 1 & 2.
+                assert article[0].version_number == 1, article[0].version_number
+                assert product[0].version_number == 1, product[0].version_number
+        finally:
+            await engine.dispose()
+    finally:
+        sys.path[:] = _orig_path
