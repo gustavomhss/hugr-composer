@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_prometheus_metrics import add_prometheus_metrics
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -44,6 +44,7 @@ def _assert_parse(root: Path) -> None:
 # CC-01: success status
 # ---------------------------------------------------------------------------
 
+
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
     project_dir = create_fixture_project(name="prom_t01")
@@ -54,6 +55,7 @@ def test_success_status() -> None:
 # ---------------------------------------------------------------------------
 # CC-02: idempotency
 # ---------------------------------------------------------------------------
+
 
 def test_idempotent() -> None:
     """CC-02: Second run returns no_op with no files created or modified."""
@@ -69,6 +71,7 @@ def test_idempotent() -> None:
 # ---------------------------------------------------------------------------
 # CC-03: dry_run
 # ---------------------------------------------------------------------------
+
 
 def test_dry_run() -> None:
     """CC-03: dry_run=True must not touch any file on disk."""
@@ -86,6 +89,7 @@ def test_dry_run() -> None:
 # CC-04: files_created count + existence
 # ---------------------------------------------------------------------------
 
+
 def test_files_created_count() -> None:
     """CC-04: At least 3 files created, all exist on disk."""
     project_dir = create_fixture_project(name="prom_t04")
@@ -101,6 +105,7 @@ def test_files_created_count() -> None:
 # ---------------------------------------------------------------------------
 # CC-05: files_modified count + existence
 # ---------------------------------------------------------------------------
+
 
 def test_files_modified_count() -> None:
     """CC-05: At least 1 file modified, all exist on disk."""
@@ -118,6 +123,7 @@ def test_files_modified_count() -> None:
 # CC-06: all .py parse
 # ---------------------------------------------------------------------------
 
+
 def test_all_py_parse() -> None:
     """CC-06: Every .py file in project parses without SyntaxError after tool."""
     project_dir = create_fixture_project(name="prom_t06")
@@ -128,6 +134,7 @@ def test_all_py_parse() -> None:
 # ---------------------------------------------------------------------------
 # CC-07: no function over 50 LOC
 # ---------------------------------------------------------------------------
+
 
 def test_no_function_over_50_loc() -> None:
     """CC-07: No generated function exceeds 50 LOC (AST walk)."""
@@ -149,6 +156,7 @@ def test_no_function_over_50_loc() -> None:
 # CC-08: config fields patched with 4-space indent
 # ---------------------------------------------------------------------------
 
+
 def test_config_fields_patched() -> None:
     """CC-08: PROMETHEUS_ENABLED and PROMETHEUS_PREFIX appear in config.py."""
     project_dir = create_fixture_project(name="prom_t08")
@@ -161,14 +169,13 @@ def test_config_fields_patched() -> None:
     # Verify 4-space indent inside Settings class
     for line in content.splitlines():
         if "PROMETHEUS_ENABLED" in line or "PROMETHEUS_PREFIX" in line:
-            assert line.startswith("    "), (
-                f"Config field not 4-space indented: {line!r}"
-            )
+            assert line.startswith("    "), f"Config field not 4-space indented: {line!r}"
 
 
 # ---------------------------------------------------------------------------
 # CC-10: /metrics route registered (if routes_init exists)
 # ---------------------------------------------------------------------------
+
 
 def test_routes_registered() -> None:
     """CC-10: app/api/routes/metrics.py is created with a router."""
@@ -184,6 +191,7 @@ def test_routes_registered() -> None:
 # ---------------------------------------------------------------------------
 # Domain tests (CC-11+): >= 5 domain-specific checks
 # ---------------------------------------------------------------------------
+
 
 def test_collectors_file_has_request_metrics() -> None:
     """D-01: app/metrics/collectors.py has RequestMetrics class."""
@@ -270,6 +278,7 @@ def test_metrics_init_has_exports() -> None:
 # CC-N-1: execution_time_ms
 # ---------------------------------------------------------------------------
 
+
 def test_execution_time_recorded() -> None:
     """CC-N-1: execution_time_ms must be a positive integer."""
     project_dir = create_fixture_project(name="prom_t17")
@@ -280,6 +289,7 @@ def test_execution_time_recorded() -> None:
 # ---------------------------------------------------------------------------
 # CC-N: next_steps present
 # ---------------------------------------------------------------------------
+
 
 def test_next_steps_present() -> None:
     """CC-N: next_steps must be non-empty and mention prometheus."""
@@ -295,6 +305,7 @@ def test_next_steps_present() -> None:
 # CC-LAST: idempotent project still parses
 # ---------------------------------------------------------------------------
 
+
 def test_idempotent_project_still_parses() -> None:
     """CC-LAST: After two runs all .py files remain parseable."""
     project_dir = create_fixture_project(name="prom_t19")
@@ -306,6 +317,7 @@ def test_idempotent_project_still_parses() -> None:
 # ---------------------------------------------------------------------------
 # Extra structural checks
 # ---------------------------------------------------------------------------
+
 
 def test_notes_mention_red_metrics() -> None:
     """notes describe RED metrics."""
@@ -331,6 +343,29 @@ def test_get_metrics_function_present() -> None:
     collectors = project_dir / "app" / "metrics" / "collectors.py"
     content = collectors.read_text()
     assert "get_metrics" in content
+
+
+def test_path_label_uses_route_template_not_raw_path() -> None:
+    """R6-S5-F1: the middleware must label by route TEMPLATE, not raw url.path.
+
+    Using ``request.url.path`` as a Prometheus label is unbounded cardinality:
+    every distinct id and every 404 scanner URL mints a new time series, a
+    metrics-store DoS. The fix reads the matched route's template from the
+    request scope and collapses unmatched paths to a constant.
+    """
+    project_dir = create_fixture_project(name="prom_cardinality")
+    add_prometheus_metrics(ToolInput(project_dir=str(project_dir)))
+    mw_src = (project_dir / "app" / "metrics" / "middleware.py").read_text()
+    # The path passed to record_request must NOT be the raw url.path.
+    assert "path=request.url.path" not in mw_src, (
+        "middleware still labels metrics by raw request.url.path (cardinality DoS)"
+    )
+    # It must resolve the matched route from the scope and have an unmatched fallback.
+    assert 'scope.get("route")' in mw_src or 'scope["route"]' in mw_src, (
+        "middleware does not read the matched route template from the request scope"
+    )
+    assert "_route_label" in mw_src, "expected a _route_label helper for the path label"
+    assert "__unmatched__" in mw_src, "unmatched paths must collapse to a constant label"
 
 
 # ---------------------------------------------------------------------------
@@ -361,6 +396,7 @@ if __name__ == "__main__":
         test_notes_mention_red_metrics,
         test_latency_buckets_in_collectors,
         test_get_metrics_function_present,
+        test_path_label_uses_route_template_not_raw_path,
     ]
 
     passed = failed = 0
@@ -373,7 +409,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-086 add_prometheus_metrics: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)

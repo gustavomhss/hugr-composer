@@ -13,6 +13,25 @@ from app.metrics.collectors import get_metrics
 
 logger = logging.getLogger(__name__)
 
+# Label used when no route matched (404s, unrouted paths). Using the raw URL
+# path here would let a scanner hitting /random-<n> mint an unbounded number of
+# Prometheus time series (R6-S5-F1 cardinality blow-up / metrics-store DoS).
+_UNMATCHED_ROUTE = "__unmatched__"
+
+
+def _route_label(request: Request) -> str:
+    """Return the matched route TEMPLATE (e.g. ``/users/{id}``) for the path label.
+
+    The raw request path is high-cardinality: every distinct id (``/users/1``,
+    ``/users/2`` ...) and every unmatched scanner URL would create a new label
+    set, exploding the metrics store (R6-S5-F1). Starlette stores the matched
+    route on the scope during routing, so after ``call_next`` we read its
+    template; unmatched requests collapse to a single constant label.
+    """
+    route = request.scope.get("route")
+    template = getattr(route, "path", None)
+    return template if template else _UNMATCHED_ROUTE
+
 
 class PrometheusMiddleware(BaseHTTPMiddleware):
     """Starlette middleware that records RED metrics for each request.
@@ -45,7 +64,7 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
         if metrics is not None:
             metrics.record_request(
                 method=request.method,
-                path=request.url.path,
+                path=_route_label(request),
                 status=response.status_code,
                 duration=duration,
             )

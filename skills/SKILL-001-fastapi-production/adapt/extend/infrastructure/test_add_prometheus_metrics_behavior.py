@@ -47,7 +47,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_prometheus_metrics import add_prometheus_metrics
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -165,6 +164,7 @@ def asgi_app(project_dir_and_app: tuple[Path, Any]) -> Any:
 # BEHAVIOR-01: GET /healthz → 200
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
     """B-01: GET /healthz must return 200."""
@@ -179,6 +179,7 @@ async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
 # ---------------------------------------------------------------------------
 # BEHAVIOR-02: GET /metrics returns 200 or 503 (503 if SDK not installed)
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.anyio
 async def test_b02_metrics_endpoint_returns_200_or_503(asgi_app: Any) -> None:
@@ -199,6 +200,7 @@ async def test_b02_metrics_endpoint_returns_200_or_503(asgi_app: Any) -> None:
 # BEHAVIOR-03: /metrics endpoint is registered (not 404)
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b03_metrics_endpoint_registered(asgi_app: Any) -> None:
     """B-03: /metrics must be registered — must NOT return 404."""
@@ -206,13 +208,14 @@ async def test_b03_metrics_endpoint_registered(asgi_app: Any) -> None:
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/metrics")
     assert response.status_code != 404, (
-        f"/metrics returned 404 — router is not registered in main.py"
+        "/metrics returned 404 — router is not registered in main.py"
     )
 
 
 # ---------------------------------------------------------------------------
 # BEHAVIOR-04: prometheus_client lazy in collectors.py
 # ---------------------------------------------------------------------------
+
 
 def test_b04_prometheus_client_not_at_top_level(project_dir: Path) -> None:
     """B-04: prometheus_client must NOT appear at module top-level."""
@@ -235,6 +238,7 @@ def test_b04_prometheus_client_not_at_top_level(project_dir: Path) -> None:
 # BEHAVIOR-05: all functions <= 50 LOC
 # ---------------------------------------------------------------------------
 
+
 def test_b05_all_generated_functions_under_50_loc(project_dir: Path) -> None:
     """B-05: All generated functions in app/metrics/ are <= 50 LOC."""
     metrics_dir = project_dir / "app" / "metrics"
@@ -253,6 +257,7 @@ def test_b05_all_generated_functions_under_50_loc(project_dir: Path) -> None:
 # BEHAVIOR-06: config fields use 4-space indent
 # ---------------------------------------------------------------------------
 
+
 def test_b06_config_fields_4_space_indent(project_dir: Path) -> None:
     """B-06: PROMETHEUS_* fields in config.py have 4-space indent."""
     config = project_dir / "app" / "core" / "config.py"
@@ -267,9 +272,11 @@ def test_b06_config_fields_4_space_indent(project_dir: Path) -> None:
 # BEHAVIOR-07: RequestMetrics record_request doesn't crash without SDK
 # ---------------------------------------------------------------------------
 
+
 def test_b07_request_metrics_record_without_sdk(project_dir: Path) -> None:
     """B-07: RequestMetrics.record_request must not raise even if prometheus_client missing."""
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
         "app.metrics.collectors_b07",
         str(project_dir / "app" / "metrics" / "collectors.py"),
@@ -291,6 +298,7 @@ def test_b07_request_metrics_record_without_sdk(project_dir: Path) -> None:
 # BEHAVIOR-08: middleware file importable
 # ---------------------------------------------------------------------------
 
+
 def test_b08_middleware_importable_without_crash(project_dir: Path) -> None:
     """B-08: app/metrics/middleware.py must be importable without raising."""
     mw_file = project_dir / "app" / "metrics" / "middleware.py"
@@ -302,9 +310,8 @@ def test_b08_middleware_importable_without_crash(project_dir: Path) -> None:
         del sys.modules[key]
     try:
         import importlib.util
-        spec = importlib.util.spec_from_file_location(
-            "app.metrics.middleware_b08", str(mw_file)
-        )
+
+        spec = importlib.util.spec_from_file_location("app.metrics.middleware_b08", str(mw_file))
         assert spec and spec.loader
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)  # type: ignore[attr-defined]
@@ -316,8 +323,51 @@ def test_b08_middleware_importable_without_crash(project_dir: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
+# BEHAVIOR-09: path label is low-cardinality (R6-S5-F1)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_b09_path_label_is_low_cardinality(asgi_app: Any) -> None:
+    """B-09 (R6-S5-F1): the path label is the route template; raw unmatched
+    paths collapse to a single constant so a scanner cannot explode cardinality.
+
+    Installs a recording stub for the middleware's ``get_metrics()`` (the SDK is
+    absent in CI, so the real collector is a no-op), hits a matched route
+    (/healthz) and a random unmatched path, then asserts the matched request
+    records the route template while the unmatched request records the
+    ``__unmatched__`` constant — never the raw scanner URL.
+    """
+    import importlib
+
+    mw = importlib.import_module("app.metrics.middleware")
+    recorded: list[str] = []
+
+    class _RecordingStub:
+        def record_request(self, *, method: str, path: str, status: int, duration: float) -> None:
+            recorded.append(path)
+
+    orig = mw.get_metrics
+    mw.get_metrics = lambda: _RecordingStub()
+    try:
+        transport = httpx.ASGITransport(app=asgi_app, raise_app_exceptions=False)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            await client.get("/healthz")
+            await client.get("/scanner-probe-9af3c2e1")
+    finally:
+        mw.get_metrics = orig
+
+    assert "/healthz" in recorded, f"matched route template not recorded: {recorded}"
+    assert "__unmatched__" in recorded, f"unmatched path did not collapse to a constant: {recorded}"
+    assert "/scanner-probe-9af3c2e1" not in recorded, (
+        f"raw unmatched path leaked into the metrics label (cardinality DoS): {recorded}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
+
 
 def _run_async_test(coro_fn: Any, *args: Any) -> None:
     import inspect
@@ -336,13 +386,26 @@ if __name__ == "__main__":
 
     _TESTS: list[tuple[str, Any]] = [
         ("B-01: /healthz → 200", lambda: _run_async_test(test_b01_healthz_returns_200, _app)),
-        ("B-02: /metrics → 200|503", lambda: _run_async_test(test_b02_metrics_endpoint_returns_200_or_503, _app)),
-        ("B-03: /metrics not 404", lambda: _run_async_test(test_b03_metrics_endpoint_registered, _app)),
+        (
+            "B-02: /metrics → 200|503",
+            lambda: _run_async_test(test_b02_metrics_endpoint_returns_200_or_503, _app),
+        ),
+        (
+            "B-03: /metrics not 404",
+            lambda: _run_async_test(test_b03_metrics_endpoint_registered, _app),
+        ),
         ("B-04: prometheus_client lazy", lambda: test_b04_prometheus_client_not_at_top_level(_pd)),
         ("B-05: all funcs <= 50 LOC", lambda: test_b05_all_generated_functions_under_50_loc(_pd)),
         ("B-06: config 4-space indent", lambda: test_b06_config_fields_4_space_indent(_pd)),
-        ("B-07: RequestMetrics safe without SDK", lambda: test_b07_request_metrics_record_without_sdk(_pd)),
+        (
+            "B-07: RequestMetrics safe without SDK",
+            lambda: test_b07_request_metrics_record_without_sdk(_pd),
+        ),
         ("B-08: middleware importable", lambda: test_b08_middleware_importable_without_crash(_pd)),
+        (
+            "B-09: path label low-cardinality",
+            lambda: _run_async_test(test_b09_path_label_is_low_cardinality, _app),
+        ),
     ]
 
     passed = failed = 0
@@ -355,7 +418,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {name}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-086 BEHAVIOR: {passed}/{passed + failed} passed")
     if failed:
         sys.exit(1)
