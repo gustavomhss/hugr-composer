@@ -116,61 +116,63 @@ from ._common import SKILL_ROOT
 # in all other code paths.
 #
 # Format: { "extend/<wp>/<tool_name>", ... }  (relative to ADAPT_ROOT)
-_WAIVED_TOOLS: frozenset[str] = frozenset({
-    # "extend/auth_access/add_passkey_auth" — closed Wave-2
-    # (fix/w2-passkey-auth-close-waivers): the module-level
-    # ``_CHALLENGE_STORE: dict[str, bytes] = {}`` is replaced by a
-    # ``_ChallengeStore()`` class instance whose primary backend is Redis
-    # (``webauthn:challenge:{session_id}`` SETEX with TTL =
-    # ``WEBAUTHN_CHALLENGE_TTL_SECONDS``) and whose per-worker dict
-    # fallback is encapsulated inside the class. Closes R5-O4-H4.
-    # "extend/auth_access/add_api_key_auth" — closed Wave-2
-    # (fix/w2-api-key-auth-close-waivers): _local_counters is now a
-    # _LocalCounters() class instance (allow-listed by this rule) AND
-    # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
-    # __init__.py. The Redis-up path is cross-worker durable; the
-    # fallback is the documented fail-degraded path.
-    # "extend/infrastructure/add_adaptive_throttle" — removed by Wave-2
-    # close-out: _PENALTY_STORE is now a _PenaltyStore() class instance
-    # (Redis-backed primary, per-worker dict fallback encapsulated in
-    # the class). Closes R6-O1-F10/F14/F15.
-    # "extend/infrastructure/add_scheduled_tasks" — closed Wave-2
-    # (fix/w2-final-b012-all-module-state): _JOBS is now a
-    # _JobsRegistry() class instance (allow-listed by this rule) AND
-    # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
-    # __init__.py. Decorator-registered jobs re-populate identically
-    # on every worker at module-import time; the duplicate-fire risk
-    # across multiple scheduler instances remains a separate concern
-    # mitigated by SCHEDULER_JOBSTORE_URL. Closes R6-S5-F5.
-    # "extend/infrastructure/add_api_monetization" — closed in W2 PR
-    # (fix/w2-api-monetization-close-waivers): _RULES is now wrapped
-    # in a _RulesRegistry class instance and _DEAD_LETTER in a
-    # _DeadLetterQueue class instance (both allow-listed by this
-    # rule), AND the tool ships _SINGLE_PROCESS_OK = True + a
-    # warnings= entry containing "single-process" in its __init__.py.
-    # Closes R6-O3-F9 family.
-    # R5-O3-F2 family — closed in W2 PR (fix/w2-tenant-onboarding-close-waivers):
-    # _PROGRESS_REGISTRY now wrapped in ProgressRegistry class instance
-    # (allow-listed by this rule) AND _SINGLE_PROCESS_OK + warnings=
-    # disclosure shipped in the tool's __init__.py.
-    # "extend/crud_data/add_data_export" — closed Wave-2
-    # (fix/w2-final-b012-all-module-state): _MODEL_REGISTRY is now a
-    # _ModelRegistry() class instance (allow-listed by this rule) AND
-    # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
-    # __init__.py. Every worker (including the ARQ background worker
-    # that runs the export jobs) re-registers models identically at
-    # module-import time. Closes R5-S5-F2 / R6-S3-F1 family.
-    # "evolve/add_event_driven" — closed Wave-2
-    # (fix/w2-final-b012-all-module-state): _HANDLERS is now a
-    # _HandlerRegistry() class instance (allow-listed by this rule)
-    # AND _SINGLE_PROCESS_OK + warnings= disclosure shipped in the
-    # tool's __init__.py. Closes P3-cluster handler-registry waiver.
-    # "evolve/add_i18n" — closed Wave-2
-    # (fix/w2-final-b012-all-module-state): _CATALOGS is now a
-    # _CatalogCache() class instance (allow-listed by this rule) AND
-    # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
-    # __init__.py. Closes R6-S8.
-})
+_WAIVED_TOOLS: frozenset[str] = frozenset(
+    {
+        # "extend/auth_access/add_passkey_auth" — closed Wave-2
+        # (fix/w2-passkey-auth-close-waivers): the module-level
+        # ``_CHALLENGE_STORE: dict[str, bytes] = {}`` is replaced by a
+        # ``_ChallengeStore()`` class instance whose primary backend is Redis
+        # (``webauthn:challenge:{session_id}`` SETEX with TTL =
+        # ``WEBAUTHN_CHALLENGE_TTL_SECONDS``) and whose per-worker dict
+        # fallback is encapsulated inside the class. Closes R5-O4-H4.
+        # "extend/auth_access/add_api_key_auth" — closed Wave-2
+        # (fix/w2-api-key-auth-close-waivers): _local_counters is now a
+        # _LocalCounters() class instance (allow-listed by this rule) AND
+        # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
+        # __init__.py. The Redis-up path is cross-worker durable; the
+        # fallback is the documented fail-degraded path.
+        # "extend/infrastructure/add_adaptive_throttle" — removed by Wave-2
+        # close-out: _PENALTY_STORE is now a _PenaltyStore() class instance
+        # (Redis-backed primary, per-worker dict fallback encapsulated in
+        # the class). Closes R6-O1-F10/F14/F15.
+        # "extend/infrastructure/add_scheduled_tasks" — closed Wave-2
+        # (fix/w2-final-b012-all-module-state): _JOBS is now a
+        # _JobsRegistry() class instance (allow-listed by this rule) AND
+        # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
+        # __init__.py. Decorator-registered jobs re-populate identically
+        # on every worker at module-import time; the duplicate-fire risk
+        # across multiple scheduler instances remains a separate concern
+        # mitigated by SCHEDULER_JOBSTORE_URL. Closes R6-S5-F5.
+        # "extend/infrastructure/add_api_monetization" — closed in W2 PR
+        # (fix/w2-api-monetization-close-waivers): _RULES is now wrapped
+        # in a _RulesRegistry class instance and _DEAD_LETTER in a
+        # _DeadLetterQueue class instance (both allow-listed by this
+        # rule), AND the tool ships _SINGLE_PROCESS_OK = True + a
+        # warnings= entry containing "single-process" in its __init__.py.
+        # Closes R6-O3-F9 family.
+        # R5-O3-F2 family — closed in W2 PR (fix/w2-tenant-onboarding-close-waivers):
+        # _PROGRESS_REGISTRY now wrapped in ProgressRegistry class instance
+        # (allow-listed by this rule) AND _SINGLE_PROCESS_OK + warnings=
+        # disclosure shipped in the tool's __init__.py.
+        # "extend/crud_data/add_data_export" — closed Wave-2
+        # (fix/w2-final-b012-all-module-state): _MODEL_REGISTRY is now a
+        # _ModelRegistry() class instance (allow-listed by this rule) AND
+        # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
+        # __init__.py. Every worker (including the ARQ background worker
+        # that runs the export jobs) re-registers models identically at
+        # module-import time. Closes R5-S5-F2 / R6-S3-F1 family.
+        # "evolve/add_event_driven" — closed Wave-2
+        # (fix/w2-final-b012-all-module-state): _HANDLERS is now a
+        # _HandlerRegistry() class instance (allow-listed by this rule)
+        # AND _SINGLE_PROCESS_OK + warnings= disclosure shipped in the
+        # tool's __init__.py. Closes P3-cluster handler-registry waiver.
+        # "evolve/add_i18n" — closed Wave-2
+        # (fix/w2-final-b012-all-module-state): _CATALOGS is now a
+        # _CatalogCache() class instance (allow-listed by this rule) AND
+        # _SINGLE_PROCESS_OK + warnings= disclosure shipped in the tool's
+        # __init__.py. Closes R6-S8.
+    }
+)
 
 # --- AST helpers ---------------------------------------------------------
 
@@ -181,37 +183,88 @@ _WAIVED_TOOLS: frozenset[str] = frozenset({
 _PLACEHOLDER_RE = re.compile(r"\$\{(\w+)\}|\$(\w+)")
 
 # Callables that produce a fresh mutable container.
-_MUTABLE_CALL_NAMES: frozenset[str] = frozenset({
-    "dict", "list", "set",
-    "defaultdict", "OrderedDict",
-    "WeakValueDictionary", "WeakKeyDictionary", "WeakSet",
-    "Counter", "deque",
-})
+#
+# Round-7 O3-F14 (HIGH) added ``SimpleNamespace`` and ``type`` (3-arg
+# dynamic class call): both are wrappers around an attribute dict and
+# are observed in the wild as evasions of the dict/list/set check. A
+# ``_X = SimpleNamespace(d={})`` is still per-worker mutable state
+# (``_X.d[k] = v`` mutates the inner dict); a ``_X = type('X', (), {'d':
+# {}})()`` is the same shape with extra ceremony. Both are flagged as
+# mutable initializers; classification of the 3-arg ``type(...)`` is
+# refined via ``_type_3arg_is_mutable`` below to keep zero-payload
+# dynamic classes (``type('X', (), {})``) out of scope.
+_MUTABLE_CALL_NAMES: frozenset[str] = frozenset(
+    {
+        "dict",
+        "list",
+        "set",
+        "defaultdict",
+        "OrderedDict",
+        "WeakValueDictionary",
+        "WeakKeyDictionary",
+        "WeakSet",
+        "Counter",
+        "deque",
+        "SimpleNamespace",
+    }
+)
 
 # Callables we explicitly allow even if they LOOK like state.
 # ``frozenset`` / ``tuple`` / ``MappingProxyType`` are immutable.
 # Lock-family + Queue-family coordinate INSIDE a process — not the
 # "invisible-per-worker" pattern B0.12 targets.
 # ``ContextVar`` is per-context by design.
-_ALLOWED_TAIL_NAMES: frozenset[str] = frozenset({
-    "frozenset", "tuple", "MappingProxyType",
-    "Lock", "RLock", "Event", "Semaphore", "BoundedSemaphore",
-    "Condition", "Queue", "LifoQueue", "PriorityQueue",
-    "ContextVar",
-})
+_ALLOWED_TAIL_NAMES: frozenset[str] = frozenset(
+    {
+        "frozenset",
+        "tuple",
+        "MappingProxyType",
+        "Lock",
+        "RLock",
+        "Event",
+        "Semaphore",
+        "BoundedSemaphore",
+        "Condition",
+        "Queue",
+        "LifoQueue",
+        "PriorityQueue",
+        "ContextVar",
+    }
+)
 
 # Annotation type names that signal a mutable container shape.
-_MUTABLE_ANNO_TAILS: frozenset[str] = frozenset({
-    "dict", "list", "set",
-    "Dict", "List", "Set", "DefaultDict",
-})
+_MUTABLE_ANNO_TAILS: frozenset[str] = frozenset(
+    {
+        "dict",
+        "list",
+        "set",
+        "Dict",
+        "List",
+        "Set",
+        "DefaultDict",
+    }
+)
 
 # Method names that mutate a container in place.
-_MUTATION_METHODS: frozenset[str] = frozenset({
-    "append", "extend", "add", "update", "pop", "popitem",
-    "setdefault", "clear", "remove", "discard", "insert",
-    "__setitem__", "__delitem__", "sort", "reverse",
-})
+_MUTATION_METHODS: frozenset[str] = frozenset(
+    {
+        "append",
+        "extend",
+        "add",
+        "update",
+        "pop",
+        "popitem",
+        "setdefault",
+        "clear",
+        "remove",
+        "discard",
+        "insert",
+        "__setitem__",
+        "__delitem__",
+        "sort",
+        "reverse",
+    }
+)
 
 
 def _attr_chain(node: ast.AST) -> str:
@@ -242,6 +295,14 @@ def _is_mutable_initializer(value: ast.AST) -> bool:
     if isinstance(value, (ast.DictComp, ast.ListComp, ast.SetComp)):
         return True
     if isinstance(value, ast.Call):
+        # Optionally-called dynamic class: ``type('X', (), {...})()`` —
+        # the outer Call's ``.func`` is itself a ``type(...)`` Call.
+        # Round-7 O3-F14 (HIGH).
+        if isinstance(value.func, ast.Call):
+            inner = value.func
+            inner_chain = _attr_chain(inner.func)
+            inner_tail = inner_chain.rsplit(".", 1)[-1] if inner_chain else ""
+            return inner_tail == "type" and _type_3arg_is_mutable(inner)
         chain = _attr_chain(value.func)
         if not chain:
             return False
@@ -249,6 +310,40 @@ def _is_mutable_initializer(value: ast.AST) -> bool:
         if tail in _ALLOWED_TAIL_NAMES:
             return False
         if tail in _MUTABLE_CALL_NAMES:
+            return True
+        # Round-7 O3-F14: dynamic-class ``type(name, bases, body_dict)``
+        # whose body dict carries any mutable value is module-level state
+        # smuggled through the metaclass front door. ``type('X', (), {})``
+        # with an empty body is class-creation, not state.
+        if tail == "type" and _type_3arg_is_mutable(value):
+            return True
+    return False
+
+
+def _type_3arg_is_mutable(call: ast.Call) -> bool:
+    """True iff ``call`` is a 3-arg ``type(name, bases, body)`` whose
+    body dict declares at least one mutable value.
+
+    Round-7 O3-F14 (HIGH): ``_X = type('X', (), {'d': {}})()`` shipped
+    a per-worker mutable ``_X.d`` without tripping the rule (the call
+    is to ``type``, which isn't in the mutable-call allow-list). We
+    inspect the third positional arg: if it's a Dict literal that
+    contains any value classified as a mutable initializer, the whole
+    construction is module-level mutable state.
+
+    A bare ``type('X', (), {})`` with an empty body is normal dynamic
+    class creation (not state) and returns False.
+    """
+    args = call.args
+    if len(args) < 3:
+        return False
+    body = args[2]
+    if not isinstance(body, ast.Dict):
+        return False
+    for v in body.values:
+        if v is None:
+            continue
+        if _is_mutable_initializer(v):
             return True
     return False
 
@@ -286,53 +381,65 @@ def _find_mutations(tree: ast.Module, names: set[str]) -> dict[str, list[int]]:
         def __init__(self) -> None:
             self.depth = 0  # 0 = module top, >0 = inside func/class
 
+        def _root_name(self, expr: ast.AST) -> str | None:
+            """Walk ``X.a.b[i].c`` ↦ ``"X"`` (return the root Name id).
+
+            Used so attribute-then-subscript mutations on a
+            ``SimpleNamespace`` candidate (``_X.d[k] = v`` — Round-7
+            O3-F14) are correctly attributed to ``_X``.
+            """
+            cur: ast.AST | None = expr
+            while True:
+                if isinstance(cur, ast.Name):
+                    return cur.id if cur.id in names else None
+                if isinstance(cur, ast.Attribute):
+                    cur = cur.value
+                    continue
+                if isinstance(cur, ast.Subscript):
+                    cur = cur.value
+                    continue
+                return None
+
         def visit_Assign(self, node: ast.Assign) -> None:
             for tgt in node.targets:
-                if (
-                    isinstance(tgt, ast.Subscript)
-                    and isinstance(tgt.value, ast.Name)
-                    and tgt.value.id in names
-                ):
-                    hits[tgt.value.id].append(node.lineno)
-                elif (
-                    isinstance(tgt, ast.Name)
-                    and tgt.id in names
-                    and self.depth > 0
-                ):
+                if isinstance(tgt, ast.Subscript):
+                    root = self._root_name(tgt.value)
+                    if root is not None:
+                        hits[root].append(node.lineno)
+                elif isinstance(tgt, ast.Attribute):
+                    # ``_X.attr = v`` — direct attribute assignment on a
+                    # SimpleNamespace-style candidate counts as mutation.
+                    root = self._root_name(tgt.value)
+                    if root is not None:
+                        hits[root].append(node.lineno)
+                elif isinstance(tgt, ast.Name) and tgt.id in names and self.depth > 0:
                     hits[tgt.id].append(node.lineno)
             self.generic_visit(node)
 
         def visit_AugAssign(self, node: ast.AugAssign) -> None:
             tgt = node.target
-            if (
-                isinstance(tgt, ast.Subscript)
-                and isinstance(tgt.value, ast.Name)
-                and tgt.value.id in names
-            ):
-                hits[tgt.value.id].append(node.lineno)
+            if isinstance(tgt, (ast.Subscript, ast.Attribute)):
+                root = self._root_name(tgt.value)
+                if root is not None:
+                    hits[root].append(node.lineno)
             elif isinstance(tgt, ast.Name) and tgt.id in names:
                 hits[tgt.id].append(node.lineno)
             self.generic_visit(node)
 
         def visit_Delete(self, node: ast.Delete) -> None:
             for tgt in node.targets:
-                if (
-                    isinstance(tgt, ast.Subscript)
-                    and isinstance(tgt.value, ast.Name)
-                    and tgt.value.id in names
-                ):
-                    hits[tgt.value.id].append(node.lineno)
+                if isinstance(tgt, (ast.Subscript, ast.Attribute)):
+                    root = self._root_name(tgt.value)
+                    if root is not None:
+                        hits[root].append(node.lineno)
             self.generic_visit(node)
 
         def visit_Call(self, node: ast.Call) -> None:
             func = node.func
-            if (
-                isinstance(func, ast.Attribute)
-                and func.attr in _MUTATION_METHODS
-                and isinstance(func.value, ast.Name)
-                and func.value.id in names
-            ):
-                hits[func.value.id].append(node.lineno)
+            if isinstance(func, ast.Attribute) and func.attr in _MUTATION_METHODS:
+                root = self._root_name(func.value)
+                if root is not None:
+                    hits[root].append(node.lineno)
             self.generic_visit(node)
 
         def _enter(self, node: ast.AST) -> None:
@@ -457,9 +564,7 @@ def _r_no_module_state_in_templates() -> tuple[bool, str]:
             mut_preview = ", ".join(str(m) for m in muts[:5])
             if len(muts) > 5:
                 mut_preview += f", …(+{len(muts) - 5})"
-            lines.append(
-                f"  {rel}:{lineno}:{col}  {name}  (mutated at L{mut_preview})"
-            )
+            lines.append(f"  {rel}:{lineno}:{col}  {name}  (mutated at L{mut_preview})")
     lines.append(
         "Fix by moving state into a process-shared backing store "
         "(Redis / DB / external cache) OR — if single-process is "

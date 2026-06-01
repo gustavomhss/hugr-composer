@@ -32,8 +32,7 @@ HERE = Path(__file__).resolve().parent
 SKILL_ROOT = HERE.parent.parent
 sys.path.insert(0, str(SKILL_ROOT))
 
-from engine.audit.contract_rules import r_no_dead_security_features as M  # noqa: E402
-
+from engine.audit.contract_rules import r_no_dead_security_features as M  # noqa: E402, N812
 
 # ---------------------------------------------------------------------------
 # Fixture helpers
@@ -134,9 +133,7 @@ def test_green_clean_template_passes(tmp_path, monkeypatch) -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_green_waived_via_feature_incomplete_and_warnings(
-    tmp_path, monkeypatch
-) -> None:
+def test_green_waived_via_feature_incomplete_and_warnings(tmp_path, monkeypatch) -> None:
     tool = _make_tool(
         tmp_path,
         "add_partial_security_feature",
@@ -176,9 +173,7 @@ def test_green_waived_via_feature_incomplete_and_warnings(
 # ---------------------------------------------------------------------------
 
 
-def test_red_feature_incomplete_in_notes_not_warnings_rejects(
-    tmp_path, monkeypatch
-) -> None:
+def test_red_feature_incomplete_in_notes_not_warnings_rejects(tmp_path, monkeypatch) -> None:
     tool = _make_tool(
         tmp_path,
         "add_misdisclosed_security_feature",
@@ -364,6 +359,256 @@ def test_real_catalog_passes_today() -> None:
     such regression has landed without the _FEATURE_INCOMPLETE +
     warnings= bypass.
     """
+    ok, msg = M._r_no_dead_security_features()
+    assert ok is True, msg
+
+
+# ---------------------------------------------------------------------------
+# 10. Round-7 O3-F1 (HIGH) — raise NotImplementedError placeholder
+# ---------------------------------------------------------------------------
+
+
+def test_red_raise_notimplementederror_body_rejects(tmp_path, monkeypatch) -> None:
+    """Round-7 O3-F1: ``raise NotImplementedError`` substitutes for
+    ``pass`` and is strictly WORSE (runtime crash) but evaded the rule
+    that only checked ``ast.Pass``. After the patch the rule flags
+    these as placeholder bodies on the security surface.
+    """
+    tool = _make_tool(
+        tmp_path,
+        "add_notimpl_security_feature",
+        init_body="""
+            from adapt.contracts import ToolResult
+
+            def add_notimpl_security_feature(inp):
+                return ToolResult(status="success")
+        """,
+        templates={
+            "core.py.tmpl": """
+                def enforce_signature_check(request):
+                    \"\"\"Enforce HMAC signature on incoming request.\"\"\"
+                    raise NotImplementedError("wire HMAC verification")
+            """,
+        },
+    )
+    _patch_scope(monkeypatch, [tool])
+    ok, msg = M._r_no_dead_security_features()
+    assert ok is False, msg
+    assert "enforce_signature_check" in msg
+    assert "NotImplementedError" in msg
+
+
+def test_red_raise_notimplementederror_bare_rejects(tmp_path, monkeypatch) -> None:
+    """Bare ``raise NotImplementedError`` (no message, no parens) is
+    still a placeholder shape and is flagged.
+    """
+    tool = _make_tool(
+        tmp_path,
+        "add_notimpl_bare_security_feature",
+        init_body="""
+            from adapt.contracts import ToolResult
+
+            def add_notimpl_bare_security_feature(inp):
+                return ToolResult(status="success")
+        """,
+        templates={
+            "core.py.tmpl": """
+                def verify_signature(proof):
+                    raise NotImplementedError
+            """,
+        },
+    )
+    _patch_scope(monkeypatch, [tool])
+    ok, msg = M._r_no_dead_security_features()
+    assert ok is False, msg
+    assert "verify_signature" in msg
+
+
+def test_green_real_raise_passes(tmp_path, monkeypatch) -> None:
+    """A real ``raise SomeError(...)`` in a real body is NOT a placeholder.
+
+    The patch only flags single-statement ``raise NotImplementedError``
+    bodies — a function with logic plus a defensive raise is allowed.
+    """
+    tool = _make_tool(
+        tmp_path,
+        "add_real_raise_security_feature",
+        init_body="""
+            from adapt.contracts import ToolResult
+
+            def add_real_raise_security_feature(inp):
+                return ToolResult(status="success")
+        """,
+        templates={
+            "core.py.tmpl": """
+                import hmac
+
+                def verify_signature(proof: bytes, key: bytes) -> bool:
+                    if not proof:
+                        raise ValueError("empty proof")
+                    expected = hmac.new(key, proof, "sha256").hexdigest()
+                    return hmac.compare_digest(expected, proof.hex())
+            """,
+        },
+    )
+    _patch_scope(monkeypatch, [tool])
+    ok, msg = M._r_no_dead_security_features()
+    assert ok is True, msg
+
+
+def test_green_abstractmethod_raise_notimplemented_allowed(tmp_path, monkeypatch) -> None:
+    """An ``@abstractmethod`` whose only body is ``raise NotImplementedError``
+    is a legitimate abstract declaration, NOT a placeholder.
+    """
+    tool = _make_tool(
+        tmp_path,
+        "add_abstract_notimpl_security_feature",
+        init_body="""
+            from adapt.contracts import ToolResult
+
+            def add_abstract_notimpl_security_feature(inp):
+                return ToolResult(status="success")
+        """,
+        templates={
+            "core.py.tmpl": """
+                from abc import ABC, abstractmethod
+
+
+                class SignatureVerifier(ABC):
+                    @abstractmethod
+                    def verify(self, proof: bytes) -> bool:
+                        raise NotImplementedError
+            """,
+        },
+    )
+    _patch_scope(monkeypatch, [tool])
+    ok, msg = M._r_no_dead_security_features()
+    assert ok is True, msg
+
+
+# ---------------------------------------------------------------------------
+# 11. Round-7 O3-F2 (HIGH) — TODO smuggled inside docstring
+# ---------------------------------------------------------------------------
+
+
+def test_red_todo_in_docstring_rejects(tmp_path, monkeypatch) -> None:
+    """Round-7 O3-F2: TODO inside the function's docstring (not a
+    ``# TODO`` comment) evaded the body-comment rule. On the security
+    surface the rule now scans ``ast.get_docstring(node)`` for
+    TODO/FIXME/XXX markers.
+    """
+    tool = _make_tool(
+        tmp_path,
+        "add_doc_todo_security_feature",
+        init_body="""
+            from adapt.contracts import ToolResult
+
+            def add_doc_todo_security_feature(inp):
+                return ToolResult(status="success")
+        """,
+        templates={
+            "core.py.tmpl": """
+                def verify_signature(proof: bytes) -> bool:
+                    \"\"\"Verify HMAC signature.
+
+                    TODO: wire shared-secret distribution before going live.
+                    \"\"\"
+                    return True
+            """,
+        },
+    )
+    _patch_scope(monkeypatch, [tool])
+    ok, msg = M._r_no_dead_security_features()
+    assert ok is False, msg
+    assert "verify_signature" in msg
+    assert "docstring" in msg.lower()
+
+
+def test_red_fixme_in_docstring_rejects(tmp_path, monkeypatch) -> None:
+    """FIXME inside the docstring is the same regression class as TODO."""
+    tool = _make_tool(
+        tmp_path,
+        "add_doc_fixme_security_feature",
+        init_body="""
+            from adapt.contracts import ToolResult
+
+            def add_doc_fixme_security_feature(inp):
+                return ToolResult(status="success")
+        """,
+        templates={
+            "core.py.tmpl": """
+                def check_csrf(token: str) -> bool:
+                    \"\"\"Validate CSRF token.
+
+                    FIXME: subtle timing leak on the fast path.
+                    \"\"\"
+                    return token == "ok"
+            """,
+        },
+    )
+    _patch_scope(monkeypatch, [tool])
+    ok, msg = M._r_no_dead_security_features()
+    assert ok is False, msg
+    assert "check_csrf" in msg
+
+
+def test_green_clean_docstring_passes(tmp_path, monkeypatch) -> None:
+    """A function whose docstring has NO TODO/FIXME/XXX is allowed."""
+    tool = _make_tool(
+        tmp_path,
+        "add_clean_doc_security_feature",
+        init_body="""
+            from adapt.contracts import ToolResult
+
+            def add_clean_doc_security_feature(inp):
+                return ToolResult(status="success")
+        """,
+        templates={
+            "core.py.tmpl": """
+                import hmac
+
+                def verify_signature(proof: bytes, key: bytes) -> bool:
+                    \"\"\"Verify HMAC signature using constant-time compare.\"\"\"
+                    expected = hmac.new(key, proof, "sha256").hexdigest()
+                    return hmac.compare_digest(expected, proof.hex())
+            """,
+        },
+    )
+    _patch_scope(monkeypatch, [tool])
+    ok, msg = M._r_no_dead_security_features()
+    assert ok is True, msg
+
+
+def test_green_abstractmethod_docstring_todo_allowed(tmp_path, monkeypatch) -> None:
+    """``@abstractmethod`` docstring TODOs read as "subclasses must wire" —
+    not a placeholder regression.
+    """
+    tool = _make_tool(
+        tmp_path,
+        "add_abstract_doc_security_feature",
+        init_body="""
+            from adapt.contracts import ToolResult
+
+            def add_abstract_doc_security_feature(inp):
+                return ToolResult(status="success")
+        """,
+        templates={
+            "core.py.tmpl": """
+                from abc import ABC, abstractmethod
+
+
+                class SignatureVerifier(ABC):
+                    @abstractmethod
+                    def verify(self, proof: bytes) -> bool:
+                        \"\"\"Verify HMAC signature.
+
+                        TODO: subclasses must implement constant-time compare.
+                        \"\"\"
+                        ...
+            """,
+        },
+    )
+    _patch_scope(monkeypatch, [tool])
     ok, msg = M._r_no_dead_security_features()
     assert ok is True, msg
 

@@ -322,11 +322,7 @@ def _call_extra_forbid(node: ast.expr) -> bool:
     if not isinstance(node, ast.Call):
         return False
     for kw in node.keywords:
-        if (
-            kw.arg == "extra"
-            and isinstance(kw.value, ast.Constant)
-            and kw.value.value == "forbid"
-        ):
+        if kw.arg == "extra" and isinstance(kw.value, ast.Constant) and kw.value.value == "forbid":
             return True
     return False
 
@@ -420,21 +416,56 @@ def _annotation_offenses(ann: ast.expr) -> list[str]:
     return offenses
 
 
-def _walk_annotation(node: ast.expr, offenses: list[str]) -> None:
+def _annotation_tail(node: ast.AST) -> str:
+    """Resolve ``X`` / ``foo.X`` / nested ``a.b.X`` → ``"X"`` (the tail).
+
+    Used by the bare-name walker so ``typing.Dict``, ``t.Dict``,
+    ``typing.Any`` all resolve to ``Dict`` / ``Any`` and match the same
+    offence shape as bare ``dict`` / ``Any``. Round-7 O3-F26 (HIGH):
+    capital-D variants from the ``typing`` module evaded the rule
+    because the walker only matched bare ``ast.Name``.
+    """
     if isinstance(node, ast.Name):
-        if node.id == "Any":
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return node.attr
+    return ""
+
+
+# Bare-name tails that signal an unbounded mutable container or Any.
+# Lowercase forms are the Python builtins; capitalised forms are the
+# ``typing`` aliases (``typing.Dict``, ``typing.List``, ``typing.Set``,
+# ``typing.Any``) which behave identically at runtime but evaded the
+# original walker — Round-7 O3-F26.
+_DICT_TAILS: frozenset[str] = frozenset({"dict", "Dict"})
+_LIST_TAILS: frozenset[str] = frozenset({"list", "List"})
+_SET_TAILS: frozenset[str] = frozenset({"set", "Set", "FrozenSet"})
+_ANY_TAILS: frozenset[str] = frozenset({"Any"})
+
+
+def _walk_annotation(node: ast.expr, offenses: list[str]) -> None:
+    tail = _annotation_tail(node)
+    if isinstance(node, (ast.Name, ast.Attribute)):
+        if tail in _ANY_TAILS:
             offenses.append("Any")
-        elif node.id == "dict":
+            return
+        if tail in _DICT_TAILS:
             offenses.append("bare-dict")
-        elif node.id == "list":
+            return
+        if tail in _LIST_TAILS:
             offenses.append("bare-list")
+            return
+        if tail in _SET_TAILS:
+            offenses.append("bare-set")
+            return
         return
     if isinstance(node, ast.Subscript):
         base = node.value
-        if isinstance(base, ast.Name) and base.id == "dict":
+        base_tail = _annotation_tail(base)
+        if base_tail in _DICT_TAILS:
             _walk_dict_subscript(node.slice, offenses)
             return
-        if isinstance(base, ast.Name) and base.id == "list":
+        if base_tail in _LIST_TAILS:
             _walk_list_subscript(node.slice, offenses)
             return
         # Other generics (Optional, Annotated, Sequence, …) — walk
@@ -451,7 +482,8 @@ def _walk_annotation(node: ast.expr, offenses: list[str]) -> None:
         for elt in node.elts:
             _walk_annotation(elt, offenses)
         return
-    # ast.Attribute (e.g. ``uuid.UUID``), ast.Constant — fine.
+    # ast.Constant — fine. (ast.Attribute is handled above by tail-match;
+    # an unmatched Attribute like ``uuid.UUID`` falls through silently.)
 
 
 def _walk_dict_subscript(slc: ast.expr, offenses: list[str]) -> None:
@@ -574,12 +606,8 @@ def _scan_file(
                     continue
                 if _line_has_pragma(src_lines, stmt.lineno):
                     continue
-                field = (
-                    stmt.target.id if isinstance(stmt.target, ast.Name) else "?"
-                )
-                bad_fields.append(
-                    (node.name, field, stmt.lineno, sorted(set(offenses)))
-                )
+                field = stmt.target.id if isinstance(stmt.target, ast.Name) else "?"
+                bad_fields.append((node.name, field, stmt.lineno, sorted(set(offenses))))
 
     return missing_forbid, bad_fields
 
@@ -611,9 +639,7 @@ def _r_write_schemas_strict() -> tuple[bool, str]:
     """
     templates = find_schema_templates()
     if not templates:
-        return False, (
-            "B0.14: no schema templates discovered under adapt/ — globs broken?"
-        )
+        return False, ("B0.14: no schema templates discovered under adapt/ — globs broken?")
 
     failures: list[str] = []
     scanned = 0
@@ -627,17 +653,13 @@ def _r_write_schemas_strict() -> tuple[bool, str]:
         missing_forbid, bad_fields = _scan_file(tmpl)
         rel = tmpl.relative_to(SKILL_ROOT)
         for cls in missing_forbid:
-            failures.append(f"{rel}::{cls} missing extra=\"forbid\"")
+            failures.append(f'{rel}::{cls} missing extra="forbid"')
         for cls, field, line, offenses in bad_fields:
-            failures.append(
-                f"{rel}::{cls}.{field} (line {line}) forbidden type(s) {offenses}"
-            )
+            failures.append(f"{rel}::{cls}.{field} (line {line}) forbidden type(s) {offenses}")
 
     if failures:
         head = failures[:5]
-        more = (
-            f" (+{len(failures) - len(head)} more)" if len(failures) > len(head) else ""
-        )
+        more = f" (+{len(failures) - len(head)} more)" if len(failures) > len(head) else ""
         joined = "\n    - ".join(head)
         return False, (
             f"B0.14 write_schemas_strict_forbid: {len(failures)} violation(s) across "
@@ -646,6 +668,6 @@ def _r_write_schemas_strict() -> tuple[bool, str]:
         )
 
     return True, (
-        f"B0.14 satisfied: {scanned} write-schema template(s) carry extra=\"forbid\""
+        f'B0.14 satisfied: {scanned} write-schema template(s) carry extra="forbid"'
         f" + no bare-Any fields ({waived_skipped} waived for Wave-1 fix-PRs)"
     )
