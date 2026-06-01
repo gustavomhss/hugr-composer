@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_kubernetes_manifests import add_kubernetes_manifests
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     """Return all .py files under *root* sorted alphabetically.
@@ -76,10 +76,11 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, "end_lineno") and node.end_lineno:
-                    loc = node.end_lineno - node.lineno + 1
-                    max_loc = max(max_loc, loc)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and getattr(
+                node, "end_lineno", None
+            ):
+                loc = node.end_lineno - node.lineno + 1
+                max_loc = max(max_loc, loc)
     return max_loc
 
 
@@ -99,6 +100,7 @@ def _fresh(name: str) -> Path:
 # CC-01 — success status
 # ---------------------------------------------------------------------------
 
+
 def test_success_status() -> None:
     """Tool returns status='success' on a fresh project."""
     project_dir = _fresh("k8s_t01")
@@ -109,6 +111,7 @@ def test_success_status() -> None:
 # ---------------------------------------------------------------------------
 # CC-02 — idempotency
 # ---------------------------------------------------------------------------
+
 
 def test_idempotent() -> None:
     """Second run returns status='no_op' without touching files."""
@@ -125,6 +128,7 @@ def test_idempotent() -> None:
 # CC-03 — dry_run
 # ---------------------------------------------------------------------------
 
+
 def test_dry_run() -> None:
     """dry_run=True returns success but writes no files."""
     project_dir = _fresh("k8s_t03")
@@ -140,6 +144,7 @@ def test_dry_run() -> None:
 # ---------------------------------------------------------------------------
 # CC-04 — files_created count
 # ---------------------------------------------------------------------------
+
 
 def test_files_created_count() -> None:
     """Tool creates exactly 7 k8s YAML manifests."""
@@ -158,6 +163,7 @@ def test_files_created_count() -> None:
 # CC-05 — files_modified count
 # ---------------------------------------------------------------------------
 
+
 def test_files_modified_count() -> None:
     """Tool modifies at least 1 file (config.py)."""
     project_dir = _fresh("k8s_t05")
@@ -174,6 +180,7 @@ def test_files_modified_count() -> None:
 # CC-06 — all .py files parse
 # ---------------------------------------------------------------------------
 
+
 def test_all_py_parse() -> None:
     """Every generated .py file AST-parses clean."""
     project_dir = _fresh("k8s_t06")
@@ -184,6 +191,7 @@ def test_all_py_parse() -> None:
 # ---------------------------------------------------------------------------
 # CC-07 — no function over 50 LOC
 # ---------------------------------------------------------------------------
+
 
 def test_no_function_over_50_loc() -> None:
     """No function in generated app/ exceeds 50 LOC."""
@@ -196,6 +204,7 @@ def test_no_function_over_50_loc() -> None:
 # ---------------------------------------------------------------------------
 # CC-08 — config fields patched
 # ---------------------------------------------------------------------------
+
 
 def test_config_fields_patched() -> None:
     """K8S_* settings fields exist inside Settings in config.py."""
@@ -218,6 +227,7 @@ def test_config_fields_patched() -> None:
 # CC-09 — models __init__ not touched
 # ---------------------------------------------------------------------------
 
+
 def test_no_spurious_models_init_changes() -> None:
     """Tool does not modify app/models/__init__.py."""
     project_dir = _fresh("k8s_t09")
@@ -231,6 +241,7 @@ def test_no_spurious_models_init_changes() -> None:
 # ---------------------------------------------------------------------------
 # CC-10 — routes __init__ not touched
 # ---------------------------------------------------------------------------
+
 
 def test_no_spurious_routes_init_changes() -> None:
     """Tool does not modify app/routes/__init__.py."""
@@ -246,6 +257,7 @@ def test_no_spurious_routes_init_changes() -> None:
 # CC-11 — deployment.yaml created
 # ---------------------------------------------------------------------------
 
+
 def test_deployment_yaml_created() -> None:
     """k8s/deployment.yaml exists with readiness and liveness probes."""
     project_dir = _fresh("k8s_t11")
@@ -257,9 +269,38 @@ def test_deployment_yaml_created() -> None:
     assert "livenessProbe" in content, "deployment.yaml missing livenessProbe"
 
 
+def test_liveness_and_readiness_use_distinct_probes() -> None:
+    """R6-S11-F1: liveness and readiness must hit DIFFERENT endpoints.
+
+    Pre-fix both probes pointed at /healthz, so a DB outage failed the liveness
+    probe and Kubernetes RESTARTED the pod (restart loop) instead of merely
+    removing it from the Service via a failed readiness probe. Readiness must use
+    the deep /readyz check (503 until DB reachable); liveness the shallow
+    /healthz (process-alive, no deps); plus a startupProbe so a slow boot does
+    not trip liveness.
+    """
+    import yaml
+
+    project_dir = _fresh("k8s_probes")
+    add_kubernetes_manifests(ToolInput(project_dir=str(project_dir)))
+    doc = yaml.safe_load((project_dir / "k8s" / "deployment.yaml").read_text())
+    container = doc["spec"]["template"]["spec"]["containers"][0]
+    readiness = container["readinessProbe"]["httpGet"]["path"]
+    liveness = container["livenessProbe"]["httpGet"]["path"]
+    assert readiness == "/readyz", f"readinessProbe must hit the deep /readyz, got {readiness!r}"
+    assert liveness == "/healthz", f"livenessProbe must hit the shallow /healthz, got {liveness!r}"
+    assert readiness != liveness, (
+        "liveness and readiness must NOT share one endpoint — a dep outage would "
+        "restart the pod instead of draining it (R6-S11-F1)"
+    )
+    assert "startupProbe" in container, "deployment must define a startupProbe for slow boots"
+    assert container["startupProbe"]["httpGet"]["path"] == "/startupz"
+
+
 # ---------------------------------------------------------------------------
 # CC-12 — service.yaml created
 # ---------------------------------------------------------------------------
+
 
 def test_service_yaml_created() -> None:
     """k8s/service.yaml exists as ClusterIP service."""
@@ -274,6 +315,7 @@ def test_service_yaml_created() -> None:
 # ---------------------------------------------------------------------------
 # CC-13 — hpa.yaml created
 # ---------------------------------------------------------------------------
+
 
 def test_hpa_yaml_created() -> None:
     """k8s/hpa.yaml exists with HorizontalPodAutoscaler and CPU/memory metrics."""
@@ -291,6 +333,7 @@ def test_hpa_yaml_created() -> None:
 # CC-14 — pdb.yaml created
 # ---------------------------------------------------------------------------
 
+
 def test_pdb_yaml_created() -> None:
     """k8s/pdb.yaml exists with PodDisruptionBudget and minAvailable."""
     project_dir = _fresh("k8s_t14")
@@ -305,6 +348,7 @@ def test_pdb_yaml_created() -> None:
 # ---------------------------------------------------------------------------
 # CC-15 — configmap.yaml and secret.yaml created
 # ---------------------------------------------------------------------------
+
 
 def test_configmap_and_secret_created() -> None:
     """k8s/configmap.yaml and k8s/secret.yaml both exist."""
@@ -322,6 +366,7 @@ def test_configmap_and_secret_created() -> None:
 # CC-16 — ingress.yaml created
 # ---------------------------------------------------------------------------
 
+
 def test_ingress_yaml_created() -> None:
     """k8s/ingress.yaml exists with nginx annotations and TLS."""
     project_dir = _fresh("k8s_t16")
@@ -337,6 +382,7 @@ def test_ingress_yaml_created() -> None:
 # CC-17 — resource limits in deployment
 # ---------------------------------------------------------------------------
 
+
 def test_deployment_has_resource_limits() -> None:
     """k8s/deployment.yaml defines CPU and memory resource limits."""
     project_dir = _fresh("k8s_t17")
@@ -351,6 +397,7 @@ def test_deployment_has_resource_limits() -> None:
 # CC-N-1 — execution time recorded
 # ---------------------------------------------------------------------------
 
+
 def test_execution_time_recorded() -> None:
     """execution_time_ms must be a positive integer."""
     project_dir = _fresh("k8s_t18")
@@ -361,6 +408,7 @@ def test_execution_time_recorded() -> None:
 # ---------------------------------------------------------------------------
 # CC-N — next_steps present
 # ---------------------------------------------------------------------------
+
 
 def test_next_steps_present() -> None:
     """next_steps guides developer to apply manifests with kubectl."""
@@ -375,6 +423,7 @@ def test_next_steps_present() -> None:
 # CC-LAST — idempotent project still parses
 # ---------------------------------------------------------------------------
 
+
 def test_idempotent_project_still_parses() -> None:
     """After two runs all .py files remain parseable."""
     project_dir = _fresh("k8s_t20")
@@ -386,6 +435,7 @@ def test_idempotent_project_still_parses() -> None:
 # ---------------------------------------------------------------------------
 # Additional domain tests
 # ---------------------------------------------------------------------------
+
 
 def test_k8s_dir_has_all_seven_files() -> None:
     """The k8s/ directory contains exactly 7 manifest files."""
@@ -434,6 +484,7 @@ if __name__ == "__main__":
         test_no_spurious_models_init_changes,
         test_no_spurious_routes_init_changes,
         test_deployment_yaml_created,
+        test_liveness_and_readiness_use_distinct_probes,
         test_service_yaml_created,
         test_hpa_yaml_created,
         test_pdb_yaml_created,
@@ -458,7 +509,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-093 add_kubernetes_manifests: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)
