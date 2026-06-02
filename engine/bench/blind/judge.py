@@ -93,7 +93,7 @@ def _collect_docstrings(judge_dir: Path) -> dict[str, str]:
 
 @dataclass
 class JudgeResult:
-    boot_status: str  # "success" | "boot_timeout" | "boot_error" | "skipped"
+    boot_status: str  # "success"|"boot_timeout"|"boot_error"|"skipped"|"harness_error"
     boot_log_path: Path | None
     test_records: list[TestRecord] = field(default_factory=list)
     per_layer: dict[str, float] = field(default_factory=dict)
@@ -289,6 +289,20 @@ def run_judge(spec, workdir: Path, *, boot_extra_env: dict | None = None) -> Jud
         _kill(proc)
         chaos_writer.event("kill_teardown", pid=proc.pid)
 
+    # Harness-integrity guard. A collection crash (missing judge dependency
+    # like hypothesis), a usage error (pytest-json-report plugin absent), or
+    # "no tests collected" must NOT be silently aggregated into final_score=0
+    # — that would make a broken benchmark environment indistinguishable from
+    # a legitimately failing emission and corrupt every published number.
+    harness_err = _harness_integrity_error(pr.returncode, report_path)
+    if harness_err is not None:
+        chaos_writer.event("harness_error", returncode=pr.returncode, detail=harness_err)
+        return JudgeResult(
+            boot_status="harness_error",
+            boot_log_path=boot_log_path,
+            notes=f"{harness_err}\n--- pytest stderr tail ---\n{pr.stderr[-800:]}",
+        )
+
     records = _parse_pytest_json(report_path, pr.stdout + "\n" + pr.stderr)
 
     # Attach rubric traces from each test's docstring. For failing tests
@@ -340,6 +354,48 @@ def _kill(proc: subprocess.Popen) -> None:
         else:
             proc.terminate()
             proc.kill()
+
+
+def _report_has_tests(report_path: Path) -> bool:
+    """True iff pytest-json-report wrote a parseable report with >=1 test."""
+    if not report_path.exists():
+        return False
+    try:
+        data = json.loads(report_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        return False
+    return isinstance(data, dict) and bool(data.get("tests"))
+
+
+def _harness_integrity_error(returncode: int, report_path: Path) -> str | None:
+    """Distinguish a broken harness from a legitimately failing emission.
+
+    pytest exit codes: 0=all pass, 1=tests failed, 2=interrupted/collection
+    error, 3=internal error, 4=usage error (e.g. --json-report flag rejected
+    because the plugin is missing), 5=no tests collected.
+
+    Codes 0 and 1 are real verdicts. Anything else WITHOUT a usable JSON
+    report means the environment — not the emitted code — is at fault.
+    Returns a diagnostic string in that case, else None.
+    """
+    if returncode in (0, 1):
+        return None
+    if _report_has_tests(report_path):
+        # Plugin still produced a report despite a non-standard exit code;
+        # trust the per-test detail rather than flagging a harness error.
+        return None
+    diagnostics = {
+        2: "pytest interrupted (exit 2): judge test collection crashed — "
+        "most likely a missing judge dependency (e.g. hypothesis). Install "
+        "the 'dev' optional-dependencies group.",
+        3: "pytest internal error (exit 3).",
+        4: "pytest usage error (exit 4): the --json-report flag was rejected — "
+        "pytest-json-report is not installed. Install the 'dev' "
+        "optional-dependencies group.",
+        5: "pytest collected no tests (exit 5): judge/ directory is empty or "
+        "test discovery failed.",
+    }
+    return diagnostics.get(returncode, f"pytest exited {returncode} with no usable report.")
 
 
 def _parse_pytest_json(report_path: Path, fallback: str) -> list[TestRecord]:

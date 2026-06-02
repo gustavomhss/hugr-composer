@@ -12,7 +12,13 @@ from pathlib import Path
 import pytest
 
 from engine.bench.blind.attribution import attribute, scan_primitives
-from engine.bench.blind.judge import TestRecord, _aggregate, _classify, _parse_pytest_json
+from engine.bench.blind.judge import (
+    TestRecord,
+    _aggregate,
+    _classify,
+    _harness_integrity_error,
+    _parse_pytest_json,
+)
 from engine.bench.blind.publish import (
     DPO_MARGIN_THRESHOLD,
     _by_condition_stats,
@@ -152,6 +158,34 @@ def test_judge_aggregate_computes_per_layer_and_bucket() -> None:
     assert result.per_layer["A"] == 50.0
     assert result.per_layer["C"] == 100.0
     assert result.per_bucket["concurrency"] == 100.0
+
+
+def test_judge_harness_error_flags_collection_crash(tmp_path: Path) -> None:
+    """A pytest collection crash (exit 2) with no report = broken harness,
+    NOT a legitimate score-0 emission."""
+    missing = tmp_path / "no_report.json"
+    err = _harness_integrity_error(2, missing)
+    assert err is not None and "collection" in err
+
+
+def test_judge_harness_error_flags_missing_json_plugin(tmp_path: Path) -> None:
+    """Exit 4 (usage error from a rejected --json-report flag) must surface
+    as a harness error pointing at the missing plugin."""
+    err = _harness_integrity_error(4, tmp_path / "absent.json")
+    assert err is not None and "pytest-json-report" in err
+
+
+def test_judge_harness_error_none_on_real_verdicts(tmp_path: Path) -> None:
+    """Exit 0 (all pass) and 1 (tests failed) are real verdicts, not errors."""
+    assert _harness_integrity_error(0, tmp_path / "x.json") is None
+    assert _harness_integrity_error(1, tmp_path / "x.json") is None
+
+
+def test_judge_harness_error_none_when_report_present(tmp_path: Path) -> None:
+    """Even on an odd exit code, a usable report means trust the per-test data."""
+    report = tmp_path / "r.json"
+    report.write_text(json.dumps({"tests": [{"nodeid": "t::test_A_x", "outcome": "passed"}]}))
+    assert _harness_integrity_error(2, report) is None
 
 
 def test_judge_parse_pytest_json_reads_report(tmp_path: Path) -> None:
