@@ -533,6 +533,55 @@ def test_r5_o3_f4_list_refunds_enforces_ownership() -> None:
     )
 
 
+def test_r8_j2_3_refund_amount_capped_to_charge() -> None:
+    """R8-J2-3: a refund must be rejected when it would exceed the original charge.
+
+    Pre-fix the only amount guards were a per-request ``REFUND_MAX_AMOUNT_CENTS``
+    cap and the auto-approve threshold — nothing checked the refund against the
+    payment's own ``amount_cents`` or against prior refunds, so a payment could be
+    refunded many times over. The fix:
+
+    1. ``refund_crud.py`` sums prior non-failed refunds for the payment.
+    2. ``request_refund`` rejects (4xx) when amount + prior > charge.
+    """
+    project_dir = create_fixture_project(name="refund_r8_j2_3_cap")
+    add_stripe_refund_flow(ToolInput(project_dir=str(project_dir)))
+
+    crud_content = (project_dir / "app" / "crud" / "refund.py").read_text()
+    assert "sum_non_failed_refunds_for_payment" in crud_content, (
+        "refund CRUD must expose a helper summing prior non-failed refunds (R8-J2-3)"
+    )
+    crud_tree = ast.parse(crud_content)
+    sum_fn = _func_node(crud_tree, "sum_non_failed_refunds_for_payment")
+    sum_src = ast.unparse(sum_fn)
+    assert "Refund.amount_cents" in sum_src, "sum helper must total amount_cents"
+    assert "!=" in sum_src and "failed" in sum_src, (
+        "sum helper must exclude failed refunds (pending+succeeded count)"
+    )
+
+    route_tree = _refund_route_tree("refund_r8_j2_3_route")
+    route_content = ast.unparse(route_tree)
+    fn = _func_node(route_tree, "request_refund")
+    body_src = ast.unparse(fn)
+    # request_refund (directly or via a helper) must run the amount validation.
+    assert "_validate_refund_amount" in route_content, (
+        "refunds.py must validate the refund amount against the charge (R8-J2-3)"
+    )
+    assert "_validate_refund_amount" in body_src or "_validate_refund_amount" in route_content, (
+        "request_refund must invoke the amount validation before issuing the refund"
+    )
+    # The validator must compare against the payment's amount_cents and reject 4xx.
+    validator = _func_node(route_tree, "_validate_refund_amount")
+    vsrc = ast.unparse(validator)
+    assert "amount_cents" in vsrc, "validator must read payment.amount_cents"
+    assert "sum_non_failed_refunds_for_payment" in vsrc, (
+        "validator must add prior non-failed refunds, not just check this one request"
+    )
+    assert "409" in vsrc or "CONFLICT" in vsrc or "400" in vsrc or "BAD_REQUEST" in vsrc, (
+        "over-amount refund must be rejected with HTTP 400/409"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
@@ -568,6 +617,7 @@ if __name__ == "__main__":
         test_r5_o3_f4_ownership_guard_present,
         test_r5_o3_f4_request_refund_passes_current_user,
         test_r5_o3_f4_list_refunds_enforces_ownership,
+        test_r8_j2_3_refund_amount_capped_to_charge,
     ]
 
     passed = failed = 0

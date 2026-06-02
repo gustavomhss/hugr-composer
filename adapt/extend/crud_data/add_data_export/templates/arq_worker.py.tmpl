@@ -5,8 +5,9 @@ The worker session is expected in ``ctx["session"]`` via ARQ startup hooks.
 """
 from __future__ import annotations
 
-import io
 import logging
+import os
+import tempfile
 import uuid
 from typing import Any
 
@@ -35,6 +36,14 @@ async def _stream_export_to_storage(
 ) -> str:
     """Stream rows through a generator into storage and return a presigned URL.
 
+    Memory-bounded: chunks are written to a ``SpooledTemporaryFile`` that keeps
+    at most ``EXPORT_SPOOL_MAX_BYTES`` (default 32 MiB) in RAM and rolls over to
+    a real temp file on disk past that. The whole export is therefore never
+    held in memory at once — which is the entire reason large exports are routed
+    to this worker. The storage ``.save()`` contract reads from the file object
+    (S3 ``upload_fileobj`` streams it; local copies it), so no multipart API is
+    required.
+
     Args:
         session: Async SQLAlchemy session.
         storage: Storage backend (has .save() and .presigned_url()).
@@ -47,12 +56,14 @@ async def _stream_export_to_storage(
     Returns:
         Presigned download URL valid for 24 h.
     """
-    buf = io.BytesIO()
-    async for chunk in gen_fn(session, stmt, cols):
-        buf.write(chunk)
-    buf.seek(0)
+    spool_max = int(os.getenv("EXPORT_SPOOL_MAX_BYTES", str(32 * 1024 * 1024)))
     key = f"exports/{job_id}.{format}"
-    await storage.save(buf, key, content_type=_CONTENT_TYPES.get(format, "application/octet-stream"))
+    content_type = _CONTENT_TYPES.get(format, "application/octet-stream")
+    with tempfile.SpooledTemporaryFile(max_size=spool_max) as buf:
+        async for chunk in gen_fn(session, stmt, cols):
+            buf.write(chunk)
+        buf.seek(0)
+        await storage.save(buf, key, content_type=content_type)
     return await storage.presigned_url(key, expires_in=86400)
 
 

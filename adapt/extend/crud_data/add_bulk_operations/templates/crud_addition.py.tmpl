@@ -188,6 +188,55 @@ async def _apply_bulk_updates_${lower}(
     return results, succeeded, failed
 
 
+class _BulkUpdateRollback_${lower}(Exception):
+    """Internal marker: abort an all_or_nothing bulk update and roll the batch back."""
+
+
+async def _apply_bulk_updates_all_or_nothing_${lower}(
+    session: _BulkSession, updates: list[dict], found_ids: set
+) -> tuple[list, int, int]:
+    """Apply every PATCH in a single transaction; roll back entirely on any failure.
+
+    Mirrors the all_or_nothing create path: if any row is unowned, missing, or its
+    UPDATE matches no row (rowcount==0), the whole batch is rolled back and no
+    partial commits survive (R8-J2-2).
+
+    Args:
+        session: Async SQLAlchemy session.
+        updates: List of update dicts each containing ``id``.
+        found_ids: Set of IDs verified as owned by the caller.
+
+    Returns:
+        Tuple of (results_list, succeeded_count, failed_count).
+    """
+    from app.schemas.${lower} import BulkResultItem  # type: ignore[import]
+    try:
+        for upd in updates:
+            row_id = _bulk_uuid.UUID(str(upd.get("id")))
+            if row_id not in found_ids:
+                raise _BulkUpdateRollback_${lower}(row_id, "Item not found or not owned by caller")
+            patch = {k: v for k, v in upd.items() if k != "id"}
+            stmt = _sql_update(${model_name}).where(${model_name}.id == row_id).values(**patch)
+            if (await session.execute(stmt)).rowcount == 0:
+                raise _BulkUpdateRollback_${lower}(row_id, "Item not found or not owned by caller")
+        await session.flush()
+    except Exception as exc:
+        await session.rollback()
+        results = [
+            BulkResultItem(
+                index=idx, id=_bulk_uuid.UUID(str(upd.get("id"))), success=False,
+                error="Rolled back: " + str(exc), error_code="ROLLBACK",
+            )
+            for idx, upd in enumerate(updates)
+        ]
+        return results, 0, len(updates)
+    results = [
+        BulkResultItem(index=idx, id=_bulk_uuid.UUID(str(upd.get("id"))), success=True)
+        for idx, upd in enumerate(updates)
+    ]
+    return results, len(updates), 0
+
+
 async def bulk_update_${lower}s(
     session: _BulkSession,
     *,
@@ -198,7 +247,10 @@ async def bulk_update_${lower}s(
     """Partially update N ${model_name} rows. Each dict must contain ``id``.
 
     Ownership is verified before any mutation: IDs not owned by the caller
-    become NOT_FOUND errors without touching the database.
+    become NOT_FOUND errors without touching the database. In ``all_or_nothing``
+    mode a single failing/unowned/no-op row rolls back the entire batch (no
+    partial commits); ``best_effort`` applies per-row savepoints and skips
+    failures.
 
     Args:
         session: Async SQLAlchemy session.
@@ -215,10 +267,15 @@ async def bulk_update_${lower}s(
         ${model_name}.id.in_(ids), ${model_name}.owner_id == owner_id
     )
     found_ids = set((await session.execute(existing_stmt)).scalars().all())
-    results, succeeded, failed = await _apply_bulk_updates_${lower}(session, updates, found_ids)
+    if mode == "all_or_nothing":
+        results, succeeded, failed = await _apply_bulk_updates_all_or_nothing_${lower}(
+            session, updates, found_ids
+        )
+    else:
+        results, succeeded, failed = await _apply_bulk_updates_${lower}(session, updates, found_ids)
     return BulkResponse(
         total=len(updates), succeeded=succeeded, failed=failed,
-        partial=(failed > 0), results=results,
+        partial=(failed > 0 and mode == "best_effort"), results=results,
     ).model_dump()
 
 

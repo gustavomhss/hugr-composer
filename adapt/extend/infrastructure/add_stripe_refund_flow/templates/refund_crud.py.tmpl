@@ -98,6 +98,26 @@ async def get_refund_by_stripe_id(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
+async def sum_non_failed_refunds_for_payment(
+    session: AsyncSession,
+    payment_id: uuid.UUID,
+) -> int:
+    """Return the cents already refunded (or in-flight) for a payment.
+
+    Sums ``amount_cents`` of every Refund for ``payment_id`` whose status is NOT
+    ``failed`` — i.e. ``pending`` and ``succeeded`` rows both count, so two
+    concurrent in-flight refunds cannot jointly exceed the charge. This is the
+    PRIMARY guard against over-refunding (R8-J2-3); per-row Stripe idempotency
+    keys are only a backstop for exact-duplicate retries.
+    """
+    stmt = (
+        select(func.coalesce(func.sum(Refund.amount_cents), 0))
+        .where(Refund.payment_id == payment_id)
+        .where(Refund.status != "failed")
+    )
+    return int((await session.execute(stmt)).scalar_one() or 0)
+
+
 async def list_refunds_for_payment(
     session: AsyncSession,
     payment_id: uuid.UUID,
