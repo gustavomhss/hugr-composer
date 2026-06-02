@@ -1,3 +1,9 @@
+# REQUIRED ENDPOINTS: the probes below assume the app exposes THREE health
+# endpoints — /healthz (liveness, shallow), /readyz (readiness, deep) and
+# /startupz (startup). This tool does NOT generate them. Add them first with
+# fastapi_api_generate_health (generators/endpoints/health.py), or a pod will
+# never become Ready / will CrashLoop. If your app only exposes /healthz,
+# repoint readinessProbe + startupProbe at /healthz before applying.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
