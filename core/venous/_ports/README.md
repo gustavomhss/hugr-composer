@@ -32,7 +32,7 @@ that:
 | Hand-authored port for `api/CommandBus` | shipped |
 | Hand-authored port for `api/QueryBus` | shipped |
 | Machine-checkable catalog of 124 registered primitives | shipped — [`CATALOG.json`](./CATALOG.json) |
-| Catalog derivation procedure | shipped — [`CATALOG.md`](./CATALOG.md) §"Derivation procedure" |
+| Catalog derivation procedure | shipped — [`docs/CATALOG.md`](./docs/CATALOG.md) §"Derivation procedure" |
 | Compat shim in `core/venous/api/CommandBus/__init__.py` | shipped (one re-export line) |
 | Compat shim in `core/venous/api/QueryBus/__init__.py` | shipped (one re-export line) |
 | Hand-authored ports for the other 122 primitives | **NOT** in this WP — phase 2 |
@@ -40,7 +40,7 @@ that:
 | Migrating compose tools to consume `_ports/` | **NOT** in this WP — phase 3 |
 | Deleting the auto-inferred `<Name>.protocol.py` stubs | **NOT** in this WP — phase 4 |
 
-`CATALOG.md` lists the phasing in full.
+`docs/CATALOG.md` lists the phasing in full.
 
 ## Directory shape
 
@@ -48,8 +48,10 @@ that:
 core/venous/_ports/
 ├── __init__.py                # top-level — no symbols, no side-effects
 ├── README.md                  # this file
-├── CATALOG.md                 # narrative catalog
 ├── CATALOG.json               # machine-readable catalog (124 entries)
+├── docs/                       # narrative docs (repo md-location rule)
+│   ├── CATALOG.md              # narrative catalog
+│   └── COMPAT_SHIM_PLAN.md     # alias/compat shim phasing plan
 ├── api/
 │   ├── __init__.py            # re-exports CommandBusProtocol, QueryBusProtocol
 │   ├── CommandBus.py          # exemplar #1 — hand-authored Protocol
@@ -114,7 +116,7 @@ WP §6 gates; two are deferred to follow-up port-consumer WPs.
 
 | # | Check | Owner | Status |
 |---|---|---|---|
-| 1 | Catalog completeness — re-derive 124 entries and diff against `CATALOG.json` | WP-15 | runnable via WP-15 §6 — `find` invocation in `CATALOG.md` derivation procedure |
+| 1 | Catalog completeness — re-derive 124 entries and diff against `CATALOG.json` | WP-15 | runnable via WP-15 §6 — `find` invocation in `docs/CATALOG.md` derivation procedure |
 | 2 | Type-only AST audit — every file under `_ports/` parses to a Protocol with `...` bodies and nothing else | WP-15 | runnable via WP-15 §6 + §10 D-11 |
 | 3 | Compat-shim `is`-check — legacy and new paths return the same Protocol object | WP-15 | runnable via WP-15 §6 gate 2 |
 | 4 | Adapter-conformance — `isinstance(adapter, <Port>)` for each adapter implementing a port | follow-up WP (phase 3) | deferred — needs an adapter migrated to consume `_ports/` first |
