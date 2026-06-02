@@ -483,6 +483,53 @@ def test_b11_client_ip_is_proxy_aware(project_dir: Path) -> None:
     )
 
 
+def test_b13_client_ip_is_bare_signals_shared_bucket(project_dir: Path) -> None:
+    """B-13 (R8-J1-1): client_ip_is_bare flags bare-peer fingerprints.
+
+    With no trusted proxy configured every request is a bare peer IP (a shared
+    CDN/LB egress bucket) → must be True. With the peer inside a trusted-proxy
+    network the resolved IP is the real client → must be False.
+    """
+    mod = _load_core_with_proxies(project_dir, "")
+    bare = _fake_request("203.0.113.9", {"x-forwarded-for": "1.2.3.4"})
+    assert mod.client_ip_is_bare(bare) is True, "empty trusted proxies → bare peer"
+
+    mod = _load_core_with_proxies(project_dir, "10.0.0.0/8")
+    via_proxy = _fake_request("10.0.0.5", {"x-forwarded-for": "198.51.100.7"})
+    assert mod.client_ip_is_bare(via_proxy) is False, "trusted peer → real client, not bare"
+
+    untrusted = _fake_request("203.0.113.50", {"x-forwarded-for": "10.0.0.1"})
+    assert mod.client_ip_is_bare(untrusted) is True, "untrusted peer → bare (cannot escalate)"
+
+
+@pytest.mark.anyio
+async def test_b14_fallback_dict_is_bounded(project_dir: Path) -> None:
+    """B-14 (R8-J7-1): the Redis-down fallback dict stays bounded under load.
+
+    Records the cap+50 distinct fingerprints (Redis absent → local path) and
+    asserts the per-worker counter dict never exceeds the configured max — no
+    unbounded growth that an attacker could exploit for memory exhaustion.
+    """
+    import importlib
+
+    _orig_path = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    stale = [k for k in sys.modules if k == "app" or k.startswith("app.")]
+    for key in stale:
+        del sys.modules[key]
+    try:
+        mw = importlib.import_module("app.middleware.adaptive_throttle")
+        cap = mw._FALLBACK_MAX_ENTRIES
+        store = mw._PenaltyStore()
+        for i in range(cap + 50):
+            await store.record_request(f"fp-{i}", 1, 60)
+            store._remember(store._fallback, f"pen-{i}", (1, 0.0))
+        assert len(store._counts) <= cap, f"_counts grew past cap: {len(store._counts)} > {cap}"
+        assert len(store._fallback) <= cap, f"_fallback grew past cap: {len(store._fallback)}"
+    finally:
+        sys.path[:] = _orig_path
+
+
 # ---------------------------------------------------------------------------
 # Shared runner helper
 # ---------------------------------------------------------------------------
@@ -568,6 +615,14 @@ if __name__ == "__main__":
         (
             "B-12: quota escalation fires on volume",
             lambda: _run_async_test(test_b12_quota_escalation_fires_on_volume, _pd),
+        ),
+        (
+            "B-13: client_ip_is_bare signals shared bucket",
+            lambda: test_b13_client_ip_is_bare_signals_shared_bucket(_pd),
+        ),
+        (
+            "B-14: fallback dict is bounded",
+            lambda: _run_async_test(test_b14_fallback_dict_is_bounded, _pd),
         ),
     ]
 

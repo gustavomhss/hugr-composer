@@ -115,6 +115,27 @@ def client_ip(request: Request) -> str:
     return peer
 
 
+def client_ip_is_bare(request: Request) -> bool:
+    """True when the resolved client IP is a bare peer IP, not a real client.
+
+    The fingerprint falls back to ``request.client.host`` whenever no
+    trusted proxy is configured, or the peer is not a trusted proxy (so
+    X-Forwarded-For is ignored). Behind a CDN/LB the peer is the proxy's
+    single egress IP — identical for every downstream user — so a bare-peer
+    fingerprint is a SHARED bucket. The middleware uses this to fail OPEN:
+    per-request rate limiting may still apply, but penalty escalation and
+    bans must NOT fire on a shared bucket (a self-inflicted mass-ban DoS).
+
+    Returns True when ``ADAPTIVE_THROTTLE_TRUSTED_PROXIES`` is empty (no
+    proxy awareness) or the peer is not inside any trusted-proxy network.
+    """
+    nets = _trusted_proxy_networks()
+    if not nets:
+        return True
+    peer = request.client.host if request.client else "unknown"
+    return not _is_trusted(peer, nets)
+
+
 def fingerprint_request(request: Request) -> str:
     """Build a behavioral fingerprint from header order and resolved client IP.
 
