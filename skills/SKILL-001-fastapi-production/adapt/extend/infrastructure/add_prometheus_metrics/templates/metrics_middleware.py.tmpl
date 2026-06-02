@@ -18,6 +18,28 @@ logger = logging.getLogger(__name__)
 # Prometheus time series (R6-S5-F1 cardinality blow-up / metrics-store DoS).
 _UNMATCHED_ROUTE = "__unmatched__"
 
+# Standard HTTP methods. The `method` label is attacker-controlled (a client may
+# send any verb, including garbage), so anything outside this allowlist collapses
+# to a single bucket — otherwise the method axis reopens the same unbounded
+# cardinality / metrics-store DoS the path normalisation closed (R6-S5-F1).
+_KNOWN_METHODS = frozenset(
+    {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
+)
+_OTHER_METHOD = "OTHER"
+
+
+def _method_label(request: Request) -> str:
+    """Return a bounded method label, collapsing non-standard verbs to OTHER.
+
+    ``request.method`` is fully client-controlled: a scanner can send an
+    unbounded number of distinct/garbage verbs, each minting a new time series
+    on the ``method`` label (R6-S5-F1 cardinality DoS via the method axis).
+    We allowlist the standard HTTP methods and map everything else to a single
+    constant bucket.
+    """
+    method = request.method.upper()
+    return method if method in _KNOWN_METHODS else _OTHER_METHOD
+
 
 def _route_label(request: Request) -> str:
     """Return the matched route TEMPLATE (e.g. ``/users/{id}``) for the path label.
@@ -63,7 +85,7 @@ class PrometheusMiddleware(BaseHTTPMiddleware):
         metrics = get_metrics()
         if metrics is not None:
             metrics.record_request(
-                method=request.method,
+                method=_method_label(request),
                 path=_route_label(request),
                 status=response.status_code,
                 duration=duration,

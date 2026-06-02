@@ -458,6 +458,47 @@ def test_secret_has_placeholder_warning() -> None:
     )
 
 
+def test_probe_endpoint_dependency_is_documented() -> None:
+    """R8-J6-2: the probes depend on /healthz, /readyz, /startupz which this tool
+
+    does NOT emit. A /healthz-only app gets a never-Ready pod / CrashLoop. The
+    tool must be honest (B0.13): notes AND next_steps must name all three
+    required endpoints, and the deployment manifest must document the assumption.
+    """
+    import yaml
+
+    project_dir = _fresh("k8s_probe_deps")
+    result = add_kubernetes_manifests(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+
+    required = ("/healthz", "/readyz", "/startupz")
+
+    notes_blob = " ".join(result.notes)
+    for ep in required:
+        assert ep in notes_blob, f"notes must name the required endpoint {ep}"
+
+    next_blob = " ".join(result.next_steps)
+    for ep in required:
+        assert ep in next_blob, f"next_steps must name the required endpoint {ep}"
+
+    # The manifest itself must document the dependency in comments.
+    deployment_src = (project_dir / "k8s" / "deployment.yaml").read_text()
+    for ep in required:
+        assert ep in deployment_src, f"deployment.yaml must reference {ep}"
+    assert "REQUIRED ENDPOINTS" in deployment_src, (
+        "deployment.yaml must carry a prominent comment documenting the probe endpoint dependency"
+    )
+
+    # Sanity: every probe path the manifest declares is one of the documented endpoints.
+    doc = yaml.safe_load(deployment_src)
+    container = doc["spec"]["template"]["spec"]["containers"][0]
+    for probe in ("readinessProbe", "livenessProbe", "startupProbe"):
+        path = container[probe]["httpGet"]["path"]
+        assert path in required, (
+            f"{probe} targets {path!r}, which is not among the documented required endpoints"
+        )
+
+
 def test_deployment_has_env_from_configmap_and_secret() -> None:
     """k8s/deployment.yaml references both ConfigMap and Secret via envFrom."""
     project_dir = _fresh("k8s_t23")
@@ -496,6 +537,7 @@ if __name__ == "__main__":
         test_idempotent_project_still_parses,
         test_k8s_dir_has_all_seven_files,
         test_secret_has_placeholder_warning,
+        test_probe_endpoint_dependency_is_documented,
         test_deployment_has_env_from_configmap_and_secret,
     ]
 

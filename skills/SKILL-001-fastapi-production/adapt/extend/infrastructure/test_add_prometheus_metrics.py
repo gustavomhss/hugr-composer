@@ -368,6 +368,59 @@ def test_path_label_uses_route_template_not_raw_path() -> None:
     assert "__unmatched__" in mw_src, "unmatched paths must collapse to a constant label"
 
 
+def test_method_label_is_bounded_to_allowlist() -> None:
+    """R8-J6-1: the `method` label must be bounded, not raw request.method.
+
+    ``request.method`` is fully client-controlled, so a scanner sending garbage
+    verbs mints an unbounded number of time series on the method axis — the same
+    cardinality / metrics-store DoS the path normalisation closed (R6-S5-F1),
+    still reachable via method. The middleware must allowlist the standard HTTP
+    methods and collapse anything else to a single constant bucket BEFORE the
+    record_request call.
+    """
+    project_dir = create_fixture_project(name="prom_method_card")
+    add_prometheus_metrics(ToolInput(project_dir=str(project_dir)))
+    mw_src = (project_dir / "app" / "metrics" / "middleware.py").read_text()
+    # The method passed to record_request must NOT be the raw request.method.
+    assert "method=request.method" not in mw_src, (
+        "middleware still labels metrics by raw request.method (cardinality DoS via method axis)"
+    )
+    # It must bound the method via an allowlist helper with an OTHER fallback.
+    assert "_method_label" in mw_src, "expected a _method_label helper to bound the method label"
+    assert "OTHER" in mw_src, "non-standard methods must collapse to a constant OTHER bucket"
+    # All standard verbs must be in the allowlist.
+    for verb in ("GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"):
+        assert verb in mw_src, f"standard method {verb} missing from the allowlist"
+
+    # Behavioural: the helper must map a garbage verb to OTHER and keep GET as GET.
+    import ast as _ast
+
+    mod = _ast.parse(mw_src)
+    helper = next(
+        n for n in mod.body if isinstance(n, _ast.FunctionDef) and n.name == "_method_label"
+    )
+
+    class _Req:
+        def __init__(self, method: str) -> None:
+            self.method = method
+
+    # Exec only the safe top-level defs (constants + helper), dropping the
+    # starlette / app imports and the Request type hint so it runs standalone.
+    snippet = "\n".join(mw_src.splitlines()[: (helper.end_lineno or helper.lineno)])
+    safe_src = "\n".join(
+        ln
+        for ln in snippet.splitlines()
+        if not ln.startswith(("from starlette", "from app.metrics", "import logging", "logger ="))
+    ).replace(": Request", "")
+    ns: dict[str, object] = {}
+    exec(compile(safe_src, "<mw>", "exec"), ns)  # noqa: S102
+    fn = ns["_method_label"]
+    assert fn(_Req("GET")) == "GET"
+    assert fn(_Req("post")) == "POST"
+    assert fn(_Req("FROBNICATE")) == "OTHER"
+    assert fn(_Req("\x00garbage")) == "OTHER"
+
+
 # ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
@@ -397,6 +450,7 @@ if __name__ == "__main__":
         test_latency_buckets_in_collectors,
         test_get_metrics_function_present,
         test_path_label_uses_route_template_not_raw_path,
+        test_method_label_is_bounded_to_allowlist,
     ]
 
     passed = failed = 0

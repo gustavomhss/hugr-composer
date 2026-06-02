@@ -15,6 +15,10 @@ The tool is idempotent: a second run detects the ``HorizontalPodAutoscaler``
 fingerprint in ``k8s/hpa.yaml`` and returns ``status="no_op"``.
 
 Warnings:
+    - The deployment probes target /healthz (liveness), /readyz (readiness) and
+      /startupz (startup). This tool does NOT generate those endpoints; create
+      them with fastapi_api_generate_health first, or repoint the probes at the
+      endpoint your app actually serves — otherwise the pod never becomes Ready.
     - Generated k8s/secret.yaml contains placeholder base64 values; replace ALL
       placeholders before applying to a production cluster.
     - Generated manifests do not include resource limits at the namespace level
@@ -145,7 +149,12 @@ def add_kubernetes_manifests(inp: ToolInput) -> ToolResult:
         files_modified=files_modified,
         notes=[
             f"Kubernetes manifests generated in k8s/ for app '{app_name}':",
-            "  deployment.yaml: readiness/liveness probes, resource limits, ConfigMap/Secret env.",
+            "  deployment.yaml: readiness/liveness/startup probes, resource limits, ConfigMap/Secret env.",
+            "  REQUIRED ENDPOINTS: the probes assume the app exposes /healthz (liveness),",
+            "    /readyz (readiness) and /startupz (startup). This tool does NOT create them —",
+            "    generate them with fastapi_api_generate_health first, or the pod will never",
+            "    become Ready / will CrashLoop. /healthz-only apps must repoint readiness +",
+            "    startup probes at /healthz in k8s/deployment.yaml before applying.",
             "  service.yaml: ClusterIP on port 8000.",
             "  hpa.yaml: autoscales 2-10 replicas on CPU (70%) and memory (80%).",
             "  pdb.yaml: minAvailable=1 to protect rolling deployments.",
@@ -155,6 +164,9 @@ def add_kubernetes_manifests(inp: ToolInput) -> ToolResult:
             "Config fields added: K8S_REPLICAS, K8S_CPU_LIMIT, K8S_MEMORY_LIMIT, K8S_NAMESPACE.",
         ],
         next_steps=[
+            "Ensure the app exposes /healthz, /readyz and /startupz (run "
+            "fastapi_api_generate_health) — the probes depend on all three, or repoint "
+            "readiness + startup probes at /healthz in k8s/deployment.yaml.",
             "Edit k8s/secret.yaml: replace all <base64-encoded-...> placeholders.",
             "Edit k8s/ingress.yaml: replace 'your-app.example.com' with your domain.",
             "kubectl create namespace ${K8S_NAMESPACE:-production}",
