@@ -163,6 +163,58 @@ def test_red_verb_prefix_schema_without_forbid(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# R8-J4-3 — broadened write-name detection (Form/Input/Data + New/Edit).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "cls_name",
+    ["UserForm", "UserInput", "UserData", "NewUser", "EditProfile"],
+)
+def test_red_broadened_write_name_without_forbid(tmp_path, monkeypatch, cls_name):
+    """R8-J4-3: a write schema named with a Form/Input/Data suffix or a
+    New/Edit prefix (and NO extra="forbid") MUST be flagged — these were
+    previously classified as neither write nor read and skipped."""
+    body = f"from pydantic import BaseModel\n\nclass {cls_name}(BaseModel):\n    name: str\n"
+    _write_template(tmp_path, "add_widget", body)
+    ok, msg = _run_rule(monkeypatch, tmp_path)
+    assert not ok, f"{cls_name} should be a write schema requiring extra=forbid"
+    assert cls_name in msg
+    assert "extra" in msg
+
+
+def test_green_broadened_write_name_with_forbid(tmp_path, monkeypatch):
+    """R8-J4-3: a ``*Form`` write schema that DOES declare extra="forbid" passes."""
+    body = (
+        "from pydantic import BaseModel, ConfigDict\n"
+        "\n"
+        "class UserForm(BaseModel):\n"
+        '    model_config = ConfigDict(extra="forbid")\n'
+        "    name: str\n"
+    )
+    _write_template(tmp_path, "add_widget", body)
+    ok, msg = _run_rule(monkeypatch, tmp_path)
+    assert ok, msg
+
+
+def test_green_response_named_data_summary_still_exempt(tmp_path, monkeypatch):
+    """R8-J4-3 caution: a read-side response schema whose name happens to
+    NOT end in Form/Input/Data and is a Response-suffix stays exempt.
+
+    Guards against the broadening accidentally requiring extra=forbid on
+    legit read schemas (the reason the full flip was rejected)."""
+    body = (
+        "from pydantic import BaseModel\n"
+        "\n"
+        "class RevenueAnalyticsResponse(BaseModel):\n"
+        "    total_cents: int\n"
+    )
+    _write_template(tmp_path, "add_widget", body)
+    ok, msg = _run_rule(monkeypatch, tmp_path)
+    assert ok, msg
+
+
+# ---------------------------------------------------------------------------
 # GREEN tests.
 # ---------------------------------------------------------------------------
 

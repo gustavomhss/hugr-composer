@@ -57,16 +57,21 @@ Match patterns (function-name tail after stripping leading underscores):
 Bypass (per-line OR per-tool):
 
 * **Per-line**: append ``# pragma: B0.15: <reason>`` to the offending
-  statement. A reason ≥1 word is required so the bypass is not a
-  silent magic boolean. The pragma is matched against the SOURCE LINE
-  (we read the file line-by-line and compare against the offending
-  statement's ``lineno``); ``ast.parse`` drops comments, hence the
-  line-table side-channel.
+  statement. A SUBSTANTIVE reason is required (R8-J4-1): ≥2 word
+  tokens and ≥12 alphanumeric characters, so a single non-whitespace
+  char (``# pragma: B0.15: .``) or a lone identifier no longer passes
+  — the bypass is not a silent magic boolean. The pragma is matched
+  against the SOURCE LINE (we read the file line-by-line and compare
+  against the offending statement's ``lineno``); ``ast.parse`` drops
+  comments, hence the line-table side-channel.
 * **Per-tool**: the tool's ``__init__.py`` declares a module-level
   ``_LIFESPAN_EXEMPT: bool = True`` AND the tool returns a
-  ``warnings=`` envelope containing the substring ``"lifespan"``
-  (case-insensitive). When both are present the tool's templates are
-  skipped and the tool key is registered in :pydata:`_WAIVED_TOOLS`.
+  ``warnings=`` envelope that BOTH mentions ``"lifespan"`` AND NAMES
+  the offending init/function (e.g. ``init_idempotency_cache``,
+  ``create_redis_pool``) — a vague "no lifespan support" string is
+  rejected (R8-J4-1). When both signals are present the tool's
+  templates are skipped and the tool key is registered in
+  :pydata:`_WAIVED_TOOLS`.
 
 Trade-offs (declared, NOT hidden):
 
@@ -291,18 +296,48 @@ def _read_source_lines(src: str) -> list[str]:
     return src.splitlines()
 
 
+# R8-J4-1: the reason capture must be a STRUCTURED, semantic
+# justification — not literal noise. The original regex accepted a
+# single non-whitespace char (``# pragma: B0.15: .``) as a "reason",
+# so any garbage satisfied the waiver. We now require the captured
+# reason to clear a minimum length AND contain real word content
+# (see ``_pragma_reason_is_substantive``); a bare pragma or a
+# punctuation-only "reason" is rejected.
 _PRAGMA_RE = re.compile(r"#\s*pragma:\s*B0\.15:\s*(\S.*?)\s*$", re.IGNORECASE)
+
+# Minimum count of alphanumeric characters a pragma reason must carry
+# to count as a genuine disclosure. 12 is deliberately conservative:
+# it admits short-but-real reasons ("single-process") while rejecting
+# ``.``, ``x``, ``- -``, ``B0.15`` and similar noise.
+_PRAGMA_REASON_MIN_ALNUM = 12
+
+
+def _pragma_reason_is_substantive(reason: str) -> bool:
+    """True iff ``reason`` is a real justification, not literal noise.
+
+    A reason must contain at least :pydata:`_PRAGMA_REASON_MIN_ALNUM`
+    alphanumeric characters spread across ≥2 word tokens, so a single
+    long identifier or a run of punctuation does not pass.
+    """
+    words = re.findall(r"[A-Za-z0-9]+", reason)
+    if len(words) < 2:
+        return False
+    alnum = sum(len(w) for w in words)
+    return alnum >= _PRAGMA_REASON_MIN_ALNUM
 
 
 def _line_has_pragma(line: str) -> bool:
     """True iff the source line carries ``# pragma: B0.15: <reason>``.
 
-    A reason ≥1 non-whitespace word is required by the regex (the
-    capture group is non-empty). A bare ``# pragma: B0.15:`` is
-    NOT a valid bypass — same defensive-justification posture B0.11
+    A SUBSTANTIVE reason is required (R8-J4-1): a bare
+    ``# pragma: B0.15:`` or a punctuation-only / single-token "reason"
+    is NOT a valid bypass — same defensive-justification posture B0.11
     takes with ``_PUBLIC_ROUTE_JUSTIFICATION``.
     """
-    return bool(_PRAGMA_RE.search(line))
+    m = _PRAGMA_RE.search(line)
+    if m is None:
+        return False
+    return _pragma_reason_is_substantive(m.group(1))
 
 
 def _collect_indirect_init_funcs(tree: ast.Module) -> dict[str, str]:
@@ -603,15 +638,55 @@ def _tool_declares_lifespan_exempt(init_path: Path) -> bool:
 # Accept both kwarg-style ``warnings=[...]`` (Python construction) AND
 # dict-literal style ``"warnings": [...]`` (JSON-flavoured ToolResult
 # envelopes). Either form satisfies the "warnings entry mentions
-# lifespan" half of the bypass.
-_WARNINGS_LIFESPAN_RE = re.compile(
-    r"""(?:warnings\s*=|["']warnings["']\s*:)\s*\[[^\]]*lifespan[^\]]*\]""",
+# lifespan" half of the bypass. We capture the bracketed list body so
+# the caller can apply the R8-J4-1 semantic check below.
+_WARNINGS_LIST_RE = re.compile(
+    r"""(?:warnings\s*=|["']warnings["']\s*:)\s*\[([^\]]*)\]""",
     re.IGNORECASE | re.DOTALL,
 )
 
+# R8-J4-1: the warnings entry must NAME the offending init/function, not
+# merely contain the word ``lifespan``. We require BOTH the substring
+# ``lifespan`` AND a token shaped like an init-class offence
+# (``init_X`` / ``create_X_pool`` / ``configure_X`` / ``start_X_listener``
+# / ``start_X_worker`` / ``register_X_routes``) so a vague disclosure
+# ("no lifespan support") no longer satisfies the waiver — the real
+# regression has to be named.
+_WARNINGS_LIFESPAN_TOKEN_RE = re.compile(r"lifespan", re.IGNORECASE)
+_WARNINGS_INIT_NAME_RE = re.compile(
+    r"\b_?("
+    r"init_\w+|"
+    r"create_\w+_pool|"
+    r"configure_\w+|"
+    r"start_\w+_listener|"
+    r"start_\w+_worker|"
+    r"register_\w+_routes"
+    r")\b"
+)
+
+
+def _warnings_body_is_substantive(body: str) -> bool:
+    """True iff a ``warnings=[...]`` body discloses lifespan AND names an init.
+
+    The body must mention ``lifespan`` (the concern) AND carry a token
+    shaped like an offending init/function name (the specific
+    regression). ``configure_logging`` / ``register_router`` (the
+    rule's allow-list) are excluded so the disclosure can't be satisfied
+    by naming a benign call.
+    """
+    if not _WARNINGS_LIFESPAN_TOKEN_RE.search(body):
+        return False
+    for m in _WARNINGS_INIT_NAME_RE.finditer(body):
+        tail = m.group(1).lstrip("_")
+        if tail in _ALLOWED_NAMES:
+            continue
+        return True
+    return False
+
 
 def _tool_warnings_mention_lifespan(tool_dir: Path) -> bool:
-    """True iff any ``.py`` under ``tool_dir`` has a ``warnings=[..."lifespan"...]``."""
+    """True iff any ``.py`` under ``tool_dir`` ships a SUBSTANTIVE
+    ``warnings=[..."lifespan"... + <init name>...]`` disclosure (R8-J4-1)."""
     if not tool_dir.is_dir():
         return False
     for py in tool_dir.rglob("*.py"):
@@ -619,8 +694,9 @@ def _tool_warnings_mention_lifespan(tool_dir: Path) -> bool:
             body = py.read_text(encoding="utf-8")
         except OSError:
             continue
-        if _WARNINGS_LIFESPAN_RE.search(body):
-            return True
+        for m in _WARNINGS_LIST_RE.finditer(body):
+            if _warnings_body_is_substantive(m.group(1)):
+                return True
     return False
 
 

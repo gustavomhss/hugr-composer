@@ -609,6 +609,225 @@ def test_b011_new_admin_keywords_caught(
     assert f"add_synthetic_{keyword}" in msg
 
 
+def test_b011_websocket_route_without_auth_rejected(fake_skill_root: Path) -> None:
+    """R8-J8-4: ``@router.websocket("/admin/...")`` with no auth MUST fail.
+
+    WebSocket handlers were structurally invisible (``websocket`` wasn't
+    in the recognised verb set) so an admin WS endpoint slipped through.
+    """
+    _write_template(
+        fake_skill_root,
+        concern="realtime",
+        tool="add_synthetic_ws_admin",
+        name="ws_routes.py.tmpl",
+        body="""
+            from fastapi import APIRouter, WebSocket
+
+            router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+            @router.websocket("/stream")
+            async def admin_stream(websocket: WebSocket) -> None:
+                await websocket.accept()
+        """,
+    )
+
+    from engine.audit.contract_rules.r_admin_routes_auth import (
+        _r_admin_routes_require_auth,
+    )
+
+    ok, msg = _r_admin_routes_require_auth()
+    assert not ok, f"expected fail (ws admin without auth), got: {msg}"
+    assert "add_synthetic_ws_admin" in msg
+    assert "/admin/stream" in msg
+
+
+def test_b011_websocket_route_with_auth_passes(fake_skill_root: Path) -> None:
+    """R8-J8-4: a WS handler carrying ``current_user`` / Depends auth passes."""
+    _write_template(
+        fake_skill_root,
+        concern="realtime",
+        tool="add_synthetic_ws_protected",
+        name="ws_routes.py.tmpl",
+        body="""
+            from fastapi import APIRouter, Depends, WebSocket
+
+            from app.deps import get_current_user
+
+            router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+            @router.websocket("/stream")
+            async def admin_stream(
+                websocket: WebSocket, _u=Depends(get_current_user)
+            ) -> None:
+                await websocket.accept()
+        """,
+    )
+
+    from engine.audit.contract_rules.r_admin_routes_auth import (
+        _r_admin_routes_require_auth,
+    )
+
+    ok, _ = _r_admin_routes_require_auth()
+    assert ok
+
+
+def test_b011_add_api_route_without_auth_rejected(fake_skill_root: Path) -> None:
+    """R8-J4-5: a route mounted via ``router.add_api_route(...)`` with an
+    unauth'd endpoint MUST fail — previously only decorator-form routes
+    were seen, so this was an invisible bypass.
+    """
+    _write_template(
+        fake_skill_root,
+        concern="infrastructure",
+        tool="add_synthetic_imperative",
+        name="imperative_routes.py.tmpl",
+        body="""
+            from fastapi import APIRouter
+
+            router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+            def purge_everything() -> dict:
+                return {"ok": True}
+
+
+            router.add_api_route("/purge", purge_everything, methods=["POST"])
+        """,
+    )
+
+    from engine.audit.contract_rules.r_admin_routes_auth import (
+        _r_admin_routes_require_auth,
+    )
+
+    ok, msg = _r_admin_routes_require_auth()
+    assert not ok, f"expected fail (add_api_route without auth), got: {msg}"
+    assert "add_synthetic_imperative" in msg
+    assert "/admin/purge" in msg
+
+
+def test_b011_add_api_route_with_auth_passes(fake_skill_root: Path) -> None:
+    """R8-J4-5: an ``add_api_route`` endpoint that carries auth passes."""
+    _write_template(
+        fake_skill_root,
+        concern="infrastructure",
+        tool="add_synthetic_imperative_ok",
+        name="imperative_routes.py.tmpl",
+        body="""
+            from fastapi import APIRouter, Depends
+
+            from app.deps import require_admin
+
+            router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+            def purge_everything(_: bool = Depends(require_admin)) -> dict:
+                return {"ok": True}
+
+
+            router.add_api_route("/purge", purge_everything, methods=["POST"])
+        """,
+    )
+
+    from engine.audit.contract_rules.r_admin_routes_auth import (
+        _r_admin_routes_require_auth,
+    )
+
+    ok, _ = _r_admin_routes_require_auth()
+    assert ok
+
+
+def test_b011_add_api_route_keyword_args(fake_skill_root: Path) -> None:
+    """R8-J4-5: ``add_api_route(path=..., endpoint=...)`` keyword form is
+    also resolved."""
+    _write_template(
+        fake_skill_root,
+        concern="infrastructure",
+        tool="add_synthetic_imperative_kw",
+        name="imperative_routes.py.tmpl",
+        body="""
+            from fastapi import APIRouter
+
+            router = APIRouter(prefix="/admin")
+
+
+            def wipe() -> dict:
+                return {"ok": True}
+
+
+            router.add_api_route(path="/wipe", endpoint=wipe, methods=["DELETE"])
+        """,
+    )
+
+    from engine.audit.contract_rules.r_admin_routes_auth import (
+        _r_admin_routes_require_auth,
+    )
+
+    ok, msg = _r_admin_routes_require_auth()
+    assert not ok
+    assert "/admin/wipe" in msg
+
+
+def test_b011_add_api_route_non_admin_path_passes(fake_skill_root: Path) -> None:
+    """R8-J4-5: an ``add_api_route`` on a NON-admin path is out of scope."""
+    _write_template(
+        fake_skill_root,
+        concern="crud_data",
+        tool="add_synthetic_imperative_public",
+        name="imperative_routes.py.tmpl",
+        body="""
+            from fastapi import APIRouter
+
+            router = APIRouter(prefix="/widgets")
+
+
+            def list_widgets() -> list:
+                return []
+
+
+            router.add_api_route("/", list_widgets, methods=["GET"])
+        """,
+    )
+
+    from engine.audit.contract_rules.r_admin_routes_auth import (
+        _r_admin_routes_require_auth,
+    )
+
+    ok, _ = _r_admin_routes_require_auth()
+    assert ok
+
+
+def test_b011_add_api_websocket_route_without_auth_rejected(fake_skill_root: Path) -> None:
+    """R8-J4-5 + J8-4: ``add_api_websocket_route`` admin mount without auth fails."""
+    _write_template(
+        fake_skill_root,
+        concern="realtime",
+        tool="add_synthetic_ws_imperative",
+        name="ws_routes.py.tmpl",
+        body="""
+            from fastapi import APIRouter, WebSocket
+
+            router = APIRouter(prefix="/admin")
+
+
+            async def admin_stream(websocket: WebSocket) -> None:
+                await websocket.accept()
+
+
+            router.add_api_websocket_route("/stream", admin_stream)
+        """,
+    )
+
+    from engine.audit.contract_rules.r_admin_routes_auth import (
+        _r_admin_routes_require_auth,
+    )
+
+    ok, msg = _r_admin_routes_require_auth()
+    assert not ok
+    assert "/admin/stream" in msg
+
+
 def test_b011_prefix_resolves_via_function_default(fake_skill_root: Path) -> None:
     """Phase A1 (#118): ``router = APIRouter(prefix=prefix)`` where
     ``prefix`` is a function parameter with a string-literal default

@@ -281,6 +281,46 @@ def test_red_pragma_without_reason_does_not_bypass() -> None:
     assert hits[0][0] == "init_idempotency_cache"
 
 
+def test_red_pragma_single_char_reason_does_not_bypass() -> None:
+    """R8-J4-1: ``# pragma: B0.15: .`` (single-char noise) → still flagged.
+
+    The original regex accepted any single non-whitespace char as a
+    "reason"; a punctuation-only reason must NOT satisfy the waiver.
+    """
+    hits = find_offences(
+        _src("""
+        init_idempotency_cache("redis://...")  # pragma: B0.15: .
+    """)
+    )
+    assert len(hits) == 1
+    assert hits[0][0] == "init_idempotency_cache"
+
+
+def test_red_pragma_single_token_reason_does_not_bypass() -> None:
+    """R8-J4-1: a lone identifier (no second word) → still flagged.
+
+    A reason must be ≥2 word tokens / ≥12 alnum chars; ``noise`` alone
+    is not a genuine justification.
+    """
+    hits = find_offences(
+        _src("""
+        init_idempotency_cache("redis://...")  # pragma: B0.15: noise
+    """)
+    )
+    assert len(hits) == 1
+    assert hits[0][0] == "init_idempotency_cache"
+
+
+def test_green_pragma_substantive_multiword_reason_bypasses() -> None:
+    """R8-J4-1: a real multi-word justification still bypasses."""
+    hits = find_offences(
+        _src("""
+        init_idempotency_cache("redis://...")  # pragma: B0.15: non-standard main has no lifespan block
+    """)
+    )
+    assert hits == []
+
+
 def test_green_assign_without_call() -> None:
     """``_x = os.getenv(...)`` is not a Call to a matched name."""
     hits = find_offences(
@@ -469,7 +509,12 @@ def test_bypass_lifespan_exempt_plus_warnings(monkeypatch: pytest.MonkeyPatch, t
         _LIFESPAN_EXEMPT: bool = True
 
         def run():
-            return {"warnings": ["module-top init disclosed (no lifespan)"]}
+            return {
+                "warnings": [
+                    "init_idempotency_cache runs at module-top (no lifespan "
+                    "in this non-standard main.py); per-worker init retained"
+                ]
+            }
     """)
     )
     (tool_dir / "templates" / "main_patch.py.tmpl").write_text(
@@ -498,6 +543,72 @@ def test_bypass_requires_both_signals(monkeypatch: pytest.MonkeyPatch, tmp_path)
     (tool_dir / "__init__.py").write_text(
         _src("""
         _LIFESPAN_EXEMPT: bool = True
+    """)
+    )
+    (tool_dir / "templates" / "main_patch.py.tmpl").write_text(
+        _src("""
+        init_idempotency_cache("redis://...")
+    """)
+    )
+
+    monkeypatch.setattr(mod, "ADAPT_ROOT", tmp_path)
+    monkeypatch.setattr(mod, "_WAIVED_TOOLS", frozenset())
+    ok, msg = mod._r_init_inside_lifespan_only()
+    assert not ok
+
+
+def test_bypass_vague_warnings_without_init_name_rejected(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    """R8-J4-1: a ``warnings=`` entry that says ``lifespan`` but NAMES no
+    offending init does NOT satisfy the bypass.
+
+    The original substring check accepted any ``warnings=[...lifespan...]``;
+    a vague "no lifespan support" disclosure must be rejected so the
+    real regression has to be named.
+    """
+    from engine.audit.contract_rules import r_init_inside_lifespan as mod
+
+    tool_dir = tmp_path / "extend" / "_v" / "vague_tool"
+    (tool_dir / "templates").mkdir(parents=True)
+    (tool_dir / "__init__.py").write_text(
+        _src("""
+        from __future__ import annotations
+        _LIFESPAN_EXEMPT: bool = True
+
+        def run():
+            return {"warnings": ["this tool has no lifespan support yet"]}
+    """)
+    )
+    (tool_dir / "templates" / "main_patch.py.tmpl").write_text(
+        _src("""
+        init_idempotency_cache("redis://...")
+    """)
+    )
+
+    monkeypatch.setattr(mod, "ADAPT_ROOT", tmp_path)
+    monkeypatch.setattr(mod, "_WAIVED_TOOLS", frozenset())
+    ok, msg = mod._r_init_inside_lifespan_only()
+    assert not ok
+
+
+def test_bypass_warnings_naming_only_allowlisted_call_rejected(
+    monkeypatch: pytest.MonkeyPatch, tmp_path
+) -> None:
+    """R8-J4-1: naming only an allow-listed call (``configure_logging``)
+    in the warnings does NOT satisfy the bypass — it must name a real
+    offence."""
+    from engine.audit.contract_rules import r_init_inside_lifespan as mod
+
+    tool_dir = tmp_path / "extend" / "_a" / "allowlist_only"
+    (tool_dir / "templates").mkdir(parents=True)
+    (tool_dir / "__init__.py").write_text(
+        _src("""
+        from __future__ import annotations
+        _LIFESPAN_EXEMPT: bool = True
+
+        def run():
+            return {"warnings": ["configure_logging runs at import; no lifespan"]}
     """)
     )
     (tool_dir / "templates" / "main_patch.py.tmpl").write_text(
