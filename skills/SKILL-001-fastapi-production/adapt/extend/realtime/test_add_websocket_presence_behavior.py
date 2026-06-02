@@ -451,6 +451,43 @@ def test_b12_presence_rest_routes_registered_on_app(asgi_app: object) -> None:
 
 
 # ---------------------------------------------------------------------------
+# B-13 (R8-J8-2): anonymous GET on the registered presence REST routes is
+# denied. Pre-fix the handlers had no auth dep so anonymous polling returned
+# 200/500 and enumerated/leaked presence data; post-fix ``CurrentUser`` makes
+# the app deny unauthenticated callers (401/403).
+# ---------------------------------------------------------------------------
+
+
+def _registered_presence_path(asgi_app: object, suffix: str) -> str:
+    """Return the booted app's effective path ending with *suffix*."""
+    for r in getattr(asgi_app, "routes", []):
+        p = getattr(r, "path", None)
+        if p and p.endswith(suffix):
+            return p
+    raise AssertionError(f"no registered route ends with {suffix!r}")
+
+
+@pytest.mark.anyio
+async def test_b13_anonymous_presence_denied(asgi_app: Any) -> None:
+    """R8-J8-2: anonymous GET on the registered presence routes → 401/403."""
+    online_path = _registered_presence_path(asgi_app, "/presence/online")
+    user_path = _registered_presence_path(asgi_app, "/presence/{user_id}")
+    user_path = user_path.replace("{user_id}", str(uuid.uuid4()))
+
+    transport = httpx.ASGITransport(app=asgi_app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        online = await client.get(online_path)
+        user = await client.get(user_path)
+
+    assert online.status_code in (401, 403), (
+        f"anonymous {online_path} not denied: {online.status_code}: {online.text}"
+    )
+    assert user.status_code in (401, 403), (
+        f"anonymous {user_path} not denied: {user.status_code}: {user.text}"
+    )
+
+
+# ---------------------------------------------------------------------------
 # B-10: Delivery contract — final mechanistic proof of delivery
 # ---------------------------------------------------------------------------
 
@@ -482,8 +519,8 @@ def test_b10_delivery_contract(behavior_project: Path) -> None:
         test_file="adapt/extend/realtime/test_add_websocket_presence.py",
         tool_loc=tool_loc,
         test_loc=test_loc + behavior_loc,  # combined: structural + behavior
-        test_count=26 + 10,  # 26 structural + 10 behavior tests
-        tests_passed=26 + 10,
+        test_count=27 + 11,  # 27 structural + 11 behavior tests
+        tests_passed=27 + 11,
         tests_failed=0,
         has_mcp_tool=True,
         has_ensure_prerequisites=True,
