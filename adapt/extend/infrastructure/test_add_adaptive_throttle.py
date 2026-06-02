@@ -487,6 +487,74 @@ def test_fingerprint_is_proxy_aware() -> None:
     assert "client_ip(request)" in content, "fingerprint must use client_ip(request)"
 
 
+def test_enabled_defaults_to_false() -> None:
+    """R8-J1-1: emitted config must default ADAPTIVE_THROTTLE_ENABLED to False.
+
+    Defaulting to True self-activates throttling on first boot; behind a CDN/LB
+    with no trusted proxy configured every user collapses into one fingerprint
+    bucket and the escalation path bans them all (self-inflicted mass-ban DoS).
+    The feature must be opt-in.
+    """
+    project_dir = create_fixture_project(name="at_default_off")
+    add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "config.py").read_text()
+    tree = ast.parse(content)
+    found = False
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.AnnAssign)
+            and isinstance(node.target, ast.Name)
+            and node.target.id == "ADAPTIVE_THROTTLE_ENABLED"
+        ):
+            found = True
+            assert isinstance(node.value, ast.Constant) and node.value.value is False, (
+                "ADAPTIVE_THROTTLE_ENABLED must default to False (opt-in)"
+            )
+    assert found, "ADAPTIVE_THROTTLE_ENABLED field not found in config.py"
+
+
+def test_fail_open_guard_for_bare_peer() -> None:
+    """R8-J1-1 (fix B): middleware must fail OPEN for bare-peer fingerprints.
+
+    When no trusted proxy is configured, client_ip() falls back to the bare
+    peer IP (a shared CDN/LB egress bucket). The middleware must skip the
+    escalation/ban path for such fingerprints via client_ip_is_bare(), so a
+    shared bucket cannot trigger a mass-ban.
+    """
+    project_dir = create_fixture_project(name="at_fail_open")
+    add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
+    core = (project_dir / "app" / "core" / "adaptive_throttle.py").read_text()
+    assert "def client_ip_is_bare" in core, "core must expose client_ip_is_bare()"
+    mw = (project_dir / "app" / "middleware" / "adaptive_throttle.py").read_text()
+    assert "client_ip_is_bare" in mw, "middleware must consult client_ip_is_bare"
+    tree = ast.parse(mw)
+    dispatch = next(
+        n for n in ast.walk(tree) if isinstance(n, ast.AsyncFunctionDef) and n.name == "dispatch"
+    )
+    body = ast.unparse(dispatch)
+    # The bare-peer guard must run BEFORE any escalation: it must precede the
+    # quota check and the downstream escalation.
+    assert "client_ip_is_bare" in body, "dispatch must run the bare-peer guard"
+    assert body.index("client_ip_is_bare") < body.index("_quota_exceeded"), (
+        "bare-peer fail-open guard must precede the quota/escalation path"
+    )
+
+
+def test_fallback_dict_is_bounded() -> None:
+    """R8-J7-1: per-worker Redis-down fallback maps must be size-bounded.
+
+    Distinct attacker-varied fingerprints must not accumulate forever (OOM
+    DoS while Redis is down). The store uses OrderedDict with an explicit
+    max-size cap and LRU eviction.
+    """
+    project_dir = create_fixture_project(name="at_bounded")
+    add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
+    mw = (project_dir / "app" / "middleware" / "adaptive_throttle.py").read_text()
+    assert "OrderedDict" in mw, "fallback store must use OrderedDict (bounded)"
+    assert "_FALLBACK_MAX_ENTRIES" in mw, "fallback store must define a max-size cap"
+    assert "popitem(last=False)" in mw, "fallback store must LRU-evict oldest entries"
+
+
 def test_no_files_mutated_outside_scope() -> None:
     """T-25: Tool must not modify files outside result.files_created/modified."""
     project_dir = create_fixture_project(name="at_t25")
@@ -536,6 +604,9 @@ if __name__ == "__main__":
         test_register_throttle_positioned_after_fastapi,
         test_config_has_six_fields,
         test_fingerprint_is_proxy_aware,
+        test_enabled_defaults_to_false,
+        test_fail_open_guard_for_bare_peer,
+        test_fallback_dict_is_bounded,
         test_no_files_mutated_outside_scope,
     ]
 

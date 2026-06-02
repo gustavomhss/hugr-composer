@@ -5,7 +5,10 @@ Penalty state lives in Redis under ``athrottle:penalty:{fingerprint}``
 ``_PenaltyStore`` instance serves as a best-effort fallback ONLY when
 Redis is unavailable (so the API stays up during a transient Redis
 outage). The fallback is encapsulated in a class so the rule
-``r_no_module_state`` (B0.12) sees no module-level mutable dict.
+``r_no_module_state`` (B0.12) sees no module-level mutable dict. Both
+fallback maps are LRU-bounded ``OrderedDict``s capped at
+``_FALLBACK_MAX_ENTRIES`` so attacker-varied fingerprints cannot exhaust
+worker memory while Redis is down (R8-J7-1).
 
 Closes R6-O1-F10 (multi-worker penalty drift): under multi-worker
 deployments, Redis is now the source of truth — escalations persist
@@ -24,6 +27,7 @@ from __future__ import annotations
 
 import logging
 import time
+from collections import OrderedDict
 from typing import Any
 
 from fastapi import FastAPI
@@ -34,6 +38,7 @@ from starlette.responses import JSONResponse, Response
 from app.core.adaptive_throttle import (
     AdaptiveThrottleConfig,
     build_config,
+    client_ip_is_bare,
     cost_weight,
     fingerprint_request,
     penalty_seconds_for_tier,
@@ -46,6 +51,10 @@ _REDIS_COUNT_PREFIX = "athrottle:count:"
 # Sliding window over which a fingerprint's weighted request count is compared
 # against ADAPTIVE_THROTTLE_BASE_QUOTA before the penalty tier escalates.
 _QUOTA_WINDOW_SECONDS = 60
+# Hard cap on the per-worker Redis-down fallback dicts. Without it, distinct
+# attacker-varied fingerprints accumulate forever (memory-exhaustion DoS while
+# Redis is down). Oldest entries are LRU-evicted past this size.
+_FALLBACK_MAX_ENTRIES = 10_000
 
 
 class _PenaltyStore:
@@ -63,8 +72,24 @@ class _PenaltyStore:
     """
 
     def __init__(self) -> None:
-        self._fallback: dict[str, tuple[int, float]] = {}
-        self._counts: dict[str, tuple[int, float]] = {}
+        self._fallback: OrderedDict[str, tuple[int, float]] = OrderedDict()
+        self._counts: OrderedDict[str, tuple[int, float]] = OrderedDict()
+
+    @staticmethod
+    def _remember(
+        store: OrderedDict[str, tuple[int, float]],
+        key: str,
+        value: tuple[int, float],
+    ) -> None:
+        """LRU-bounded write: set *key*, mark most-recent, evict oldest past cap.
+
+        Bounds the per-worker fallback so attacker-varied fingerprints cannot
+        grow the dict without limit when Redis is unavailable.
+        """
+        store[key] = value
+        store.move_to_end(key)
+        while len(store) > _FALLBACK_MAX_ENTRIES:
+            store.popitem(last=False)
 
     async def _redis_or_none(self) -> Any:
         """Return a connected Redis client, or None if unreachable."""
@@ -103,7 +128,7 @@ class _PenaltyStore:
                 return
             except Exception:
                 pass  # fall through to local
-        self._fallback[fp] = (tier, time.monotonic() + ttl)
+        self._remember(self._fallback, fp, (tier, time.monotonic() + ttl))
 
     async def record_request(self, fp: str, cost: int, window: int) -> int:
         """Add *cost* to *fp*'s windowed request count; return the new total.
@@ -127,7 +152,7 @@ class _PenaltyStore:
         if now > expiry:
             count, expiry = 0, now + window
         count += cost
-        self._counts[fp] = (count, expiry)
+        self._remember(self._counts, fp, (count, expiry))
         return count
 
 
@@ -195,7 +220,10 @@ class AdaptiveThrottleMiddleware(BaseHTTPMiddleware):
     """ASGI middleware enforcing adaptive throttle rules.
 
     Applies fingerprint-based penalty checks and cascading cooldowns.
-    Skips throttle checks when ADAPTIVE_THROTTLE_ENABLED is False.
+    Skips throttle checks when ADAPTIVE_THROTTLE_ENABLED is False, and
+    fails OPEN (no escalation, no ban) for bare-peer fingerprints when no
+    trusted proxy is configured — so a shared CDN/LB egress IP cannot
+    mass-ban every downstream user.
     """
 
     async def dispatch(
@@ -212,6 +240,15 @@ class AdaptiveThrottleMiddleware(BaseHTTPMiddleware):
         """
         cfg: AdaptiveThrottleConfig = build_config()
         if not cfg.enabled:
+            return await call_next(request)
+
+        # Fail-open guard: a bare-peer fingerprint (no trusted proxy set, or
+        # peer not a trusted proxy) is a SHARED bucket behind a CDN/LB —
+        # escalating or banning it would mass-ban every downstream user
+        # (self-inflicted DoS). Skip the escalation/ban paths entirely for
+        # bare-peer fingerprints; never collapse distinct users into one ban.
+        if client_ip_is_bare(request):
+            logger.debug("adaptive_throttle.fail_open_bare_peer")
             return await call_next(request)
 
         fp = fingerprint_request(request)

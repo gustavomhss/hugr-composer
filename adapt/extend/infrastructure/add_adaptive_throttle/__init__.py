@@ -141,13 +141,15 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
         ],
         next_steps=[
             "Set REDIS_URL in .env (required for multi-worker penalty state).",
-            "Set ADAPTIVE_THROTTLE_ENABLED=true in .env to activate.",
+            "Disabled by default — set ADAPTIVE_THROTTLE_ENABLED=true in .env to activate.",
             "Decorate expensive endpoints with @throttle_cost(weight=5) to consume more quota.",
             "Monitor penalty events via GET /throttle/status (returns client penalty tier).",
             "Set ADAPTIVE_THROTTLE_LEARNING_PERIOD_H to baseline window in hours (default 24).",
             "Behind a load balancer/CDN, set ADAPTIVE_THROTTLE_TRUSTED_PROXIES to your "
             "proxy egress IPs/CIDRs so the throttle fingerprint resolves the real client "
-            "IP from X-Forwarded-For (left empty, it safely pins to the peer IP).",
+            "IP from X-Forwarded-For. Left empty it pins to the peer IP, and penalty "
+            "escalation/bans are SKIPPED for those bare-peer fingerprints (fail-open) so "
+            "a shared proxy egress IP cannot mass-ban every downstream user.",
         ],
         execution_time_ms=_ms(start),
     )
@@ -160,7 +162,7 @@ def _patch_config(config_file: Path) -> None:
         return
 
     fields = (
-        "    ADAPTIVE_THROTTLE_ENABLED: bool = True\n"
+        "    ADAPTIVE_THROTTLE_ENABLED: bool = False\n"
         "    ADAPTIVE_THROTTLE_SENSITIVITY: float = 0.8\n"
         "    ADAPTIVE_THROTTLE_LEARNING_PERIOD_H: int = 24\n"
         "    ADAPTIVE_THROTTLE_BASE_QUOTA: int = 200\n"
