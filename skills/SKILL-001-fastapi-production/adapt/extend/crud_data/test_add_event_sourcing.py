@@ -11,6 +11,8 @@ import ast
 import json
 import sys
 from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
 
 from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_event_sourcing import MCP_TOOL, add_event_sourcing
@@ -174,6 +176,127 @@ def test_durable_store_persists_and_enforces_concurrency() -> None:
         st2 = SqlEventSourcedStore(create_engine(url), create=False)
         assert len(list(st2.load("agg-1"))) == 2
         assert st2.append("agg-1", 2, [{"t": "third"}]) == 3
+    finally:
+        sys.path[:] = _orig
+
+
+def _build_durable_store(project_dir: Path, db_name: str) -> tuple[Any, Any]:
+    """Import the emitted SqlEventSourcedStore over a fresh on-disk SQLite DB."""
+    import tempfile
+
+    from sqlalchemy import create_engine
+
+    sys.path.insert(0, str(project_dir))
+    for m in [k for k in sys.modules if k in ("app", "core") or k.startswith(("app.", "core."))]:
+        del sys.modules[m]
+    from app.event_store_store import SqlEventSourcedStore
+
+    from core.venous.events.EventSourcedStore.EventSourcedStore import (
+        ConcurrencyError,
+        EventSourcedStoreInvariantError,
+    )
+
+    d = tempfile.mkdtemp()
+    url = f"sqlite:///{d}/{db_name}.db"
+    store = SqlEventSourcedStore(create_engine(url))
+    errs = SimpleNamespace(
+        ConcurrencyError=ConcurrencyError,
+        EventSourcedStoreInvariantError=EventSourcedStoreInvariantError,
+    )
+    return store, errs
+
+
+def test_durable_store_ports_in_memory_invariants() -> None:
+    """R8-J3-1: durable append/snapshot enforce the SAME guards as the reference.
+
+    Red pre-fix: the SQL store skipped empty-id, bool-version, snapshot-ahead,
+    and snapshot-rewind guards (ESS-INV-01/03) on the durable path only.
+    """
+    project_dir = create_fixture_project(name="es_r8j3_inv")
+    add_event_sourcing(ToolInput(project_dir=str(project_dir)))
+    _orig = sys.path.copy()
+    try:
+        st, errs = _build_durable_store(project_dir, "inv")
+        inv = errs.EventSourcedStoreInvariantError
+
+        # (a) empty aggregate_id rejected.
+        try:
+            st.append("", 0, [{"t": "x"}])
+            raise AssertionError("empty aggregate_id must be rejected")
+        except inv:
+            pass
+
+        # (b) bool passed as expected_version rejected (bool is an int subclass).
+        try:
+            st.append("agg-b", True, [{"t": "x"}])
+            raise AssertionError("bool expected_version must be rejected")
+        except inv:
+            pass
+
+        # (c) snapshot whose version out-runs the event log rejected.
+        st.append("agg-s", 0, [{"t": "one"}])  # tail = 1
+        try:
+            st.snapshot("agg-s", 5, {"v": 5})
+            raise AssertionError("snapshot ahead of log must be rejected")
+        except inv:
+            pass
+
+        # (d) snapshot rewind rejected.
+        st.append("agg-s", 1, [{"t": "two"}])  # tail = 2
+        st.snapshot("agg-s", 2, {"v": 2})
+        try:
+            st.snapshot("agg-s", 1, {"v": 1})
+            raise AssertionError("snapshot rewind must be rejected")
+        except inv:
+            pass
+    finally:
+        sys.path[:] = _orig
+
+
+def test_durable_concurrent_append_collision_maps_to_concurrency_error() -> None:
+    """R8-J3-2: a UNIQUE(aggregate_id, version) collision becomes ConcurrencyError.
+
+    Red pre-fix: SQLAlchemy's IntegrityError escaped raw (→ HTTP 500) instead of
+    the ConcurrencyError the adapter maps to 409. We reproduce the race window
+    deterministically by subclassing the store to return a STALE tail of 0 (as
+    if a racer committed version 1 between our optimistic read and our INSERT),
+    so the optimistic check passes and the INSERT collides on the UNIQUE
+    (aggregate_id, version) backstop.
+    """
+    from sqlalchemy import create_engine, insert
+
+    project_dir = create_fixture_project(name="es_r8j3_race")
+    add_event_sourcing(ToolInput(project_dir=str(project_dir)))
+    _orig = sys.path.copy()
+    sys.path.insert(0, str(project_dir))
+    for m in [k for k in sys.modules if k in ("app", "core") or k.startswith(("app.", "core."))]:
+        del sys.modules[m]
+    try:
+        import tempfile
+
+        from app.event_store_store import SqlEventSourcedStore, event_store_events
+
+        from core.venous.events.EventSourcedStore.EventSourcedStore import ConcurrencyError
+
+        class _StaleTailStore(SqlEventSourcedStore):
+            def _locked_tail(self, conn: Any, key: str) -> int:  # noqa: ARG002
+                return 0  # pretend the racer's version-1 row is not yet visible
+
+        d = tempfile.mkdtemp()
+        engine = create_engine(f"sqlite:///{d}/race.db")
+        st = _StaleTailStore(engine)
+        # A racer already committed version 1 for this aggregate.
+        with engine.begin() as conn:
+            conn.execute(
+                insert(event_store_events).values(
+                    aggregate_id="agg-r", version=1, event={"t": "racer"}
+                )
+            )
+        try:
+            st.append("agg-r", 0, [{"t": "ours"}])
+            raise AssertionError("collision must raise ConcurrencyError, not IntegrityError")
+        except ConcurrencyError as exc:
+            assert exc.aggregate_id == "agg-r"
     finally:
         sys.path[:] = _orig
 
