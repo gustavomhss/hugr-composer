@@ -82,6 +82,36 @@ def test_routes_require_auth() -> None:
     assert post.status_code == 401
 
 
+def test_owner_resolver_blocks_non_owner() -> None:
+    """R8-J1-4: with ``owner_resolver``, a caller who does not own the
+    aggregate gets HTTP 403 on both read and append (per-aggregate
+    ownership on top of authentication)."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from core.venous._adapters.fastapi.EventSourcedStoreAdapter import install
+
+    def _owns(principal: object, aggregate_id: str) -> bool:
+        # Principal owns only "agg-mine".
+        return aggregate_id == "agg-mine"
+
+    app = FastAPI()
+    install(app, auth_dependency=_fake_auth, owner_resolver=_owns)
+    client = TestClient(app)
+
+    # Owned aggregate → allowed.
+    ok = client.post("/events/agg-mine?expected_version=0", json=[{"type": "a", "data": {}}])
+    assert ok.status_code == 200, ok.text
+    assert client.get("/events/agg-mine").status_code == 200
+
+    # Foreign aggregate → 403.
+    assert client.get("/events/agg-theirs").status_code == 403
+    forbidden = client.post(
+        "/events/agg-theirs?expected_version=0", json=[{"type": "a", "data": {}}]
+    )
+    assert forbidden.status_code == 403
+
+
 if __name__ == "__main__":
     import sys
 
@@ -91,6 +121,7 @@ if __name__ == "__main__":
         test_append_and_load_roundtrip,
         test_concurrency_conflict_returns_409,
         test_routes_require_auth,
+        test_owner_resolver_blocks_non_owner,
     ]
     failed = 0
     for t in tests:

@@ -36,6 +36,12 @@ Approach (AST, NOT regex):
    * Re-assignment ``Name = <anything>`` from inside a function /
      class / async function (i.e. ``global X; X = …``)
 4. If ANY mutation is found → REJECT.
+5. Separately (R8-J4-7), detect ``setattr(<self-module>, 'name',
+   <mutable-literal>)`` calls anywhere in the module — e.g.
+   ``setattr(sys.modules[__name__], '_X', {})`` invoked from a
+   function. These install module-level mutable state with NO
+   module-level assignment target, so steps 2–4 saw zero offenders.
+   The install call itself is treated as the offence.
 
 What this rule deliberately does NOT flag (allow-list):
 
@@ -62,13 +68,24 @@ What this rule deliberately does NOT flag (allow-list):
 
 Bypass (per-tool waiver):
 
-A tool may declare ``_SINGLE_PROCESS_OK: bool = True`` in its
-``__init__.py`` AND return ``warnings=`` (NOT ``notes=``) containing
-the substring ``"single-process"`` (case-insensitive). When both are
-present the tool is registered in :pydata:`_WAIVED_TOOLS` below and
-the rule skips its templates. The waiver list is hand-maintained: a
-new offending template fails the rule UNTIL the tool's ``__init__.py``
-ships both signals AND the tool dir is added to ``_WAIVED_TOOLS``.
+The waiver is a CURATED frozenset (:pydata:`_WAIVED_TOOLS`): a tool
+listed there has its templates skipped, and nothing else. The rule
+does NOT open any ``__init__.py`` — there is no automatic signal-based
+bypass. (R8-J4-2: an earlier version of this docstring advertised a
+dual-signal bypass — ``_SINGLE_PROCESS_OK = True`` in ``__init__.py``
+PLUS a ``warnings=`` entry containing ``"single-process"`` — that the
+rule never enforced. That claim is removed here so the docstring no
+longer documents a bypass the code doesn't check.)
+
+Convention for adding a waiver: a tool that genuinely needs
+single-process semantics SHOULD still ship ``_SINGLE_PROCESS_OK = True``
+in its ``__init__.py`` AND a ``warnings=`` entry containing
+``"single-process"`` so the intent is visible in code review — but
+those signals are advisory documentation, not a rule-checked gate. The
+waiver list is hand-maintained: a new offending template fails the
+rule UNTIL the tool dir is explicitly added to :pydata:`_WAIVED_TOOLS`
+(reviewer-approved). The set is currently EMPTY — every offender has
+been migrated to a process-shared store or a class-instance wrapper.
 
 Trade-offs (declared, not hidden):
 
@@ -99,12 +116,13 @@ from ._common import SKILL_ROOT
 
 # --- Tool waivers --------------------------------------------------------
 #
-# Tool import paths (relative to ``adapt/``) that have explicitly opted
-# into single-process semantics. Each entry MUST be backed by:
-#   * ``_SINGLE_PROCESS_OK: bool = True`` in the tool's ``__init__.py``
-#   * a ``warnings=`` entry containing the substring "single-process"
-#     (case-insensitive) returned by the tool's runtime envelope
-# AND a comment line citing the audit finding the waiver discloses.
+# CURATED frozenset of tool import paths (relative to ``adapt/``) whose
+# templates are skipped wholesale. The rule does NOT inspect any
+# ``__init__.py`` — membership here is the ONLY bypass (R8-J4-2). A
+# waived tool SHOULD still document its single-process intent in code
+# (``_SINGLE_PROCESS_OK = True`` + a ``warnings=`` "single-process"
+# entry) and each entry MUST carry a comment citing the audit finding it
+# discloses — but those are review conventions, not rule-checked signals.
 #
 # Wave-0 SOTA contract: rule lands strict + CI stays green. Each
 # pre-existing offender is grandfathered here with a citation pointing
@@ -455,6 +473,83 @@ def _find_mutations(tree: ast.Module, names: set[str]) -> dict[str, list[int]]:
     return {k: sorted(set(v)) for k, v in hits.items() if v}
 
 
+def _is_self_module_ref(node: ast.AST) -> bool:
+    """True iff ``node`` references the CURRENT module object.
+
+    Recognised shapes (R8-J4-7):
+      * ``sys.modules[__name__]``        — subscript on ``sys.modules``
+        by the ``__name__`` Name.
+      * ``modules[__name__]``            — when ``modules`` was imported
+        from ``sys`` (``from sys import modules``).
+      * ``sys.modules.get(__name__)``    — the ``.get(...)`` accessor.
+
+    Kept deliberately tight: an aliased arbitrary module object is NOT
+    matched (we cannot resolve it without execution), so the detection
+    has near-zero false-positive surface — only the documented
+    ``setattr(sys.modules[__name__], ...)`` smuggling pattern trips.
+    """
+    # ``sys.modules.get(__name__)`` — Call on a ``...modules.get`` attr.
+    if isinstance(node, ast.Call):
+        fn = node.func
+        return (
+            isinstance(fn, ast.Attribute)
+            and fn.attr == "get"
+            and _attr_chain(fn.value).rsplit(".", 1)[-1] == "modules"
+            and len(node.args) == 1
+            and isinstance(node.args[0], ast.Name)
+            and node.args[0].id == "__name__"
+        )
+    # ``sys.modules[__name__]`` / ``modules[__name__]`` — subscript.
+    if isinstance(node, ast.Subscript):
+        base_tail = _attr_chain(node.value).rsplit(".", 1)[-1]
+        if base_tail != "modules":
+            return False
+        idx = node.slice
+        return isinstance(idx, ast.Name) and idx.id == "__name__"
+    return False
+
+
+def _find_setattr_module_state(tree: ast.Module) -> list[tuple[str, int, int, list[int]]]:
+    """Find ``setattr(<self-module>, 'name', <mutable-literal>)`` installs.
+
+    R8-J4-7: ``setattr(sys.modules[__name__], '_X', {})`` called from a
+    function installs module-level mutable state with NO module-level
+    assignment target, so the candidate scan in :func:`find_module_state`
+    saw zero offenders. We treat such a call as a direct offence — the
+    installed name is module-level state and the mutable literal is the
+    smoking gun (mirrors the assignment-time classification).
+
+    Only flags when (a) the 1st arg resolves to the current module, (b)
+    the 2nd arg is a string-literal attribute name (not a dunder), and
+    (c) the 3rd arg is a fresh mutable initialiser.
+    """
+    out: list[tuple[str, int, int, list[int]]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        fn = node.func
+        fn_name = (
+            fn.id
+            if isinstance(fn, ast.Name)
+            else (fn.attr if isinstance(fn, ast.Attribute) else "")
+        )
+        if fn_name != "setattr" or len(node.args) < 3:
+            continue
+        target, name_arg, value_arg = node.args[0], node.args[1], node.args[2]
+        if not _is_self_module_ref(target):
+            continue
+        if not (isinstance(name_arg, ast.Constant) and isinstance(name_arg.value, str)):
+            continue
+        attr_name = name_arg.value
+        if attr_name.startswith("__") and attr_name.endswith("__"):
+            continue
+        if not _is_mutable_initializer(value_arg):
+            continue
+        out.append((attr_name, node.lineno, node.col_offset, [node.lineno]))
+    out.sort(key=lambda t: (t[1], t[0]))
+    return out
+
+
 def find_module_state(src: str) -> list[tuple[str, int, int, list[int]]]:
     """Return ``[(name, lineno, col, mutation_lines), …]`` for offenders.
 
@@ -485,10 +580,14 @@ def find_module_state(src: str) -> list[tuple[str, int, int, list[int]]]:
                 candidates[name] = (stmt.lineno, stmt.col_offset)
             # AnnAssign WITHOUT value is a bare type declaration — allowed.
 
+    # R8-J4-7: setattr-installed module state has no assignment target,
+    # so it's collected independently and merged in.
+    setattr_offenders = _find_setattr_module_state(tree)
+
     if not candidates:
-        return []
+        return setattr_offenders
     mutations = _find_mutations(tree, set(candidates.keys()))
-    result: list[tuple[str, int, int, list[int]]] = []
+    result: list[tuple[str, int, int, list[int]]] = list(setattr_offenders)
     for name, (lineno, col) in candidates.items():
         if name in mutations:
             result.append((name, lineno, col, mutations[name]))
@@ -568,9 +667,9 @@ def _r_no_module_state_in_templates() -> tuple[bool, str]:
     lines.append(
         "Fix by moving state into a process-shared backing store "
         "(Redis / DB / external cache) OR — if single-process is "
-        "genuinely acceptable — add the tool to "
-        "`_WAIVED_TOOLS` in `r_no_module_state.py` after the "
-        "tool's `__init__.py` ships `_SINGLE_PROCESS_OK = True` "
-        "AND returns a `warnings=` entry containing `single-process`."
+        "genuinely acceptable — add the tool to `_WAIVED_TOOLS` in "
+        "`r_no_module_state.py` (reviewer-approved curated waiver; "
+        "document the intent with `_SINGLE_PROCESS_OK = True` + a "
+        "`warnings=` `single-process` entry for code review)."
     )
     return False, "\n".join(lines)

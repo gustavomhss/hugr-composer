@@ -32,6 +32,7 @@ def install(
     auth_dependency: Callable[..., Any],
     prefix: str = "/events",
     store: Any = None,
+    owner_resolver: Callable[[Any, str], bool] | None = None,
 ) -> Any:
     """Attach an event-sourced store + auth-gated router to *app*; return store.
 
@@ -42,6 +43,22 @@ def install(
     ``get_current_superuser`` (this is a raw, cross-aggregate admin surface;
     application code uses ``app.state.event_store`` directly).
 
+    .. warning::
+
+       ⚠️ FOOTGUN (R8-J1-4): ``auth_dependency`` enforces *authentication*
+       only — it does NOT scope access to the caller's own aggregates. With
+       a non-superuser dependency, ANY authenticated user can read or append
+       to ANY ``aggregate_id``. ``auth_dependency`` MUST therefore be
+       SUPERUSER-GRADE, *unless* you also pass ``owner_resolver`` for
+       per-aggregate ownership checks.
+
+    ``owner_resolver`` (optional) — ``(principal, aggregate_id) -> bool``.
+    When provided, every route additionally checks that the authenticated
+    ``principal`` owns ``aggregate_id``; a falsy return yields HTTP 403. This
+    lets a non-superuser ``auth_dependency`` be used safely for per-tenant /
+    per-owner access. When omitted, no ownership check is applied (the
+    superuser footgun above applies).
+
     *store* is an optional pre-built ``EventSourcedStore`` (e.g. the durable
     ``SqlEventSourcedStore``). When omitted, an in-memory reference store is
     created — NON-durable, lost on restart.
@@ -50,8 +67,13 @@ def install(
         store = InMemoryEventSourcedStore()
     router = APIRouter(prefix=prefix, tags=["events"])
 
+    def _check_owner(principal: Any, aggregate_id: str) -> None:
+        if owner_resolver is not None and not owner_resolver(principal, aggregate_id):
+            raise HTTPException(status_code=403, detail="not the aggregate owner")
+
     @router.get("/{aggregate_id}")
     def _load(aggregate_id: str, principal: object = Depends(auth_dependency)) -> dict:
+        _check_owner(principal, aggregate_id)
         events = [
             dict(e) if isinstance(e, dict) else {"event": repr(e)} for e in store.load(aggregate_id)
         ]
@@ -64,6 +86,7 @@ def install(
         events: list[dict[str, Any]],
         principal: object = Depends(auth_dependency),
     ) -> dict:
+        _check_owner(principal, aggregate_id)
         try:
             new_version = store.append(aggregate_id, expected_version, events)
         except ConcurrencyError as exc:

@@ -5,9 +5,18 @@ CONTRACT.md scope: §B0.11 ``admin_routes_require_auth`` — AST-scan every
 ``skills/SKILL-001-fastapi-production/adapt/`` AND every adapter module
 under ``skills/SKILL-001-fastapi-production/core/venous/_adapters/fastapi/``
 (plain ``*.py``, excluding ``__init__.py`` and ``_test_*``/``test_*``
-files), and REJECT any ``@router.<verb>(...)`` whose effective path
-(router ``prefix=`` + decorator ``path``) matches the admin-path regex
-AND whose handler signature carries no auth dependency.
+files), and REJECT any route whose effective path (router ``prefix=`` +
+route ``path``) matches the admin-path regex AND whose handler carries
+no auth dependency. Recognised mount shapes:
+
+  * ``@router.<verb>(...)`` decorators — HTTP verbs AND ``websocket``
+    (R8-J8-4: a ``/admin``-prefixed ``@router.websocket`` handler was
+    structurally invisible before).
+  * ``router.add_api_route(path, handler, methods=[...])`` and
+    ``add_api_websocket_route(path, handler)`` imperative mounts
+    (R8-J4-5: previously only decorator-form routes were seen, so an
+    admin route mounted via ``add_api_route`` passed with no auth). The
+    endpoint handler is resolved by name and given the same auth check.
 
 Origin: ROUND5_6_TRIAGE §3 P2 — "Admin/diagnostic routes lack
 authentication (≥15 occurrences)". Closes ~15 BLOCKER findings.
@@ -155,6 +164,23 @@ _ADMIN_PATH_RE = re.compile(
 # Verbs that mount HTTP handlers on an APIRouter.
 _HTTP_VERBS: frozenset[str] = frozenset({"get", "post", "put", "patch", "delete"})
 
+# J8-4: WebSocket handlers (``@router.websocket(...)`` / ``@app.websocket``)
+# are structurally invisible to the HTTP-verb list but expose the same
+# admin surface (a ``/admin``-prefixed WS endpoint leaks data over the
+# socket). Treated like a verb for decorator detection; "has auth" uses
+# the same in-body/dependency check as HTTP (``_handler_has_auth``).
+_WS_VERBS: frozenset[str] = frozenset({"websocket"})
+
+# Recognised decorator verbs = HTTP + WebSocket.
+_ROUTE_VERBS: frozenset[str] = _HTTP_VERBS | _WS_VERBS
+
+# J4-5: imperative methods that mount a route WITHOUT a decorator —
+# ``router.add_api_route(path, endpoint, methods=[...])`` and the WS
+# variant ``router.add_api_websocket_route(path, endpoint)``. These are
+# invisible to the decorator scan; we resolve the endpoint handler by
+# name and apply the same admin-regex + auth check.
+_ADD_ROUTE_METHODS: frozenset[str] = frozenset({"add_api_route", "add_api_websocket_route"})
+
 # Parameter-name tokens that satisfy "has auth" at the handler signature.
 _AUTH_PARAM_TOKENS: frozenset[str] = frozenset({"current_user", "superuser", "principal"})
 
@@ -289,15 +315,15 @@ def _decorator_path_and_verb(dec: ast.AST) -> tuple[str, str] | None:
     """Return ``(verb, path)`` if ``dec`` is ``@router.<verb>(path, ...)``.
 
     Accepts both positional ``@router.get("/x")`` and keyword
-    ``@router.get(path="/x")`` forms. Returns ``None`` for any decorator
-    that isn't a recognised HTTP verb on an attribute call, or whose path
-    isn't a string literal (dynamic paths are out of scope for the
-    static AST check).
+    ``@router.get(path="/x")`` forms. Recognises HTTP verbs AND
+    ``websocket`` (J8-4). Returns ``None`` for any decorator that isn't a
+    recognised verb on an attribute call, or whose path isn't a string
+    literal (dynamic paths are out of scope for the static AST check).
     """
     if not isinstance(dec, ast.Call):
         return None
     fn = dec.func
-    if not isinstance(fn, ast.Attribute) or fn.attr not in _HTTP_VERBS:
+    if not isinstance(fn, ast.Attribute) or fn.attr not in _ROUTE_VERBS:
         return None
     # Positional path
     if dec.args and isinstance(dec.args[0], ast.Constant):
@@ -387,10 +413,77 @@ def _tool_name_for_template(path: Path) -> str:
     return "?"
 
 
+def _effective_path(prefix: str, path: str) -> str:
+    """Concatenate router prefix + decorator/route path into the URL the
+    user sees (``prefix="/authz"`` + ``"/check"`` → ``/authz/check``)."""
+    sep = "" if path.startswith("/") else "/"
+    return f"{prefix}{sep}{path}".replace("//", "/")
+
+
+def _add_api_route_path_and_endpoint(call: ast.Call) -> tuple[str, str] | None:
+    """Return ``(path, endpoint_name)`` for an ``x.add_api_route(...)`` /
+    ``x.add_api_websocket_route(...)`` call (J4-5).
+
+    Resolves the path from the 1st positional arg (or ``path=`` kwarg)
+    and the endpoint handler name from the 2nd positional arg (or
+    ``endpoint=`` kwarg) when it's a bare ``Name`` reference. Returns
+    ``None`` when the call isn't an add-route method, or the path isn't a
+    string literal, or the endpoint isn't a resolvable name reference.
+    """
+    fn = call.func
+    if not isinstance(fn, ast.Attribute) or fn.attr not in _ADD_ROUTE_METHODS:
+        return None
+
+    # Path: 1st positional or ``path=`` kwarg.
+    path: str | None = None
+    if call.args and isinstance(call.args[0], ast.Constant) and isinstance(call.args[0].value, str):
+        path = call.args[0].value
+    else:
+        for kw in call.keywords:
+            if (
+                kw.arg == "path"
+                and isinstance(kw.value, ast.Constant)
+                and isinstance(kw.value.value, str)
+            ):
+                path = kw.value.value
+                break
+    if path is None:
+        return None
+
+    # Endpoint: 2nd positional or ``endpoint=`` kwarg, resolved by name.
+    endpoint: ast.expr | None = None
+    if len(call.args) >= 2:
+        endpoint = call.args[1]
+    else:
+        for kw in call.keywords:
+            if kw.arg == "endpoint":
+                endpoint = kw.value
+                break
+    if not isinstance(endpoint, ast.Name):
+        return None
+    return path, endpoint.id
+
+
 def _iter_admin_violations(tree: ast.Module, prefix: str) -> list[tuple[str, str, str]]:
     """Yield (verb, effective_path, handler_name) tuples for every
-    admin-path route in ``tree`` whose handler lacks auth."""
+    admin-path route in ``tree`` whose handler lacks auth.
+
+    Covers three mount shapes:
+      * ``@router.<verb>(path)`` decorators (HTTP + WebSocket, J8-4).
+      * ``router.add_api_route(path, handler, ...)`` /
+        ``add_api_websocket_route`` imperative mounts (J4-5) — the
+        endpoint handler is resolved by name and given the same auth
+        check as a decorated route.
+    """
     out: list[tuple[str, str, str]] = []
+
+    # Name → handler FunctionDef map for add_api_route endpoint resolution.
+    handlers_by_name: dict[str, ast.FunctionDef | ast.AsyncFunctionDef] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            handlers_by_name.setdefault(node.name, node)
+
+    # 1. Decorator-form routes.
     for node in ast.walk(tree):
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
@@ -399,13 +492,35 @@ def _iter_admin_violations(tree: ast.Module, prefix: str) -> list[tuple[str, str
             if res is None:
                 continue
             verb, path = res
-            sep = "" if path.startswith("/") else "/"
-            effective = f"{prefix}{sep}{path}".replace("//", "/")
+            effective = _effective_path(prefix, path)
             if not _ADMIN_PATH_RE.match(effective):
                 continue
             if _handler_has_auth(node):
                 continue
             out.append((verb.upper(), effective, node.name))
+
+    # 2. Imperative add_api_route(...) mounts (J4-5).
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        res = _add_api_route_path_and_endpoint(node)
+        if res is None:
+            continue
+        path, endpoint_name = res
+        effective = _effective_path(prefix, path)
+        if not _ADMIN_PATH_RE.match(effective):
+            continue
+        handler = handlers_by_name.get(endpoint_name)
+        # Unresolvable endpoint (imported / lambda) — conservatively
+        # skip rather than guess; the decorator scan covers in-module
+        # handlers and this avoids false positives on glue we can't see.
+        if handler is None:
+            continue
+        if _handler_has_auth(handler):
+            continue
+        verb_label = "WS" if node.func.attr == "add_api_websocket_route" else "ROUTE"  # type: ignore[union-attr]
+        out.append((verb_label, effective, endpoint_name))
+
     return out
 
 

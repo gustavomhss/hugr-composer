@@ -28,9 +28,13 @@ Scope of the check (in plain English):
     placeholders so jinja-style templates parse as Python).
   * For each ``class X(BaseModel):`` in the module:
       - Decide WRITE vs READ from the class name suffix (Create / Update
-        / Request / In / Patch → WRITE; Read / Public / Response / Out /
-        Detail / View / List / Item → READ; verb-prefix like
-        ``RegistrationBeginRequest`` also → WRITE per spec heuristic).
+        / Request / In / Patch / Form / Input / Data → WRITE; Read /
+        Public / Response / Out / Detail / View / List / Item → READ;
+        verb-prefix like ``RegistrationBeginRequest`` / ``NewUser`` /
+        ``EditProfile`` also → WRITE per spec heuristic). The Form /
+        Input / Data suffixes + New / Edit prefixes were added in
+        R8-J4-3 to close the ``UserForm`` / ``UserInput`` / ``NewUser`` /
+        ``UserData`` mass-assignment evasion.
       - WRITE schemas must carry ``model_config = ConfigDict(extra=
         "forbid", ...)`` OR the Pydantic-v1 equivalent ``class Config:
         extra = "forbid"``. Missing → REJECT. (Read schemas exempt —
@@ -90,11 +94,35 @@ from ._common import SKILL_ROOT
 # ---------------------------------------------------------------------------
 
 # Class-name suffixes that mark a WRITE schema (input boundary).
-_WRITE_SUFFIXES: tuple[str, ...] = ("Create", "Update", "Request", "In", "Patch")
+#
+# R8-J4-3: a write schema named WITHOUT a Create|Update|Request|In|Patch
+# suffix or an imperative-verb prefix (``UserForm``, ``UserInput``,
+# ``NewUser``, ``UserData``) was classified as NEITHER write nor read,
+# so ``extra="forbid"`` was never required on it — a mass-assignment
+# evasion. We BROADEN write-name detection with the ``Form|Input|Data``
+# input-boundary suffixes and the ``New|Edit`` verb prefixes. (The full
+# "every non-read schema is a write" flip was rejected: it newly flags
+# 24 legit read-side response schemas in the catalog — ``UsageSummary``,
+# ``TopConsumer``, ``RevenueAnalytics``, ``*Status``, ``*Created`` … —
+# that legitimately omit ``extra="forbid"`` because they ride
+# ``from_attributes=True``. Broadening the write allow-list catches the
+# documented evasion shapes with zero false positives; the residual is
+# that an exotically-named write schema with neither a known suffix nor
+# verb prefix still escapes — tracked, low incidence.)
+_WRITE_SUFFIXES: tuple[str, ...] = (
+    "Create",
+    "Update",
+    "Request",
+    "In",
+    "Patch",
+    "Form",
+    "Input",
+    "Data",
+)
 
-# Imperative verb-form prefixes (per pattern P5 spec).
+# Imperative verb-form prefixes (per pattern P5 spec + R8-J4-3 New/Edit).
 _WRITE_VERB_RE = re.compile(
-    r"^(Create|Update|Submit|Send|Register|Verify|Confirm|Begin|Complete)[A-Z]"
+    r"^(Create|Update|Submit|Send|Register|Verify|Confirm|Begin|Complete|New|Edit)[A-Z]"
 )
 
 # Class-name suffixes that mark a READ / response schema (exempt from

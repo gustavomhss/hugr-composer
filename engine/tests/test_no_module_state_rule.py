@@ -630,3 +630,92 @@ def test_green_simplenamespace_unmutated_constant() -> None:
     """)
     )
     assert hits == []
+
+
+# ----------------------------------------------------------------------
+# R8-J4-7 — setattr(sys.modules[__name__], ...) module-state smuggling
+# ----------------------------------------------------------------------
+
+
+def test_red_setattr_sys_modules_install_from_function() -> None:
+    """``setattr(sys.modules[__name__], '_X', {})`` from a function
+    installs module-level mutable state with no module-level assignment
+    target. After the patch the install is flagged under the attr name.
+    """
+    hits = find_module_state(
+        _src("""
+        import sys
+
+        def _install():
+            setattr(sys.modules[__name__], '_X', {})
+    """)
+    )
+    assert len(hits) == 1, hits
+    assert hits[0][0] == "_X"
+
+
+def test_red_setattr_sys_modules_install_at_module_top() -> None:
+    """The same install at module top is also flagged."""
+    hits = find_module_state(
+        _src("""
+        import sys
+        setattr(sys.modules[__name__], '_REGISTRY', [])
+    """)
+    )
+    assert len(hits) == 1, hits
+    assert hits[0][0] == "_REGISTRY"
+
+
+def test_red_setattr_modules_get_accessor() -> None:
+    """``sys.modules.get(__name__)`` target form is also recognised."""
+    hits = find_module_state(
+        _src("""
+        import sys
+
+        def _install():
+            setattr(sys.modules.get(__name__), '_CACHE', set())
+    """)
+    )
+    assert len(hits) == 1, hits
+    assert hits[0][0] == "_CACHE"
+
+
+def test_green_setattr_self_module_immutable_value() -> None:
+    """``setattr(sys.modules[__name__], '_X', frozenset(...))`` installs
+    an IMMUTABLE value — not the per-worker-mutable class B0.12 targets.
+    """
+    hits = find_module_state(
+        _src("""
+        import sys
+
+        def _install():
+            setattr(sys.modules[__name__], '_FLAGS', frozenset({'a'}))
+    """)
+    )
+    assert hits == []
+
+
+def test_green_setattr_other_object_not_module() -> None:
+    """``setattr(obj, 'x', {})`` on a NON-module object is out of scope —
+    only the current-module target is flagged (tight detection)."""
+    hits = find_module_state(
+        _src("""
+        def _install(obj):
+            setattr(obj, '_X', {})
+    """)
+    )
+    assert hits == []
+
+
+def test_green_setattr_dynamic_name_not_flagged() -> None:
+    """``setattr(sys.modules[__name__], dynamic, {})`` with a non-literal
+    attribute name is not flagged (we can't classify a dynamic name)."""
+    hits = find_module_state(
+        _src("""
+        import sys
+
+        def _install(name):
+            setattr(sys.modules[__name__], name, {})
+    """)
+    )
+    assert hits == []
