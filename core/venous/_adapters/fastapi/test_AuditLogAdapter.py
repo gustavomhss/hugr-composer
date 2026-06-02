@@ -77,6 +77,42 @@ def test_routes_require_auth() -> None:
     assert client.get("/audit-logs/export").status_code == 401
 
 
+def test_export_default_since_seq_does_not_500() -> None:
+    """R8-J3-3: bare GET /audit-logs/export must not 500 (default since_seq=1).
+
+    Red pre-fix: the default since_seq=0 hit TEAL_INV_04 (>= 1) and the route
+    did not catch it, returning 500 on the documented default invocation.
+    """
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from core.venous._adapters.fastapi.AuditLogAdapter import install
+
+    app = FastAPI()
+    install(app, hmac_secret=b"s3cretXXXXXXXXXXXXXXXXXXXXXXXXXX", auth_dependency=_fake_auth)
+    client = TestClient(app)
+    client.post("/audit-logs/?action=A&resource=/x&outcome=success", json={})
+
+    r = client.get("/audit-logs/export")
+    assert r.status_code == 200, r.text
+    assert "admin@example.com" in r.text
+
+
+def test_export_bad_explicit_since_seq_maps_to_400() -> None:
+    """R8-J3-3: an explicit out-of-range since_seq maps to 400, not 500."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from core.venous._adapters.fastapi.AuditLogAdapter import install
+
+    app = FastAPI()
+    install(app, hmac_secret=b"s3cretXXXXXXXXXXXXXXXXXXXXXXXXXX", auth_dependency=_fake_auth)
+    client = TestClient(app)
+
+    r = client.get("/audit-logs/export?since_seq=0")
+    assert r.status_code == 400, r.text
+
+
 if __name__ == "__main__":
     import sys
 

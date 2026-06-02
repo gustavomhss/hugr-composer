@@ -37,8 +37,40 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 
-from core.venous.events.EventSourcedStore.EventSourcedStore import ConcurrencyError
+from core.venous.events.EventSourcedStore.EventSourcedStore import (
+    ConcurrencyError,
+    EventSourcedStoreInvariantError,
+)
+
+_MAX_AGGREGATE_ID_LEN = 512
+
+
+def _check_aggregate_id(aggregate_id: object) -> str:
+    """Reject empty / non-string / over-long aggregate ids (mirrors reference)."""
+    if not isinstance(aggregate_id, str) or not aggregate_id:
+        raise EventSourcedStoreInvariantError(
+            "ESS-INV-01: aggregate_id MUST be a non-empty string."
+        )
+    if len(aggregate_id) > _MAX_AGGREGATE_ID_LEN:
+        raise EventSourcedStoreInvariantError(
+            f"ESS-INV-01: aggregate_id length {len(aggregate_id)} exceeds "
+            f"{_MAX_AGGREGATE_ID_LEN}."
+        )
+    return aggregate_id
+
+
+def _as_int(value: object, field: str) -> int:
+    # bool is an int subclass in Python — reject it explicitly so True/False
+    # cannot sneak in as a version number (mirrors the in-memory reference).
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise EventSourcedStoreInvariantError(
+            f"ESS-INV-01: field {field!r} MUST be a plain int, got "
+            f"{type(value).__name__}."
+        )
+    return value
+
 
 _METADATA = MetaData()
 
@@ -70,10 +102,11 @@ class SqlEventSourcedStore:
 
     def load(self, aggregate_id: str) -> Iterable[Any]:
         """Return every event for *aggregate_id* in ascending version order."""
+        key = _check_aggregate_id(aggregate_id)
         with self._engine.connect() as conn:
             rows = conn.execute(
                 select(event_store_events.c.event)
-                .where(event_store_events.c.aggregate_id == aggregate_id)
+                .where(event_store_events.c.aggregate_id == key)
                 .order_by(event_store_events.c.version.asc())
             ).all()
         return [row.event for row in rows]
@@ -85,49 +118,98 @@ class SqlEventSourcedStore:
         events: Iterable[Any],
     ) -> int:
         """Append *events*; return the new tail version (ESS-INV-01)."""
+        key = _check_aggregate_id(aggregate_id)
+        expected = _as_int(expected_version, "expected_version")
+        if expected < 0:
+            raise EventSourcedStoreInvariantError(
+                "ESS-INV-01: expected_version MUST be >= 0 (versions start at 0 "
+                "for an aggregate with no events)."
+            )
         batch = list(events)
         with self._engine.begin() as conn:
             # Lock the aggregate's tail so a concurrent append cannot read the
             # same version (PG row lock; SQLite's write lock serializes).
-            actual = conn.execute(
-                select(func.max(event_store_events.c.version))
-                .where(event_store_events.c.aggregate_id == aggregate_id)
-                .with_for_update()
-            ).scalar()
-            actual = int(actual) if actual is not None else 0
-            if expected_version != actual:
-                raise ConcurrencyError(aggregate_id, expected_version, actual)
+            actual = self._locked_tail(conn, key)
+            if expected != actual:
+                raise ConcurrencyError(key, expected, actual)
             if not batch:
                 return actual  # empty append is a no-op (matches the reference)
-            conn.execute(
-                insert(event_store_events),
-                [
-                    {"aggregate_id": aggregate_id, "version": actual + i, "event": ev}
-                    for i, ev in enumerate(batch, start=1)
-                ],
-            )
+            try:
+                conn.execute(
+                    insert(event_store_events),
+                    [
+                        {"aggregate_id": key, "version": actual + i, "event": ev}
+                        for i, ev in enumerate(batch, start=1)
+                    ],
+                )
+            except IntegrityError as exc:
+                # A concurrent appender won the race on the UNIQUE backstop; map
+                # it to the same ConcurrencyError the optimistic check raises so
+                # the adapter answers 409 (ESS-INV-01), not a raw 500.
+                raise ConcurrencyError(key, expected, actual) from exc
             return actual + len(batch)
 
+    def _locked_tail(self, conn: Any, key: str) -> int:
+        """Return the aggregate's current tail version under a row lock."""
+        actual = conn.execute(
+            select(func.max(event_store_events.c.version))
+            .where(event_store_events.c.aggregate_id == key)
+            .with_for_update()
+        ).scalar()
+        return int(actual) if actual is not None else 0
+
     def snapshot(self, aggregate_id: str, version: int, state: Any) -> None:
-        """Persist (or replace) the latest snapshot for *aggregate_id*."""
+        """Persist (or replace) the latest snapshot for *aggregate_id* (ESS-INV-03).
+
+        A snapshot is an optimisation over the event log: it CANNOT out-run the
+        log (version > tail) and CANNOT rewind a prior snapshot. Both reads run
+        under the write lock so a concurrent append cannot race the guard.
+        """
+        key = _check_aggregate_id(aggregate_id)
+        ver = _as_int(version, "version")
+        if ver < 0:
+            raise EventSourcedStoreInvariantError(
+                "ESS-INV-03: snapshot version MUST be >= 0."
+            )
         with self._engine.begin() as conn:
+            self._guard_snapshot_version(conn, key, ver)
             conn.execute(
                 event_store_snapshots.delete().where(
-                    event_store_snapshots.c.aggregate_id == aggregate_id
+                    event_store_snapshots.c.aggregate_id == key
                 )
             )
             conn.execute(
                 insert(event_store_snapshots).values(
-                    aggregate_id=aggregate_id, version=version, state=state
+                    aggregate_id=key, version=ver, state=state
                 )
+            )
+
+    def _guard_snapshot_version(self, conn: Any, key: str, ver: int) -> None:
+        """Enforce ESS-INV-03 (no out-run, no rewind) under the begin() lock."""
+        tail = self._locked_tail(conn, key)
+        if ver > tail:
+            raise EventSourcedStoreInvariantError(
+                f"ESS-INV-03: snapshot version {ver} exceeds aggregate tail "
+                f"{tail}; a snapshot CANNOT out-run the event log."
+            )
+        prior = conn.execute(
+            select(event_store_snapshots.c.version).where(
+                event_store_snapshots.c.aggregate_id == key
+            )
+        ).scalar()
+        if prior is not None and ver < int(prior):
+            raise EventSourcedStoreInvariantError(
+                f"ESS-INV-03: snapshot version {ver} rewinds prior snapshot "
+                f"version {int(prior)}; rewind is FORBIDDEN."
             )
 
     def latest_snapshot(self, aggregate_id: str) -> Any:
         """Return the latest snapshot state for *aggregate_id*, or None."""
+        key = _check_aggregate_id(aggregate_id)
         with self._engine.connect() as conn:
             row = conn.execute(
                 select(event_store_snapshots.c.state).where(
-                    event_store_snapshots.c.aggregate_id == aggregate_id
+                    event_store_snapshots.c.aggregate_id == key
                 )
             ).first()
         return row.state if row is not None else None

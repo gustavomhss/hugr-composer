@@ -103,10 +103,17 @@ def install(
 
     @router.get("/export")
     def _export(
-        since_seq: int = 0,
+        since_seq: int = 1,
         principal: object = Depends(auth_dependency),
     ) -> Response:
-        return Response(content=log.export(since_seq), media_type="application/x-ndjson")
+        # since_seq is 1-based; the store rejects < 1. Default to the valid
+        # minimum so the documented bare GET /export does not 500, and map a
+        # bad explicit value to 400 rather than letting it escape as 500.
+        try:
+            body = log.export(since_seq)
+        except TamperEvidentAuditLogError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return Response(content=body, media_type="application/x-ndjson")
 
     app.include_router(router)
     app.state.audit_log = log
