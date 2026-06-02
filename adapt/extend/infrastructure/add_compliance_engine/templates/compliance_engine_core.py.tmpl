@@ -125,15 +125,30 @@ def encrypt_field(plaintext: str) -> str:
 def decrypt_field(token: str) -> str:
     """Decrypt a Fernet *token* (lazy import).
 
+    **Fails CLOSED**, symmetric with ``encrypt_field``: raises
+    ``RuntimeError`` when the key is empty/unset rather than returning the
+    raw token unchanged. The old passthrough silently handed ciphertext
+    back as if it were plaintext whenever the key was missing — the exact
+    asymmetry flagged by R8-J8-3.
+
     Args:
         token: Fernet token string as returned by ``encrypt_field``.
 
     Returns:
-        Decrypted plaintext, or *token* unchanged when key absent.
+        Decrypted plaintext string.
+
+    Raises:
+        RuntimeError: When ``COMPLIANCE_ENCRYPTION_KEY`` is unset/empty.
+            Set the same Fernet key used for ``encrypt_field`` before
+            calling ``decrypt_field()``.
     """
     key = settings.COMPLIANCE_ENCRYPTION_KEY
     if not key:
-        return token
+        raise RuntimeError(
+            "COMPLIANCE_ENCRYPTION_KEY not configured — refusing to return "
+            "an undecrypted token as plaintext. Set the Fernet key used to "
+            "encrypt the field before calling decrypt_field()."
+        )
     from cryptography.fernet import Fernet  # lazy import
     return Fernet(key.encode()).decrypt(token.encode()).decode()
 

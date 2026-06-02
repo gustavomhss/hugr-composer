@@ -103,7 +103,7 @@ from ._common import SKILL_ROOT
 # template tool names (snake_case ``add_*``) AND adapter file stems
 # (``*Adapter`` PascalCase); the two namespaces don't collide.
 #
-#   add_compliance_engine        → #135 (GDPR erasure + SOC2 evidence; not trivial)
+#   add_compliance_engine        → RESOLVED R8-J8-1 (superuser-gated, un-waived)
 #   add_outbox_pattern           → #131 (DLQ admin + stub data)
 #   add_stripe_refund_flow       → #136 (webhook needs verify_stripe_signature dep)
 #   add_websocket_presence       → #138 (trivial fix deferred to keep PR scoped)
@@ -111,7 +111,6 @@ from ._common import SKILL_ROOT
 #   EventSourcedStoreAdapter     → #124 (auth + durable store)
 #   SagaAdapter                  → #137 (adapter auth-injection pattern, Phase A2)
 # ---------------------------------------------------------------------------
-# Waived pending issue #135 — add_compliance_engine (GDPR/SOC2 routes need superuser)
 # Waived pending issue #131 — add_outbox_pattern (DLQ admin + real data)
 # Waived pending issue #136 — add_stripe_refund_flow (webhook needs signature verify dep)
 # Waived pending issue #138 — add_websocket_presence (trivial fix in follow-up PR)
@@ -120,10 +119,12 @@ from ._common import SKILL_ROOT
 # enforces it.
 # RESOLVED (R5-O2-D6) — EventSourcedStoreAdapter now requires an injected auth
 # dependency on every /events route; un-waived so the rule enforces it.
+# RESOLVED (R8-J8-1, CRITICAL) — add_compliance_engine now gates every route
+# (erasure / SOC2 evidence / Article 30 / status) with ``CurrentSuperuser``;
+# un-waived so the rule enforces the GDPR erasure auth that #135 deferred.
 # Waived pending issue #137 — SagaAdapter (adapter auth-injection pattern)
 _WAIVED_TOOLS: frozenset[str] = frozenset(
     {
-        "add_compliance_engine",
         "add_outbox_pattern",
         "add_stripe_refund_flow",
         "add_websocket_presence",

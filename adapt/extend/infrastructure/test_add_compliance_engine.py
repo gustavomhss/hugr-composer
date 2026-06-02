@@ -22,10 +22,10 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_compliance_engine import add_compliance_engine
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -52,10 +52,11 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, "end_lineno") and node.end_lineno:
-                    loc = node.end_lineno - node.lineno + 1
-                    max_loc = max(max_loc, loc)
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and (
+                hasattr(node, "end_lineno") and node.end_lineno
+            ):
+                loc = node.end_lineno - node.lineno + 1
+                max_loc = max(max_loc, loc)
     return max_loc
 
 
@@ -63,18 +64,18 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
 # CC-01 — status='success'
 # ---------------------------------------------------------------------------
 
+
 def test_success_status() -> None:
     """Tool returns status='success' on a fresh project."""
     project_dir = create_fixture_project(name="comp_t01")
     result = add_compliance_engine(ToolInput(project_dir=str(project_dir)))
-    assert result.status == "success", (
-        f"Expected success, got {result.status}: {result.error}"
-    )
+    assert result.status == "success", f"Expected success, got {result.status}: {result.error}"
 
 
 # ---------------------------------------------------------------------------
 # CC-02 — idempotent
 # ---------------------------------------------------------------------------
+
 
 def test_idempotent() -> None:
     """Second run returns status='no_op' without touching files."""
@@ -90,6 +91,7 @@ def test_idempotent() -> None:
 # ---------------------------------------------------------------------------
 # CC-03 — dry_run
 # ---------------------------------------------------------------------------
+
 
 def test_dry_run() -> None:
     """dry_run=True returns success but writes no files."""
@@ -107,6 +109,7 @@ def test_dry_run() -> None:
 # CC-04 — files_created_count
 # ---------------------------------------------------------------------------
 
+
 def test_files_created_count() -> None:
     """Tool creates at least 6 files."""
     project_dir = create_fixture_project(name="comp_t04")
@@ -122,6 +125,7 @@ def test_files_created_count() -> None:
 # ---------------------------------------------------------------------------
 # CC-05 — files_modified_count
 # ---------------------------------------------------------------------------
+
 
 def test_files_modified_count() -> None:
     """Tool modifies at least 2 files (config, models init, routes init, requirements)."""
@@ -139,6 +143,7 @@ def test_files_modified_count() -> None:
 # CC-06 — all .py parse
 # ---------------------------------------------------------------------------
 
+
 def test_all_py_parse() -> None:
     """Every generated .py file AST-parses clean."""
     project_dir = create_fixture_project(name="comp_t06")
@@ -149,6 +154,7 @@ def test_all_py_parse() -> None:
 # ---------------------------------------------------------------------------
 # CC-07 — no function over 50 LOC
 # ---------------------------------------------------------------------------
+
 
 def test_no_function_over_50_loc() -> None:
     """No function in generated app/ exceeds 50 LOC."""
@@ -162,26 +168,29 @@ def test_no_function_over_50_loc() -> None:
 # CC-08 — config fields patched
 # ---------------------------------------------------------------------------
 
+
 def test_config_fields_patched() -> None:
     """COMPLIANCE_* settings exist inside the Settings class body."""
     project_dir = create_fixture_project(name="comp_t08")
     add_compliance_engine(ToolInput(project_dir=str(project_dir)))
     config_file = project_dir / "app" / "core" / "config.py"
     content = config_file.read_text()
-    for field in ["COMPLIANCE_ENABLED", "COMPLIANCE_RETENTION_DEFAULT_DAYS",
-                  "COMPLIANCE_ENCRYPTION_KEY"]:
+    for field in [
+        "COMPLIANCE_ENABLED",
+        "COMPLIANCE_RETENTION_DEFAULT_DAYS",
+        "COMPLIANCE_ENCRYPTION_KEY",
+    ]:
         assert field in content, f"Config field {field} missing from config.py"
     for line in content.splitlines():
         if "COMPLIANCE_ENABLED" in line and ":" in line:
-            assert line.startswith("    "), (
-                f"COMPLIANCE_ENABLED not inside class body: {line!r}"
-            )
+            assert line.startswith("    "), f"COMPLIANCE_ENABLED not inside class body: {line!r}"
             break
 
 
 # ---------------------------------------------------------------------------
 # CC-09 — models/__init__ patched
 # ---------------------------------------------------------------------------
+
 
 def test_models_init_patched() -> None:
     """ComplianceEvent is registered in app/models/__init__.py."""
@@ -197,6 +206,7 @@ def test_models_init_patched() -> None:
 # CC-10 — routes registered
 # ---------------------------------------------------------------------------
 
+
 def test_routes_registered() -> None:
     """Compliance router is registered in app/routes/__init__.py."""
     project_dir = create_fixture_project(name="comp_t10")
@@ -211,6 +221,7 @@ def test_routes_registered() -> None:
 # ---------------------------------------------------------------------------
 # CC-11+ — domain-specific tests
 # ---------------------------------------------------------------------------
+
 
 def test_compliance_engine_file_exists() -> None:
     """app/core/compliance_engine.py exists with ComplianceEngine class."""
@@ -310,14 +321,13 @@ def test_requirements_cryptography() -> None:
     project_dir = create_fixture_project(name="comp_t19")
     add_compliance_engine(ToolInput(project_dir=str(project_dir)))
     requirements = project_dir / "requirements.txt"
-    assert "cryptography" in requirements.read_text(), (
-        "cryptography dependency not added"
-    )
+    assert "cryptography" in requirements.read_text(), "cryptography dependency not added"
 
 
 # ---------------------------------------------------------------------------
 # CC-N-1 — execution_time_ms
 # ---------------------------------------------------------------------------
+
 
 def test_execution_time_recorded() -> None:
     """execution_time_ms must be a positive integer."""
@@ -329,6 +339,7 @@ def test_execution_time_recorded() -> None:
 # ---------------------------------------------------------------------------
 # CC-N — next_steps_present
 # ---------------------------------------------------------------------------
+
 
 def test_next_steps_present() -> None:
     """Result includes next_steps with alembic upgrade head."""
@@ -343,12 +354,121 @@ def test_next_steps_present() -> None:
 # CC-LAST — idempotent project still parses
 # ---------------------------------------------------------------------------
 
+
 def test_idempotent_project_still_parses() -> None:
     """After two runs all .py files remain parseable."""
     project_dir = create_fixture_project(name="comp_t_last")
     add_compliance_engine(ToolInput(project_dir=str(project_dir)))
     add_compliance_engine(ToolInput(project_dir=str(project_dir)))
     _assert_parse(project_dir)
+
+
+# ---------------------------------------------------------------------------
+# R8-J8-1 (CRITICAL) — every compliance route is superuser-gated
+# ---------------------------------------------------------------------------
+
+_AUTH_PARAM_NAMES = {"current_user", "superuser", "principal"}
+_HTTP_VERBS = {"get", "post", "put", "patch", "delete"}
+
+
+def _handler_has_auth(node: ast.AST) -> bool:
+    """True iff a route handler binds an auth param or a Depends(get_current_*)."""
+    assert isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    args = node.args
+    for arg in list(args.args) + list(args.kwonlyargs) + list(args.posonlyargs):
+        if arg.arg in _AUTH_PARAM_NAMES:
+            return True
+        if arg.annotation is not None:
+            for sub in ast.walk(arg.annotation):
+                if isinstance(sub, ast.Name) and sub.id in {
+                    "CurrentUser",
+                    "CurrentSuperuser",
+                }:
+                    return True
+    return False
+
+
+def test_all_compliance_routes_require_auth() -> None:
+    """R8-J8-1: EVERY @router route in compliance.py must carry auth.
+
+    Before the fix, ``DELETE /erasure/{user_id}`` (and the SOC2/Article30/
+    status reads) had no auth dependency — an anonymous caller could
+    cascade-redact any user's PII. This test parses the emitted route file
+    and asserts no route handler ships without an auth parameter, so the
+    regression cannot silently return.
+    """
+    project_dir = create_fixture_project(name="comp_t_auth")
+    add_compliance_engine(ToolInput(project_dir=str(project_dir)))
+    route_file = project_dir / "app" / "api" / "routes" / "compliance.py"
+    tree = ast.parse(route_file.read_text())
+    unguarded: list[str] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        is_route = any(
+            isinstance(dec, ast.Call)
+            and isinstance(dec.func, ast.Attribute)
+            and dec.func.attr in _HTTP_VERBS
+            for dec in node.decorator_list
+        )
+        if is_route and not _handler_has_auth(node):
+            unguarded.append(node.name)
+    assert not unguarded, (
+        f"compliance route handlers without auth (R8-J8-1 regression): {unguarded}"
+    )
+
+
+def test_erasure_route_uses_superuser() -> None:
+    """R8-J8-1: the erasure handler specifically requires CurrentSuperuser."""
+    project_dir = create_fixture_project(name="comp_t_su")
+    add_compliance_engine(ToolInput(project_dir=str(project_dir)))
+    route_file = project_dir / "app" / "api" / "routes" / "compliance.py"
+    content = route_file.read_text()
+    assert "CurrentSuperuser" in content, "compliance routes must import/use CurrentSuperuser"
+    tree = ast.parse(content)
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == "erasure_endpoint"
+        ):
+            anns = [
+                sub.id
+                for arg in node.args.args
+                if arg.annotation is not None
+                for sub in ast.walk(arg.annotation)
+                if isinstance(sub, ast.Name)
+            ]
+            assert "CurrentSuperuser" in anns, "erasure_endpoint must be gated by CurrentSuperuser"
+            return
+    raise AssertionError("erasure_endpoint not found in compliance routes")
+
+
+# ---------------------------------------------------------------------------
+# R8-J8-3 — decrypt_field fails CLOSED (symmetric with encrypt_field)
+# ---------------------------------------------------------------------------
+
+
+def test_decrypt_field_fails_closed() -> None:
+    """R8-J8-3: decrypt_field must raise on empty key, not pass the token through."""
+    project_dir = create_fixture_project(name="comp_t_dec")
+    add_compliance_engine(ToolInput(project_dir=str(project_dir)))
+    engine_file = project_dir / "app" / "core" / "compliance_engine.py"
+    tree = ast.parse(engine_file.read_text())
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and node.name == "decrypt_field"
+        ):
+            raises = [n for n in ast.walk(node) if isinstance(n, ast.Raise)]
+            assert raises, "decrypt_field must raise when key is unset (fail-closed)"
+            # No fail-open `return token` on the empty-key branch.
+            for n in ast.walk(node):
+                if isinstance(n, ast.Return) and isinstance(n.value, ast.Name):
+                    assert n.value.id != "token", (
+                        "decrypt_field still returns the raw token (fail-open) on empty key"
+                    )
+            return
+    raise AssertionError("decrypt_field not found in compliance_engine.py")
 
 
 # ---------------------------------------------------------------------------
@@ -379,6 +499,9 @@ if __name__ == "__main__":
         test_execution_time_recorded,
         test_next_steps_present,
         test_idempotent_project_still_parses,
+        test_all_compliance_routes_require_auth,
+        test_erasure_route_uses_superuser,
+        test_decrypt_field_fails_closed,
     ]
 
     passed = failed = 0
@@ -391,7 +514,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-113 add_compliance_engine: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)

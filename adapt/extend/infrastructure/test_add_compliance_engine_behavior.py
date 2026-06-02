@@ -48,7 +48,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_compliance_engine import add_compliance_engine
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------
@@ -163,6 +162,7 @@ def asgi_app(project_dir_and_app: tuple[Path, Any]) -> Any:
 # B-01: GET /healthz → 200
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
     """B-01: App boots cleanly after compliance engine applied."""
@@ -178,6 +178,7 @@ async def test_b01_healthz_returns_200(asgi_app: Any) -> None:
 # B-02: GET /compliance/status → 200
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b02_compliance_status_route_exists(asgi_app: Any) -> None:
     """B-02: GET /compliance/status returns 200 with compliance config."""
@@ -190,19 +191,23 @@ async def test_b02_compliance_status_route_exists(asgi_app: Any) -> None:
 
 
 # ---------------------------------------------------------------------------
-# B-03: DELETE /compliance/erasure/{user_id} → exists (not 404/500)
+# B-03: DELETE /compliance/erasure/{user_id} → DENIED for anonymous (R8-J8-1)
 # ---------------------------------------------------------------------------
 
-@pytest.mark.anyio
-async def test_b03_erasure_route_exists(asgi_app: Any) -> None:
-    """B-03: Erasure endpoint must exist (route is registered — not 404).
 
-    A 500 is acceptable in the behavior test: SQLite in-memory does not have
-    the compliance_events table because Alembic migrations are not run in the
-    behavior test environment.  The important thing is the route exists (not
-    404) and the generated code is wired correctly.
+@pytest.mark.anyio
+async def test_b03_erasure_denies_anonymous(asgi_app: Any) -> None:
+    """B-03 (R8-J8-1): unauthenticated erasure is DENIED before any cascade.
+
+    The erasure endpoint cascade-redacts PII for ANY user_id. Before the
+    R8-J8-1 fix it had no auth dependency, so an anonymous caller reached
+    ``_run_erasure_cascade`` directly. Now it is ``CurrentSuperuser``-gated,
+    so an anonymous DELETE must be rejected at the dependency layer with
+    401/403 — it must NEVER reach the handler (which would otherwise have
+    returned 200 or, absent the table, 500).
     """
     import json as _json
+
     transport = httpx.ASGITransport(app=asgi_app, raise_app_exceptions=False)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.request(
@@ -214,11 +219,62 @@ async def test_b03_erasure_route_exists(asgi_app: Any) -> None:
     assert response.status_code != 404, (
         f"Erasure route not registered: {response.status_code}; body: {response.text}"
     )
+    assert response.status_code in (401, 403), (
+        f"Anonymous erasure was NOT denied (got {response.status_code}); the "
+        f"CurrentSuperuser gate is missing or bypassable. body: {response.text}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# B-09: authenticated superuser passes the gate (route not over-locked)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.anyio
+async def test_b09_erasure_allows_superuser(asgi_app: Any, project_dir: Path) -> None:
+    """B-09 (R8-J8-1): a superuser passes the auth gate and reaches the handler.
+
+    Proves the fix denies anonymous callers without breaking the legitimate
+    path: with ``get_current_superuser`` overridden to a superuser principal,
+    the request must get PAST auth (i.e. NOT 401/403). It may then 500
+    because the behavior env runs no migrations (no compliance_events table) —
+    that is the documented happy-path-blocked-by-fixture state, not an auth
+    failure.
+    """
+    import json as _json
+    from types import SimpleNamespace
+
+    sys.path.insert(0, str(project_dir))
+    try:
+        from app.api.deps import get_current_superuser  # type: ignore
+    finally:
+        sys.path[:] = [p for p in sys.path if p != str(project_dir)]
+
+    asgi_app.dependency_overrides[get_current_superuser] = lambda: SimpleNamespace(
+        id="00000000-0000-0000-0000-000000000001", is_superuser=True
+    )
+    try:
+        transport = httpx.ASGITransport(app=asgi_app, raise_app_exceptions=False)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.request(
+                "DELETE",
+                "/api/v1/compliance/erasure/test-user-id",
+                content=_json.dumps({"reason": "test"}).encode(),
+                headers={"content-type": "application/json"},
+            )
+    finally:
+        asgi_app.dependency_overrides.pop(get_current_superuser, None)
+
+    assert response.status_code not in (401, 403), (
+        f"Superuser was wrongly denied (got {response.status_code}); the gate "
+        f"is over-locked. body: {response.text}"
+    )
 
 
 # ---------------------------------------------------------------------------
 # B-04: cryptography NOT top-level import in compliance_engine.py
 # ---------------------------------------------------------------------------
+
 
 def test_b04_cryptography_not_top_level(project_dir: Path) -> None:
     """B-04: cryptography/Fernet NOT imported at top level."""
@@ -228,19 +284,16 @@ def test_b04_cryptography_not_top_level(project_dir: Path) -> None:
     for node in tree.body:
         if isinstance(node, ast.Import):
             for alias in node.names:
-                assert "cryptography" not in alias.name, (
-                    f"cryptography at top level: {alias.name}"
-                )
+                assert "cryptography" not in alias.name, f"cryptography at top level: {alias.name}"
         elif isinstance(node, ast.ImportFrom):
             module = node.module or ""
-            assert "cryptography" not in module, (
-                "cryptography at top level via 'from'"
-            )
+            assert "cryptography" not in module, "cryptography at top level via 'from'"
 
 
 # ---------------------------------------------------------------------------
 # B-05: compliance_engine.py config fields 4-space indent
 # ---------------------------------------------------------------------------
+
 
 def test_b05_config_fields_4space_indent(project_dir: Path) -> None:
     """B-05: COMPLIANCE_* fields are inside the Settings class (4-space indent)."""
@@ -258,6 +311,7 @@ def test_b05_config_fields_4space_indent(project_dir: Path) -> None:
 # B-06: GET /compliance/article30 → exists
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.anyio
 async def test_b06_article30_route_exists(asgi_app: Any) -> None:
     """B-06: GET /compliance/article30 must return non-404 (route is registered)."""
@@ -273,6 +327,7 @@ async def test_b06_article30_route_exists(asgi_app: Any) -> None:
 # B-07: all functions in generated app/ code ≤50 LOC
 # ---------------------------------------------------------------------------
 
+
 def test_b07_no_function_over_50_loc(project_dir: Path) -> None:
     """B-07: No function in app/ exceeds 50 LOC."""
     app_dir = project_dir / "app"
@@ -282,17 +337,17 @@ def test_b07_no_function_over_50_loc(project_dir: Path) -> None:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, "end_lineno") and node.end_lineno:
-                    loc = node.end_lineno - node.lineno + 1
-                    assert loc <= 50, (
-                        f"{py_file.name}:{node.name} has {loc} LOC (limit: 50)"
-                    )
+            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and (
+                hasattr(node, "end_lineno") and node.end_lineno
+            ):
+                loc = node.end_lineno - node.lineno + 1
+                assert loc <= 50, f"{py_file.name}:{node.name} has {loc} LOC (limit: 50)"
 
 
 # ---------------------------------------------------------------------------
 # B-08: GET /compliance/evidence/soc2 → exists
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.anyio
 async def test_b08_soc2_evidence_route_exists(asgi_app: Any) -> None:
@@ -325,7 +380,7 @@ if __name__ == "__main__":
     tests_async = [
         test_b01_healthz_returns_200,
         test_b02_compliance_status_route_exists,
-        test_b03_erasure_route_exists,
+        test_b03_erasure_denies_anonymous,
         test_b06_article30_route_exists,
         test_b08_soc2_evidence_route_exists,
     ]
@@ -351,7 +406,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-113 behavior: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)
