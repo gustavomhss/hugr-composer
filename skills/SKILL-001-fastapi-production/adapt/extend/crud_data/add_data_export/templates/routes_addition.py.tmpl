@@ -32,6 +32,20 @@ _DEFAULT_EXPORT_COLUMNS: list[str] = [
 ]
 
 
+def _export_async_filters_${lower}(current_user) -> dict:
+    """Build the filter dict handed to the worker, scoped like the sync path.
+
+    Mirrors ``_build_export_base_stmt_${lower}``: the worker rebuilds the query
+    from these filters via ``build_filtered_stmt``, so tenant_id MUST be threaded
+    through or the async export leaks cross-tenant rows for the same owner
+    (R8-J2-4).
+    """
+    filters: dict = {"owner_id": str(current_user.id)}
+    if hasattr(_${model_name}, "tenant_id") and getattr(current_user, "tenant_id", None) is not None:
+        filters["tenant_id"] = str(current_user.tenant_id)
+    return filters
+
+
 async def _build_export_base_stmt_${lower}(session, current_user):
     """Build scoped base SELECT statement and count for ${model_name} export.
 
@@ -80,9 +94,10 @@ async def export_${lower}s(
 
     base_stmt, total = await _build_export_base_stmt_${lower}(session, current_user)
     if total > _EXPORT_ASYNC_THRESHOLD:
+        # tenant_id parity with the sync path — see _export_async_filters_${lower}.
         job_id = await _dispatch_export_job(
             user_id=current_user.id, model="${model_name}", format=format,
-            filters={"owner_id": str(current_user.id)},
+            filters=_export_async_filters_${lower}(current_user),
         )
         return _JSONResponse(status_code=202, content={
             "status": "queued", "job_id": str(job_id), "row_estimate": total,

@@ -429,6 +429,80 @@ def test_csv_formula_injection_neutralized_in_spreadsheet_paths() -> None:
     assert "_csv_cell(" not in ndjson_fn, "export_ndjson must not formula-escape JSON values"
 
 
+def test_r8_j2_4_async_dispatch_includes_tenant_id() -> None:
+    """R8-J2-4: the async export dispatch must scope by tenant_id, like the sync path.
+
+    The sync path filters on owner_id AND tenant_id (when the model + user carry
+    one). Pre-fix the async dispatch passed only ``{"owner_id": ...}`` to the
+    worker (which rebuilds the query via build_filtered_stmt), so a large export
+    leaked every tenant's rows for that owner. The dispatch block must now also
+    thread tenant_id through the filters dict.
+    """
+    project_dir = create_fixture_project(name="export_r8_j2_4_tenant")
+    add_data_export(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "api" / "routes" / "item.py").read_text()
+    tree = ast.parse(content)
+    fn = next(
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.AsyncFunctionDef) and n.name == "export_items"
+    )
+    fn_src = ast.unparse(fn)
+    assert "_dispatch_export_job" in fn_src, "dispatch helper missing from route"
+
+    # The async dispatch must build its filters via the tenant-aware helper
+    # (extracted to keep export_items under the 50-LOC cap), and that helper
+    # must add tenant_id when the model + user carry one — parity with the sync
+    # _build_export_base_stmt_item path.
+    filters_fn = next(
+        (
+            n
+            for n in ast.walk(tree)
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+            and n.name == "_export_async_filters_item"
+        ),
+        None,
+    )
+    assert filters_fn is not None, (
+        "async export filters helper _export_async_filters_item not found"
+    )
+    filters_src = ast.unparse(filters_fn)
+    assert "tenant_id" in filters_src, (
+        "async export dispatch omits tenant_id — cross-tenant leak vs the sync path (R8-J2-4)"
+    )
+    assert "_export_async_filters_item(" in fn_src, (
+        "export_items must build dispatch filters via the tenant-aware helper"
+    )
+
+
+def test_r8_j2_4_worker_streams_without_full_bytesio_buffer() -> None:
+    """R8-J2-4: the async worker must NOT buffer the whole export in io.BytesIO.
+
+    The module advertises memory-bounded streaming, but ``_stream_export_to_storage``
+    previously wrote every chunk into a single ``io.BytesIO()`` before
+    ``storage.save()`` — holding the entire (large) export in RAM, defeating the
+    reason it was routed to the worker. The fix uses a memory-bounded spooled
+    temp file that rolls over to disk past a cap.
+    """
+    project_dir = create_fixture_project(name="export_r8_j2_4_stream")
+    add_data_export(ToolInput(project_dir=str(project_dir)))
+    worker_src = (project_dir / "app" / "jobs" / "export.py").read_text()
+    tree = ast.parse(worker_src)
+    fn = next(
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.AsyncFunctionDef) and n.name == "_stream_export_to_storage"
+    )
+    body = ast.unparse(fn)
+    assert "io.BytesIO" not in body, (
+        "_stream_export_to_storage still buffers the whole export in io.BytesIO — "
+        "not memory-bounded (R8-J2-4)"
+    )
+    assert "SpooledTemporaryFile" in body, (
+        "_stream_export_to_storage must use a memory-bounded SpooledTemporaryFile"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Standalone runner (fallback when pytest is unavailable)
 # ---------------------------------------------------------------------------
@@ -468,6 +542,8 @@ if __name__ == "__main__":
         test_execution_time_recorded,
         test_next_steps_present,
         test_no_models_returns_error,
+        test_r8_j2_4_async_dispatch_includes_tenant_id,
+        test_r8_j2_4_worker_streams_without_full_bytesio_buffer,
     ]
 
     passed = 0

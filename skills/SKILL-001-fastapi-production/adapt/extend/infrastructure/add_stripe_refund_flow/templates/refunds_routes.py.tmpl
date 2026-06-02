@@ -96,16 +96,13 @@ async def _load_owned_payment(
     return payment
 
 
-async def _resolve_payment_intent(
-    session: Any, payment_id: uuid.UUID, current_user: Any
-) -> str:
-    """Look up the Stripe PaymentIntent id for a Payment the caller owns.
+def _resolve_payment_intent_from(payment: Any) -> str:
+    """Return the Stripe PaymentIntent id of an already-loaded Payment, or 409.
 
-    Ownership is validated by ``_load_owned_payment`` BEFORE the PaymentIntent
-    is resolved, so a non-owner gets 404 without learning whether the payment
-    is refundable.
+    The caller is expected to have validated ownership via ``_load_owned_payment``
+    BEFORE calling this, so a non-owner gets 404 without learning whether the
+    payment is refundable.
     """
-    payment = await _load_owned_payment(session, payment_id, current_user)
     intent_id = getattr(payment, "stripe_payment_intent_id", None)
     if not intent_id:
         raise HTTPException(
@@ -113,6 +110,30 @@ async def _resolve_payment_intent(
             detail="payment has no Stripe PaymentIntent — cannot refund",
         )
     return intent_id
+
+
+async def _validate_refund_amount(
+    session: Any, payment: Any, amount_cents: int
+) -> None:
+    """Reject a refund that would exceed the original charge (R8-J2-3).
+
+    Sums prior non-failed refunds (``pending`` + ``succeeded``) for this payment
+    and rejects with 409 when ``amount_cents + already_refunded`` exceeds the
+    payment's ``amount_cents``. This — not the per-row Stripe idempotency key —
+    is the primary guard against double / over-refunding; the idempotency key is
+    only a backstop against exact-duplicate API retries.
+    """
+    from app.crud.refund import sum_non_failed_refunds_for_payment  # lazy
+
+    charge_cents = getattr(payment, "amount_cents", None)
+    if charge_cents is None:
+        return
+    already = await sum_non_failed_refunds_for_payment(session, payment.id)
+    if amount_cents + already > charge_cents:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="refund amount exceeds remaining refundable balance",
+        )
 
 
 async def _mark_refund_failed_by_id(
@@ -184,6 +205,12 @@ async def request_refund(
 ) -> RefundPublic:
     """Issue a Stripe refund for a payment.
 
+    Validates ownership (R5-O3-F4) and that ``amount_cents`` plus all prior
+    non-failed refunds for the payment does NOT exceed the original charge
+    (R8-J2-3) — rejecting with 409 otherwise.  This amount check, not the
+    per-row Stripe idempotency key, is the primary guard against
+    double/over-refunding.
+
     Persists a ``pending`` Refund row, commits it (so the row exists
     for the ``charge.refund.updated`` webhook to reconcile against),
     then calls ``create_refund`` to invoke the Stripe API.  On a
@@ -196,9 +223,9 @@ async def request_refund(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="refund amount exceeds maximum",
         )
-    payment_intent_id = await _resolve_payment_intent(
-        session, body.payment_id, current_user
-    )
+    payment = await _load_owned_payment(session, body.payment_id, current_user)
+    await _validate_refund_amount(session, payment, body.amount_cents)
+    payment_intent_id = _resolve_payment_intent_from(payment)
     refund = await create_pending_refund(
         session,
         payment_id=body.payment_id,

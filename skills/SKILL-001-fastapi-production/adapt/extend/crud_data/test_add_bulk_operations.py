@@ -525,6 +525,53 @@ def test_b014_bulk_update_uses_typed_item_not_raw_dict() -> None:
     )
 
 
+def test_r8_j2_2_bulk_update_all_or_nothing_rolls_back_whole_batch() -> None:
+    """R8-J2-2: ``bulk_update`` must honor ``mode`` — all_or_nothing rolls back the
+    entire batch on any failing item instead of silently running best-effort.
+
+    Pre-fix ``bulk_update_items`` ignored ``mode`` and always delegated to the
+    per-item savepoint path (``_apply_bulk_updates_item``), which commits the
+    successful rows even when a later item fails — a partial commit. The fix adds
+    a dedicated all_or_nothing helper that updates inside one transaction and
+    calls ``session.rollback()`` (no nested savepoints) when any row fails or
+    is a no-op, mirroring the create path.
+    """
+    project_dir = create_fixture_project(name="bulk_r8_j2_2_all_or_nothing")
+    add_bulk_operations(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "crud" / "item.py").read_text()
+    tree = ast.parse(content)
+
+    # 1. The mode-aware dispatcher must branch on all_or_nothing.
+    dispatch = next(
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.AsyncFunctionDef) and n.name == "bulk_update_items"
+    )
+    dispatch_src = ast.unparse(dispatch)
+    assert (
+        'mode == "all_or_nothing"' in dispatch_src or "mode == 'all_or_nothing'" in dispatch_src
+    ), "bulk_update_items must branch on mode (R8-J2-2) — it currently ignores it"
+    assert "_apply_bulk_updates_all_or_nothing_item" in dispatch_src, (
+        "all_or_nothing mode must use the single-transaction rollback helper"
+    )
+
+    # 2. The all_or_nothing helper must roll the whole batch back, not savepoint.
+    helper = next(
+        n
+        for n in ast.walk(tree)
+        if isinstance(n, ast.AsyncFunctionDef)
+        and n.name == "_apply_bulk_updates_all_or_nothing_item"
+    )
+    helper_src = ast.unparse(helper)
+    assert "session.rollback()" in helper_src, (
+        "all_or_nothing update must roll the whole batch back on failure (no partial commits)"
+    )
+    assert "begin_nested" not in helper_src, (
+        "all_or_nothing update must NOT use per-item savepoints (that is best_effort)"
+    )
+    assert "ROLLBACK" in helper_src, "rolled-back rows must be reported with ROLLBACK error_code"
+
+
 def test_b015_init_idempotency_cache_called_inside_lifespan() -> None:
     """B0.15: ``init_idempotency_cache(...)`` lives INSIDE ``async def lifespan(...)``.
 
@@ -626,6 +673,7 @@ if __name__ == "__main__":
         test_multiword_model_bulk_ops_not_skipped,
         test_b014_bulk_request_schemas_declare_extra_forbid,
         test_b014_bulk_update_uses_typed_item_not_raw_dict,
+        test_r8_j2_2_bulk_update_all_or_nothing_rolls_back_whole_batch,
         test_b015_init_idempotency_cache_called_inside_lifespan,
     ]
 
