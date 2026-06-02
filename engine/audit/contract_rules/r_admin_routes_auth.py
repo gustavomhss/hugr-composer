@@ -106,14 +106,13 @@ from ._common import SKILL_ROOT
 #   add_compliance_engine        → RESOLVED R8-J8-1 (superuser-gated, un-waived)
 #   add_outbox_pattern           → #131 (DLQ admin + stub data)
 #   add_stripe_refund_flow       → #136 (webhook needs verify_stripe_signature dep)
-#   add_websocket_presence       → #138 (trivial fix deferred to keep PR scoped)
+#   add_websocket_presence       → RESOLVED R8-J8-2 (CurrentUser-gated, un-waived)
 #   AuditLogAdapter              → #125 (auth + server-side actor + durable ledger)
 #   EventSourcedStoreAdapter     → #124 (auth + durable store)
 #   SagaAdapter                  → #137 (adapter auth-injection pattern, Phase A2)
 # ---------------------------------------------------------------------------
 # Waived pending issue #131 — add_outbox_pattern (DLQ admin + real data)
 # Waived pending issue #136 — add_stripe_refund_flow (webhook needs signature verify dep)
-# Waived pending issue #138 — add_websocket_presence (trivial fix in follow-up PR)
 # RESOLVED (R5-S1-F1/F2) — AuditLogAdapter now superuser-gates every route and
 # records the actor from the authenticated principal; un-waived so the rule
 # enforces it.
@@ -122,12 +121,15 @@ from ._common import SKILL_ROOT
 # RESOLVED (R8-J8-1, CRITICAL) — add_compliance_engine now gates every route
 # (erasure / SOC2 evidence / Article 30 / status) with ``CurrentSuperuser``;
 # un-waived so the rule enforces the GDPR erasure auth that #135 deferred.
+# RESOLVED (R8-J8-2, HIGH) — add_websocket_presence now requires ``CurrentUser``
+# on both REST companion routes (GET /presence/online enumerated every online
+# user's UUID; GET /presence/{user_id} leaked any user's status/last_seen/device);
+# un-waived so the rule enforces auth on the presence polling surface.
 # Waived pending issue #137 — SagaAdapter (adapter auth-injection pattern)
 _WAIVED_TOOLS: frozenset[str] = frozenset(
     {
         "add_outbox_pattern",
         "add_stripe_refund_flow",
-        "add_websocket_presence",
         "SagaAdapter",
     }
 )

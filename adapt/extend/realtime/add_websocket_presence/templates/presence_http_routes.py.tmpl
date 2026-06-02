@@ -5,6 +5,7 @@ import uuid
 
 from fastapi import APIRouter
 
+from app.api.deps import CurrentUser
 from app.schemas.presence import PresenceList, PresenceOut
 from app.ws.presence import PRESENCE_KEY, get_presence_manager
 
@@ -12,7 +13,7 @@ router = APIRouter(prefix="/presence", tags=["presence"])
 
 
 @router.get("/online", response_model=PresenceList)
-async def list_online_users() -> PresenceList:
+async def list_online_users(current_user: CurrentUser) -> PresenceList:
     """Return a list of all currently online user UUIDs.
 
     Scans Redis for ``presence:user:*`` keys and returns the user
@@ -34,7 +35,9 @@ async def list_online_users() -> PresenceList:
 
 
 @router.get("/{user_id}", response_model=PresenceOut)
-async def get_user_presence(user_id: uuid.UUID) -> PresenceOut:
+async def get_user_presence(
+    user_id: uuid.UUID, current_user: CurrentUser
+) -> PresenceOut:
     """Return the current presence state for a specific user.
 
     Args:

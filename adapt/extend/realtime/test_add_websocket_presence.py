@@ -237,6 +237,41 @@ def test_presence_http_routes_created() -> None:
     assert "online" in content.lower(), "Presence routes must have /online endpoint"
 
 
+def test_presence_rest_routes_require_auth() -> None:
+    """R8-J8-2 — both REST companion handlers carry an auth param.
+
+    ``GET /presence/online`` (``list_online_users``) enumerated every
+    online user's UUID and ``GET /presence/{user_id}``
+    (``get_user_presence``) leaked any user's status/last_seen/device,
+    both with no auth dependency. Each handler must now declare a
+    ``current_user``-style auth param so anonymous callers are denied.
+    """
+    project_dir = create_fixture_project(name="wsp_authz")
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    route_file = project_dir / "app" / "api" / "routes" / "presence.py"
+    tree = ast.parse(route_file.read_text())
+
+    auth_tokens = {"current_user", "superuser", "principal"}
+    targets = {"list_online_users", "get_user_presence"}
+    found: dict[str, bool] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        if node.name not in targets:
+            continue
+        params = node.args.args + node.args.kwonlyargs + node.args.posonlyargs
+        found[node.name] = any(a.arg in auth_tokens for a in params)
+
+    assert targets <= found.keys(), (
+        f"missing presence handlers in rendered routes: {targets - found.keys()}"
+    )
+    for name in targets:
+        assert found[name], (
+            f"{name} has no auth param ({auth_tokens}); anonymous callers can "
+            f"enumerate/leak presence data (R8-J8-2 regression)"
+        )
+
+
 def test_presence_manager_has_redis_pub_sub() -> None:
     """PresenceManager uses Redis pub/sub for broadcasting events."""
     project_dir = create_fixture_project(name="wsp_t16")
@@ -453,6 +488,7 @@ if __name__ == "__main__":
         test_presence_model_created,
         test_presence_schemas_created,
         test_presence_http_routes_created,
+        test_presence_rest_routes_require_auth,
         test_presence_manager_has_redis_pub_sub,
         test_presence_manager_has_ttl,
         test_heartbeat_ping_pong,
