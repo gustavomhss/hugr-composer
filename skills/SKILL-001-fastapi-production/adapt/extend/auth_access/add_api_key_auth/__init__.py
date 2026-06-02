@@ -36,7 +36,8 @@ _NOTES_SUCCESS = [
     "Hasher supports argon2id and sha256_pepper algorithms.",
     "Constant-time DUMMY_HASH prevents key-id enumeration timing attacks.",
     "Per-key rate limiting: Redis (atomic INCR+EXPIRE) with in-process fallback.",
-    "Scope format: resource:action, wildcard *:* supported.",
+    "Scope format: guards require resource:action; grants accept resource:action "
+    "(wildcards *:* supported at eval) or bare read/write (any-resource action grant).",
     "Plaintext secret returned ONCE at creation; never stored, never logged.",
     "⚠ verify_secret uses hmac.compare_digest for sha256$$ branch (constant-time); "
     "argon2id branch relies on argon2-cffi internal compare.",
@@ -57,6 +58,10 @@ _NEXT_STEPS = [
     "Add API_KEY_PEPPER and API_KEY_RATE_LIMIT_PER_MINUTE to app/core/config.py settings.",
     "alembic upgrade head",
     "Include api_keys router in app/api/main.py (done automatically if file existed).",
+    "Self-service keys may only be minted with scopes in GRANTABLE_SCOPES "
+    "(default: bare 'read'/'write', which satisfy any resource:action guard). "
+    "To allow resource-scoped grants set API_KEY_GRANTABLE_SCOPES="
+    "'orders:read,billing:write' (resource:action literals; wildcards rejected).",
 ]
 _PREREQ_NOTES = [
     "These prerequisites cannot be auto-created.",

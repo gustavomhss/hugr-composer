@@ -11,6 +11,7 @@ Run with::
 from __future__ import annotations
 
 import ast
+import os
 import sys
 from pathlib import Path
 
@@ -231,6 +232,99 @@ def test_default_scopes_grantable() -> None:
     assert mod.validate_grantable_scopes(["read", "write", "read"]) == ["read", "write"]
 
 
+# ---------------------------------------------------------------------------
+# R8-J1-3 / R8-J7-2: grantable allow-list must be coherent with the
+# resource:action evaluator the guards actually use.
+# ---------------------------------------------------------------------------
+
+
+def test_default_grant_satisfies_resource_action_guard() -> None:
+    """R8-J1-3: a default-granted bare 'read' satisfies require_scope('orders:read').
+
+    Pre-fix this FAILED: the default allow-list grants bare ``read`` but the
+    evaluator only matched ``resource:action`` (splitting on ``:`` gave
+    ``action=""``), so a default key authorized nothing.
+    """
+    project_dir, _ = _run("t010_r8_grant_eval_coherent")
+    mod = _load_emitted_scopes_module(project_dir)
+    granted = mod.validate_grantable_scopes(["read"])  # the default schema scope
+    result = mod.evaluate_scope(granted, "orders:read")
+    assert result.allowed is True, (
+        "R8-J1-3: a granted bare 'read' must satisfy require_scope('orders:read')"
+    )
+    # bare 'read' must NOT widen to write
+    assert mod.evaluate_scope(granted, "orders:write").allowed is False, (
+        "bare 'read' must not satisfy a :write guard"
+    )
+
+
+def test_bare_write_grant_satisfies_write_guard() -> None:
+    """R8-J1-3: a granted bare 'write' satisfies any resource:write guard."""
+    project_dir, _ = _run("t010_r8_bare_write")
+    mod = _load_emitted_scopes_module(project_dir)
+    granted = mod.validate_grantable_scopes(["write"])
+    assert mod.evaluate_scope(granted, "billing:write").allowed is True
+    assert mod.evaluate_scope(granted, "billing:read").allowed is False
+
+
+def test_resource_action_grant_still_works() -> None:
+    """R8-J1-3: explicit resource:action grants (via env config) still evaluate.
+
+    Exercises the documented finer-grained config path: an operator widens
+    ``API_KEY_GRANTABLE_SCOPES`` to resource-scoped literals.
+    """
+    project_dir = create_fixture_project(name="t010_r8_resource_grant")
+    add_api_key_auth(ToolInput(project_dir=str(project_dir)))
+    prev = os.environ.get("API_KEY_GRANTABLE_SCOPES")
+    os.environ["API_KEY_GRANTABLE_SCOPES"] = "orders:read,billing:write"
+    try:
+        mod = _load_emitted_scopes_module(project_dir)
+        granted = mod.validate_grantable_scopes(["orders:read", "billing:write"])
+        assert mod.evaluate_scope(granted, "orders:read").allowed is True
+        assert mod.evaluate_scope(granted, "billing:write").allowed is True
+        # not granted -> denied (deny-by-default)
+        assert mod.evaluate_scope(granted, "billing:read").allowed is False
+    finally:
+        if prev is None:
+            os.environ.pop("API_KEY_GRANTABLE_SCOPES", None)
+        else:
+            os.environ["API_KEY_GRANTABLE_SCOPES"] = prev
+
+
+def test_docstring_example_matches_evaluator() -> None:
+    """R8-J7-2: the in-file docstring example reflects real evaluator behaviour."""
+    project_dir, _ = _run("t010_r8_docstring_example")
+    mod = _load_emitted_scopes_module(project_dir)
+    # Example block (resource:action with wildcard) must hold.
+    result = mod.evaluate_scope(["orders:read", "billing:*"], "billing:write")
+    assert result.allowed is True
+    assert result.matched_scope == "billing:*"
+    # Example block (bare-action grant) must hold.
+    assert mod.evaluate_scope(["read"], "orders:read").allowed is True
+    assert mod.evaluate_scope(["read"], "orders:write").allowed is False
+
+
+def test_r7n2_protection_preserved_after_coherence_fix() -> None:
+    """R7-N2 must remain intact: wildcards & unlisted scopes still rejected at grant."""
+    project_dir, _ = _run("t010_r8_r7n2_preserved")
+    mod = _load_emitted_scopes_module(project_dir)
+    for bad in ("*:*", "admin:*", "*:write", "read:*"):
+        try:
+            mod.validate_grantable_scopes([bad])
+        except mod.ScopeNotGrantableError:
+            continue
+        raise AssertionError(f"R7-N2 regressed: wildcard {bad!r} was accepted at grant")
+    # An unlisted resource:action literal is still denied by default.
+    try:
+        mod.validate_grantable_scopes(["orders:read"])
+    except mod.ScopeNotGrantableError:
+        pass
+    else:
+        raise AssertionError(
+            "R7-N2 regressed: 'orders:read' grantable without being in the allow-list"
+        )
+
+
 def test_deps_file_created() -> None:
     """CC-03: app/core/api_key_deps.py exists with get_current_api_key + require_scope."""
     project_dir, _ = _run("t010_13_deps")
@@ -431,6 +525,11 @@ if __name__ == "__main__":
         test_rate_limit_has_redis_and_fallback,
         test_scopes_file_created,
         test_scope_wildcard_supported,
+        test_default_grant_satisfies_resource_action_guard,
+        test_bare_write_grant_satisfies_write_guard,
+        test_resource_action_grant_still_works,
+        test_docstring_example_matches_evaluator,
+        test_r7n2_protection_preserved_after_coherence_fix,
         test_deps_file_created,
         test_deps_uses_dummy_hash_for_unknown_key,
         test_crud_file_created,

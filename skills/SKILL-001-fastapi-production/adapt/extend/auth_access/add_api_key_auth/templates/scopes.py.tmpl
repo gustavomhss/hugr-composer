@@ -1,12 +1,25 @@
 """Scope evaluator for API keys.
 
-Scopes are strings of the form ``resource:action`` (e.g. ``orders:read``,
-``billing:write``, ``admin:*``, ``*:*``).  Wildcards are supported on
-either or both segments.  A key is denied by default; it must have an
-explicit grant that matches the required scope.
+Scopes a route REQUIRES are always of the form ``resource:action`` (e.g.
+``orders:read``, ``billing:write``).  Scopes a key is GRANTED may be either:
+
+* ``resource:action`` — explicit, with optional wildcards on either or both
+  segments (``orders:*``, ``admin:*``, ``*:*``); or
+* a bare ``action`` (``read`` / ``write``) — an action-level grant that
+  applies across every resource (a key granted ``read`` satisfies any
+  ``resource:read`` guard).  These are the defaults the self-service endpoint
+  may mint (see ``GRANTABLE_SCOPES``).
+
+A key is denied by default; it must hold a grant that matches the required
+scope.
 
 Example::
 
+    # bare action grant — the default the create endpoint mints:
+    assert evaluate_scope(["read"], "orders:read").allowed is True
+    assert evaluate_scope(["read"], "orders:write").allowed is False
+
+    # explicit resource:action grant with a resource wildcard:
     result = evaluate_scope(["orders:read", "billing:*"], "billing:write")
     assert result.allowed is True
     assert result.matched_scope == "billing:*"
@@ -33,9 +46,13 @@ from dataclasses import dataclass
 #     self-service endpoint — they are reserved for privileged provisioning
 #     paths that are not exposed here.
 #   * Only scopes in ``GRANTABLE_SCOPES`` may be granted. The default set is
-#     intentionally minimal (``read``, ``write``); widen it for your app by
-#     editing this set or the ``API_KEY_GRANTABLE_SCOPES`` env var
-#     (comma-separated), and wire the matching ``require_scope(...)`` guards.
+#     intentionally minimal — the bare action tokens ``read`` and ``write``,
+#     which ``_scope_matches`` treats as "this action on ANY resource" so they
+#     satisfy ``require_scope("orders:read")`` etc. out of the box. Widen or
+#     tighten it for your app by editing this set or the
+#     ``API_KEY_GRANTABLE_SCOPES`` env var (comma-separated) — e.g. set
+#     resource-scoped literals like ``orders:read,billing:write`` for finer
+#     control — and wire the matching ``require_scope(...)`` guards.
 #
 # Each entry is a literal ``resource:action`` (or bare ``read``/``write``)
 # string — no wildcards in the allow-list itself.
@@ -125,15 +142,33 @@ class ScopeCheckResult:
 def _scope_matches(granted: str, required: str) -> bool:
     """Return True if *granted* satisfies *required* using wildcard rules.
 
+    Two grant forms are honoured:
+
+    * ``resource:action`` — explicit grant. Either segment may be ``*``
+      (e.g. ``orders:*`` covers ``orders:read``; ``*:*`` covers everything).
+    * bare ``action`` (no ``:``) — an action-level grant that applies across
+      ALL resources. The default grantable allow-list seeds bare ``read`` /
+      ``write`` (see ``_DEFAULT_GRANTABLE_SCOPES``), so a key granted ``read``
+      satisfies ``require_scope("orders:read")`` for any resource. This is the
+      coherence bridge between the bare-token allow-list and the
+      ``resource:action`` evaluator/guards (R8-J1-3).
+
+    A bare grant never widens the action: granted ``read`` matches only
+    ``<resource>:read`` requirements, never ``<resource>:write``.
+
     Args:
         granted: A scope string from the key's granted list.
-        required: The scope the route requires.
+        required: The scope the route requires (always ``resource:action``).
 
     Returns:
         ``True`` if the granted scope covers the required scope.
     """
+    _, _, r_action = required.partition(":")
+    if ":" not in granted:
+        # Bare action grant: matches the same action on any resource.
+        return granted == r_action
     g_resource, _, g_action = granted.partition(":")
-    r_resource, _, r_action = required.partition(":")
+    r_resource, _, _ = required.partition(":")
     resource_ok = g_resource == "*" or g_resource == r_resource
     action_ok = g_action == "*" or g_action == r_action
     return resource_ok and action_ok
