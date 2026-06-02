@@ -1,4 +1,4 @@
-"""TOOL-097: add_compliance_engine — GDPR/SOC2 compliance engine for FastAPI.
+"""TOOL-097: add_compliance_engine — GDPR/SOC2 compliance scaffold for FastAPI.
 
 Emits ``app/core/compliance_engine.py`` (PII registry, Fernet field
 encryption, retention helpers), ``app/models/compliance_event.py`` (audit
@@ -29,8 +29,9 @@ _HERE = Path(__file__).parent
 MCP_TOOL = {
     "name": "fastapi_resiliency_add_compliance_engine",
     "description": (
-        "Add a GDPR/SOC2 compliance engine: PII registry, Fernet field encryption, "
-        "audit-log table, retention worker, erasure / evidence / Article 30 endpoints."
+        "Add a GDPR/SOC2 compliance scaffold: PII registry, Fernet field encryption, "
+        "audit-log table, retention worker, erasure / evidence / Article 30 endpoints. "
+        "Superuser-gated; not a turnkey production compliance engine."
     ),
     "tags": ["extend", "infrastructure", "compliance"],
     "entry": "add_compliance_engine",

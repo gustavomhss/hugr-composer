@@ -9,6 +9,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import CurrentSuperuser
 from app.core.compliance_engine import generate_erasure_certificate, get_compliance_engine
 from app.core.config import settings
 from app.crud.compliance import (
@@ -50,16 +51,21 @@ SessionDep = Annotated[AsyncSession, Depends(_get_session)]
 async def erasure_endpoint(
     user_id: str,
     body: ErasureRequest,
+    current_user: CurrentSuperuser,
     session: SessionDep,
 ) -> ErasureCertificate:
     """Delete or anonymise all personal data for *user_id*.
 
     Cascades across known PII tables, records a compliance event, and
-    returns a signed erasure certificate.
+    returns a signed erasure certificate. **Superuser only** — erasure is
+    an irreversible cross-subject data-destruction operation, so the route
+    requires an authenticated superuser (the DPO/admin acting for the org),
+    never the data subject themselves or an anonymous caller.
 
     Args:
         user_id: Data subject identifier.
         body: Optional reason for erasure.
+        current_user: Authenticated superuser performing the erasure.
         session: Async database session.
 
     Returns:
@@ -86,10 +92,16 @@ async def erasure_endpoint(
     response_model=SocEvidenceReport,
     summary="SOC2 evidence export",
 )
-async def soc2_evidence(session: SessionDep) -> SocEvidenceReport:
+async def soc2_evidence(
+    current_user: CurrentSuperuser,
+    session: SessionDep,
+) -> SocEvidenceReport:
     """Return a SOC2-ready evidence package for the last 90 days.
 
+    **Superuser only** — exposes the full compliance audit trail.
+
     Args:
+        current_user: Authenticated superuser requesting the evidence pack.
         session: Async database session.
 
     Returns:
@@ -114,8 +126,13 @@ async def soc2_evidence(session: SessionDep) -> SocEvidenceReport:
     response_model=Article30Record,
     summary="GDPR Article 30 record of processing",
 )
-async def article30() -> Article30Record:
+async def article30(current_user: CurrentSuperuser) -> Article30Record:
     """Auto-generate a GDPR Article 30 record-of-processing entry.
+
+    **Superuser only** — reveals the controller's processing inventory.
+
+    Args:
+        current_user: Authenticated superuser requesting the record.
 
     Returns:
         Article30Record with PII categories and retention metadata.
@@ -135,8 +152,15 @@ async def article30() -> Article30Record:
     response_model=ComplianceStatusResponse,
     summary="Compliance engine status",
 )
-async def compliance_status() -> ComplianceStatusResponse:
+async def compliance_status(
+    current_user: CurrentSuperuser,
+) -> ComplianceStatusResponse:
     """Return the current compliance configuration.
+
+    **Superuser only** — discloses encryption/retention posture.
+
+    Args:
+        current_user: Authenticated superuser.
 
     Returns:
         ComplianceStatusResponse with enabled flag and config summary.

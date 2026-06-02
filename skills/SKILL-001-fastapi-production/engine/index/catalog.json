@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "3bf2da0",
-  "generated_at": "2026-05-30T20:29:55+00:00",
+  "kit_commit": "b89acca",
+  "generated_at": "2026-06-02T10:34:01+00:00",
   "verbs": [
     "add",
     "generate",
@@ -2818,8 +2818,8 @@
       "domain": "resiliency",
       "skill": "SKILL-001-fastapi-production",
       "bundle": "infrastructure",
-      "synopsis": "Add a GDPR/SOC2 compliance engine: PII registry, Fernet field encryption, audit-log table, retention",
-      "when_to_call": "Add a GDPR/SOC2 compliance engine: PII registry, Fernet field encryption, audit-log table, retention worker, erasure / evidence / Article 30 endpoints.",
+      "synopsis": "Add a GDPR/SOC2 compliance scaffold: PII registry, Fernet field encryption, audit-log table, retenti",
+      "when_to_call": "Add a GDPR/SOC2 compliance scaffold: PII registry, Fernet field encryption, audit-log table, retention worker, erasure / evidence / Article 30 endpoints. Superuser-gated; not a turnkey production compliance engine.",
       "when_not_to_call": "",
       "tags": [],
       "tier": 2,
@@ -12005,5 +12005,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "a531bf3f10f2c4ef0bfd83e7b19ab15c46f0d4e42eb57bfd08e8f9cedf69694c"
+  "stable_hash": "19155adf9301782ca93473faa28ac3ae9c3cc6b094943e95bd49b0d056ebcdfa"
 }
