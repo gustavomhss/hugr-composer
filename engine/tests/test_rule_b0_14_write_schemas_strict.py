@@ -215,6 +215,89 @@ def test_green_response_named_data_summary_still_exempt(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# R8-closeout — non-read=write FLIP. Exotically-named input schemas with no
+# known write suffix/prefix are now flagged; the catalog's read/response
+# schemas remain exempt (the golden invariant).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("cls_name", ["Payload", "Thing", "SearchParams", "Options"])
+def test_red_flip_exotic_input_schema_without_forbid(tmp_path, monkeypatch, cls_name):
+    """A non-read BaseModel with NO Create/Update/Request/Form/… suffix and
+    no verb prefix (``Payload``, ``Thing``, ``*Params``) MUST now be flagged.
+
+    Pre-flip these escaped because they matched neither the write
+    suffix/verb arms nor the read allow-list — the residual J4-3 gap.
+    """
+    body = f"from pydantic import BaseModel\n\nclass {cls_name}(BaseModel):\n    x: str\n"
+    _write_template(tmp_path, "add_widget", body)
+    ok, msg = _run_rule(monkeypatch, tmp_path)
+    assert not ok, f"{cls_name} is a non-read input schema and must require extra=forbid"
+    assert cls_name in msg
+    assert "extra" in msg
+
+
+def test_green_flip_exotic_input_schema_with_forbid(tmp_path, monkeypatch):
+    """The same exotic input schema passes once it declares extra=forbid."""
+    body = (
+        "from pydantic import BaseModel, ConfigDict\n"
+        "\n"
+        "class Payload(BaseModel):\n"
+        '    model_config = ConfigDict(extra="forbid")\n'
+        "    x: str\n"
+    )
+    _write_template(tmp_path, "add_widget", body)
+    ok, msg = _run_rule(monkeypatch, tmp_path)
+    assert ok, msg
+
+
+@pytest.mark.parametrize(
+    "cls_name",
+    [
+        "UsageSummary",
+        "RevenueAnalytics",
+        "TopConsumer",
+        "SubscriptionStatus",
+        "ImportJobCreated",
+        "Article30Record",
+        "ErasureCertificate",
+        "ModelInfo",
+        "AutocompleteResult",
+        "MLModelCompare",
+        "UnreadCount",
+        "VersionDiff",
+        "SocEvidenceReport",
+        "DomainEvent",
+        "FeatureFlagBase",
+        "OrderPlacedV1",
+    ],
+)
+def test_green_flip_response_schemas_remain_exempt(tmp_path, monkeypatch, cls_name):
+    """GOLDEN INVARIANT: the ~24 catalog read/response schemas the naive
+    flip would newly-flag stay exempt — they ride from_attributes=True and
+    are returned (response_model), not accepted as input."""
+    body = f"from pydantic import BaseModel\n\nclass {cls_name}(BaseModel):\n    x: int\n"
+    _write_template(tmp_path, "add_widget", body)
+    ok, msg = _run_rule(monkeypatch, tmp_path)
+    assert ok, f"{cls_name} should be read-exempt: {msg}"
+
+
+@pytest.mark.parametrize("base", ["str, Enum", "Enum", "int, IntEnum", "StrEnum"])
+def test_green_flip_enum_not_treated_as_write(tmp_path, monkeypatch, base):
+    """Enum subclasses are not pydantic input models — the flip must not
+    require extra=forbid on ``class JobStatus(str, Enum)`` etc."""
+    body = (
+        "from enum import Enum, IntEnum, StrEnum\n"
+        "\n"
+        f"class JobStatus({base}):\n"
+        '    PENDING = "pending"\n'
+    )
+    _write_template(tmp_path, "add_widget", body)
+    ok, msg = _run_rule(monkeypatch, tmp_path)
+    assert ok, msg
+
+
+# ---------------------------------------------------------------------------
 # GREEN tests.
 # ---------------------------------------------------------------------------
 

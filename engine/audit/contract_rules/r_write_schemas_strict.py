@@ -127,6 +127,19 @@ _WRITE_VERB_RE = re.compile(
 
 # Class-name suffixes that mark a READ / response schema (exempt from
 # extra=forbid; from_attributes=True is the documented Pydantic-v2 pattern).
+#
+# R8-closeout (B0.14 non-read=write flip): the response/read suffix set is
+# now the SOLE exemption from the flip (``_is_write_schema`` requires
+# extra=forbid on EVERY non-read pydantic model). The original suffixes
+# (Read/Public/Response/Out/Detail/View/List/Item) are extended with the
+# response-noun + event suffixes the catalog scan proved are read-side
+# (returned via ``response_model=`` or nested inside one, never accepted):
+# Summary/Analytics/Report/Status/Created/Record/Certificate/Info/Result/
+# Compare/Consumer/Count/Diff/Event/Base. Each maps 1:1 to a real
+# response schema (UsageSummary, RevenueAnalytics, TopConsumer, *Status,
+# ImportJobCreated, Article30Record, ErasureCertificate, ModelInfo/PlanInfo,
+# AutocompleteResult, MLModelCompare, UnreadCount, VersionDiff, DomainEvent,
+# FeatureFlagBase …). Verified zero collision with existing WRITE schemas.
 _READ_SUFFIXES: tuple[str, ...] = (
     "Read",
     "Public",
@@ -136,7 +149,26 @@ _READ_SUFFIXES: tuple[str, ...] = (
     "View",
     "List",
     "Item",
+    "Summary",
+    "Analytics",
+    "Report",
+    "Status",
+    "Created",
+    "Record",
+    "Certificate",
+    "Info",
+    "Result",
+    "Compare",
+    "Consumer",
+    "Count",
+    "Diff",
+    "Event",
+    "Base",
 )
+
+# Versioned event schemas (``OrderPlacedV1`` / ``${event_name}V1``) are
+# read-side event envelopes (subclass a cross-module ``BaseEvent``), exempt.
+_READ_VERSION_RE = re.compile(r"V\d+$")
 
 # Per-line bypass for the bare-dict / Any field rule.
 _PRAGMA_RE = re.compile(r"#\s*pragma:\s*schema-any:\s*(.+?)\s*$")
@@ -304,15 +336,23 @@ def _clean_placeholders(src: str) -> str:
 
 
 def _is_read_schema(name: str) -> bool:
-    return any(name.endswith(s) for s in _READ_SUFFIXES)
+    if any(name.endswith(s) for s in _READ_SUFFIXES):
+        return True
+    return bool(_READ_VERSION_RE.search(name))
 
 
 def _is_write_schema(name: str) -> bool:
-    if _is_read_schema(name):
-        return False
-    if any(name.endswith(s) for s in _WRITE_SUFFIXES):
-        return True
-    return bool(_WRITE_VERB_RE.match(name))
+    """B0.14 non-read=write FLIP (R8-closeout).
+
+    Every non-READ pydantic input model is a WRITE schema and must carry
+    ``extra="forbid"``. The READ allow-list (``_is_read_schema``) is the
+    SOLE exemption — closing the residual where an exotically-named input
+    schema (``class Payload(BaseModel)``, ``*Params``) with no Create/
+    Update/Request/Form/… suffix or verb prefix escaped the requirement.
+    The legacy suffix/verb-prefix tables are retained only as
+    documentation of the canonical write-name shapes.
+    """
+    return not _is_read_schema(name)
 
 
 def _inherits_pydantic_model(cls: ast.ClassDef) -> bool:
@@ -323,7 +363,18 @@ def _inherits_pydantic_model(cls: ast.ClassDef) -> bool:
     those don't exist in the catalog (every schema-template class lives
     on top of pydantic). We trade a theoretical false-positive for a
     much simpler scanner — and any future false-positive can opt out
-    by *not* matching the WRITE-name pattern."""
+    by *not* matching the WRITE-name pattern.
+
+    Enum subclasses (``class Foo(str, Enum)`` / ``class Foo(Enum)``) are
+    NOT pydantic models — they carry no ``extra=`` config and accept no
+    field input. R8-closeout: the non-read=write flip would otherwise
+    flag string-enums (``JobStatus``, ``PaymentStatus`` …) caught by the
+    permissive ``any Name base`` arm below, so we exclude them first."""
+    for base in cls.bases:
+        if isinstance(base, ast.Name) and base.id in ("Enum", "IntEnum", "StrEnum"):
+            return False
+        if isinstance(base, ast.Attribute) and base.attr in ("Enum", "IntEnum", "StrEnum"):
+            return False
     for base in cls.bases:
         if isinstance(base, ast.Name) and base.id == "BaseModel":
             return True
