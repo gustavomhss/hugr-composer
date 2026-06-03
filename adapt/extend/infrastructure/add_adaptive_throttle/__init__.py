@@ -145,11 +145,13 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
             "Decorate expensive endpoints with @throttle_cost(weight=5) to consume more quota.",
             "Monitor penalty events via GET /throttle/status (returns client penalty tier).",
             "Set ADAPTIVE_THROTTLE_LEARNING_PERIOD_H to baseline window in hours (default 24).",
-            "Behind a load balancer/CDN, set ADAPTIVE_THROTTLE_TRUSTED_PROXIES to your "
-            "proxy egress IPs/CIDRs so the throttle fingerprint resolves the real client "
-            "IP from X-Forwarded-For. Left empty it pins to the peer IP, and penalty "
-            "escalation/bans are SKIPPED for those bare-peer fingerprints (fail-open) so "
-            "a shared proxy egress IP cannot mass-ban every downstream user.",
+            "Single-server (default): leave ADAPTIVE_THROTTLE_BEHIND_PROXY=false — the "
+            "peer IP IS the real client, so escalation/bans work normally on it.",
+            "Behind a load balancer/CDN: set ADAPTIVE_THROTTLE_BEHIND_PROXY=true AND "
+            "ADAPTIVE_THROTTLE_TRUSTED_PROXIES to your proxy egress IPs/CIDRs so the "
+            "fingerprint resolves the real client from X-Forwarded-For. In proxy mode a "
+            "bare/untrusted peer (shared egress IP) fails OPEN — penalty escalation/bans "
+            "are SKIPPED so a shared proxy IP cannot mass-ban every downstream user.",
         ],
         execution_time_ms=_ms(start),
     )
@@ -171,6 +173,11 @@ def _patch_config(config_file: Path) -> None:
         # The throttle fingerprint trusts X-Forwarded-For ONLY when the peer
         # is in this list; empty (default) pins the fingerprint to the peer IP.
         '    ADAPTIVE_THROTTLE_TRUSTED_PROXIES: str = ""\n'
+        # False (default, single-server): the peer IP IS the real client, so
+        # the throttle escalates/bans on it normally. True: you ARE behind a
+        # proxy — set TRUSTED_PROXIES so the real client is resolved from
+        # X-Forwarded-For; a bare/untrusted peer fails OPEN (no mass-ban).
+        "    ADAPTIVE_THROTTLE_BEHIND_PROXY: bool = False\n"
     )
 
     anchor = "ACCESS_TOKEN_EXPIRE_MINUTES: int = 30"

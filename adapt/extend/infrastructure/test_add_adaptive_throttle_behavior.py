@@ -396,11 +396,15 @@ def test_b10_generated_files_parse_clean(project_dir: Path) -> None:
 # ---------------------------------------------------------------------------
 
 
-def _load_core_with_proxies(project_dir: Path, trusted_proxies: str) -> Any:
+def _load_core_with_proxies(
+    project_dir: Path, trusted_proxies: str, behind_proxy: bool = True
+) -> Any:
     """Exec the emitted core module with a controllable fake settings object.
 
-    Injects ``ADAPTIVE_THROTTLE_TRUSTED_PROXIES=trusted_proxies`` and restores
-    sys.modules afterwards so the module-scoped real app is not poisoned.
+    Injects ``ADAPTIVE_THROTTLE_TRUSTED_PROXIES=trusted_proxies`` and
+    ``ADAPTIVE_THROTTLE_BEHIND_PROXY=behind_proxy`` and restores sys.modules
+    afterwards so the module-scoped real app is not poisoned. Defaults to
+    ``behind_proxy=True`` so proxy-aware cases exercise the trusted-proxy path.
     """
     import importlib.util
     import types
@@ -413,6 +417,7 @@ def _load_core_with_proxies(project_dir: Path, trusted_proxies: str) -> Any:
         ADAPTIVE_THROTTLE_BASE_QUOTA=200,
         ADAPTIVE_THROTTLE_PENALTY_ESCALATION=True,
         ADAPTIVE_THROTTLE_TRUSTED_PROXIES=trusted_proxies,
+        ADAPTIVE_THROTTLE_BEHIND_PROXY=behind_proxy,
         REDIS_URL="redis://localhost:6379/0",
     )
     mod_name = "at_core_proxytest"
@@ -484,22 +489,45 @@ def test_b11_client_ip_is_proxy_aware(project_dir: Path) -> None:
 
 
 def test_b13_client_ip_is_bare_signals_shared_bucket(project_dir: Path) -> None:
-    """B-13 (R8-J1-1): client_ip_is_bare flags bare-peer fingerprints.
+    """B-13 (R8-J1-1 / R8-closeout): client_ip_is_bare is mode-aware.
 
-    With no trusted proxy configured every request is a bare peer IP (a shared
-    CDN/LB egress bucket) → must be True. With the peer inside a trusted-proxy
-    network the resolved IP is the real client → must be False.
+    Proxy mode (BEHIND_PROXY=True): with no trusted proxy configured every
+    request is a bare peer IP (a shared CDN/LB egress bucket) → True. With the
+    peer inside a trusted-proxy network the resolved IP is the real client →
+    False. An untrusted peer is bare (cannot escalate).
     """
-    mod = _load_core_with_proxies(project_dir, "")
+    mod = _load_core_with_proxies(project_dir, "", behind_proxy=True)
     bare = _fake_request("203.0.113.9", {"x-forwarded-for": "1.2.3.4"})
-    assert mod.client_ip_is_bare(bare) is True, "empty trusted proxies → bare peer"
+    assert mod.client_ip_is_bare(bare) is True, "proxy mode + empty proxies → bare peer"
 
-    mod = _load_core_with_proxies(project_dir, "10.0.0.0/8")
+    mod = _load_core_with_proxies(project_dir, "10.0.0.0/8", behind_proxy=True)
     via_proxy = _fake_request("10.0.0.5", {"x-forwarded-for": "198.51.100.7"})
     assert mod.client_ip_is_bare(via_proxy) is False, "trusted peer → real client, not bare"
 
     untrusted = _fake_request("203.0.113.50", {"x-forwarded-for": "10.0.0.1"})
     assert mod.client_ip_is_bare(untrusted) is True, "untrusted peer → bare (cannot escalate)"
+
+
+def test_b15_single_server_peer_is_not_bare(project_dir: Path) -> None:
+    """B-15 (R8-closeout): single-server (BEHIND_PROXY=False) trusts the peer.
+
+    With no proxy in front, ``request.client.host`` IS the real client, so a
+    bare peer must NOT be treated as a shared bucket — otherwise an enabled
+    throttle on a single-server deploy is silently inert (the #161 regression).
+    Escalation/bans must work normally on the peer IP.
+    """
+    # Default single-server mode, empty trusted proxies: peer is NOT bare.
+    mod = _load_core_with_proxies(project_dir, "", behind_proxy=False)
+    peer = _fake_request("203.0.113.9", {"x-forwarded-for": "1.2.3.4"})
+    assert mod.client_ip_is_bare(peer) is False, (
+        "single-server peer wrongly flagged bare → throttle inert (regression)"
+    )
+
+    # Proxy mode with empty proxies STILL fails open (#161 mass-ban guard).
+    mod = _load_core_with_proxies(project_dir, "", behind_proxy=True)
+    assert mod.client_ip_is_bare(peer) is True, (
+        "proxy mode + empty proxies must still fail open (mass-ban protection)"
+    )
 
 
 @pytest.mark.anyio
@@ -623,6 +651,10 @@ if __name__ == "__main__":
         (
             "B-14: fallback dict is bounded",
             lambda: _run_async_test(test_b14_fallback_dict_is_bounded, _pd),
+        ),
+        (
+            "B-15: single-server peer is not bare",
+            lambda: test_b15_single_server_peer_is_not_bare(_pd),
         ),
     ]
 
