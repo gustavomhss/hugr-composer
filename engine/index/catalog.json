@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "b89acca",
-  "generated_at": "2026-06-02T10:34:01+00:00",
+  "kit_commit": "507ef90",
+  "generated_at": "2026-06-03T15:59:25+00:00",
   "verbs": [
     "add",
     "generate",
@@ -85,7 +85,7 @@
   "skills": [
     {
       "name": "SKILL-001-fastapi-production",
-      "version": "1.0.0-rc.1",
+      "version": "1.0.0",
       "type": "local",
       "bundles": [
         {
@@ -12005,5 +12005,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "19155adf9301782ca93473faa28ac3ae9c3cc6b094943e95bd49b0d056ebcdfa"
+  "stable_hash": "03a8833f96fc282950fccb633c5c6c7d2e98a97f6b9c2a3b6594b08f14a59c1e"
 }
