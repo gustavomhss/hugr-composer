@@ -28,6 +28,11 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
+# Skill root, anchored on this file's location (tests/mutation_runner.py),
+# so pytest runs from the right cwd/PYTHONPATH regardless of how deep the
+# target lives (single-file tools vs package tools with an extra dir level).
+_SKILL_ROOT = Path(__file__).resolve().parents[1]
+
 
 @dataclass
 class Mutation:
@@ -249,11 +254,11 @@ def run_tests(test_file: str, target_file: str) -> bool:
                 "-p",
                 "no:cacheprovider",
             ],
-            cwd=str(Path(target_file).parents[3]),
+            cwd=str(_SKILL_ROOT),
             capture_output=True,
             text=True,
             timeout=180,
-            env={**__import__("os").environ, "PYTHONPATH": str(Path(target_file).parents[3])},
+            env={**__import__("os").environ, "PYTHONPATH": str(_SKILL_ROOT)},
         )
     except subprocess.TimeoutExpired:
         return False
