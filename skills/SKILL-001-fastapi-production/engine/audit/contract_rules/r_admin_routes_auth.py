@@ -114,7 +114,9 @@ from ._common import SKILL_ROOT
 #
 #   add_compliance_engine        → RESOLVED R8-J8-1 (superuser-gated, un-waived)
 #   add_outbox_pattern           → RESOLVED #131 (CurrentSuperuser-gated, un-waived)
-#   add_stripe_refund_flow       → #136 (webhook needs verify_stripe_signature dep)
+#   add_stripe_refund_flow       → RESOLVED #136 (webhook gated by the
+#                                  ``verify_stripe_signature`` Depends; the
+#                                  Stripe-Signature HMAC IS the route's auth)
 #   add_websocket_presence       → RESOLVED R8-J8-2 (CurrentUser-gated, un-waived)
 #   AuditLogAdapter              → #125 (auth + server-side actor + durable ledger)
 #   EventSourcedStoreAdapter     → #124 (auth + durable store)
@@ -123,7 +125,9 @@ from ._common import SKILL_ROOT
 # RESOLVED (#131, R8-closeout) — add_outbox_pattern now superuser-gates both
 # admin surfaces: GET /outbox/metrics and GET /outbox/dlq each take
 # ``current_user: CurrentSuperuser``; un-waived so the rule enforces it.
-# Waived pending issue #136 — add_stripe_refund_flow (webhook needs signature verify dep)
+# RESOLVED (#136, R8-closeout) — add_stripe_refund_flow now verifies the
+# Stripe-Signature HMAC in a ``verify_stripe_signature`` Depends on the
+# /webhook/stripe route (webhook auth = signature, not user-auth); un-waived.
 # RESOLVED (R5-S1-F1/F2) — AuditLogAdapter now superuser-gates every route and
 # records the actor from the authenticated principal; un-waived so the rule
 # enforces it.
@@ -140,11 +144,10 @@ from ._common import SKILL_ROOT
 # ``auth_dependency`` on ``install(...)`` and applies ``Depends(auth_dependency)``
 # to every /admin/sagas route (start / step / status); un-waived so the rule
 # enforces it.
-_WAIVED_TOOLS: frozenset[str] = frozenset(
-    {
-        "add_stripe_refund_flow",
-    }
-)
+# Every Round-8-closeout un-waive landed: the set is now EMPTY — B0.11 enforces
+# auth on EVERY admin/diagnostic/cross-tenant route across templates + adapters,
+# with no exemptions.
+_WAIVED_TOOLS: frozenset[str] = frozenset()
 
 # Per-spec regex — admin / diagnostic / cross-tenant path segments.
 #

@@ -582,6 +582,83 @@ def test_r8_j2_3_refund_amount_capped_to_charge() -> None:
     )
 
 
+def test_r8_136_webhook_rejects_bad_signature() -> None:
+    """#136: the webhook must reject an invalid/absent Stripe-Signature with 400.
+
+    Signature verification runs in a ``verify_stripe_signature`` dependency
+    that calls ``stripe.Webhook.construct_event`` and raises
+    ``HTTPException(400)`` on failure, BEFORE the handler body (and any DB
+    write) executes. We assert structurally (no live Stripe SDK needed):
+
+    1. a ``verify_stripe_signature`` function exists,
+    2. it calls ``construct_event`` against ``STRIPE_REFUND_WEBHOOK_SECRET``,
+    3. it raises 400/BAD_REQUEST on a verification failure,
+    4. the webhook handler injects it via ``Depends`` so the un-verified
+       request never reaches ``_handle_refund_event``.
+    """
+    tree = _refund_route_tree("refund_r8_136_websig")
+    dep = _func_node(tree, "verify_stripe_signature")
+    dep_src = ast.unparse(dep)
+    assert "construct_event" in dep_src, (
+        "verify_stripe_signature must call stripe.Webhook.construct_event"
+    )
+    assert "STRIPE_REFUND_WEBHOOK_SECRET" in dep_src, (
+        "signature must be verified against STRIPE_REFUND_WEBHOOK_SECRET"
+    )
+    assert "400" in dep_src or "BAD_REQUEST" in dep_src, (
+        "an invalid signature must be rejected with HTTP 400"
+    )
+
+    handler = _func_node(tree, "stripe_refund_webhook")
+    # Handler must depend on the verifier (Depends(verify_stripe_signature)).
+    has_dep = any(
+        isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "Depends"
+        and any(isinstance(a, ast.Name) and a.id == "verify_stripe_signature" for a in node.args)
+        for node in ast.walk(handler)
+    )
+    assert has_dep, (
+        "stripe_refund_webhook must inject verify_stripe_signature via Depends "
+        "so an unsigned request is rejected before the handler runs"
+    )
+
+
+def test_r8_j2_3_concurrent_refund_serialised_by_row_lock() -> None:
+    """R8-J2-3: the cumulative-cap check must hold a row lock (TOCTOU close).
+
+    Pre-fix, two concurrent refunds could each sum prior refunds and pass the
+    cap before either inserted its pending row, jointly exceeding the charge.
+    The fix takes ``SELECT ... FOR UPDATE`` on the Payment row before
+    summing/validating/inserting, so concurrent refunds serialise on PG (no-op
+    under SQLite's global write lock). We assert the lock path is present and
+    runs inside ``request_refund`` before the amount validation.
+    """
+    tree = _refund_route_tree("refund_r8_j2_3_lock")
+    route_content = ast.unparse(tree)
+    assert "with_for_update" in route_content, (
+        "refunds.py must SELECT ... FOR UPDATE the Payment row to serialise "
+        "concurrent refunds (R8-J2-3 TOCTOU)"
+    )
+
+    lock_fn = _func_node(tree, "_lock_payment_for_update")
+    lock_src = ast.unparse(lock_fn)
+    assert "with_for_update" in lock_src, (
+        "_lock_payment_for_update must issue a with_for_update() SELECT"
+    )
+
+    # request_refund must take the lock BEFORE validating the amount.
+    rr_src = ast.unparse(_func_node(tree, "request_refund"))
+    assert "_lock_payment_for_update" in rr_src, (
+        "request_refund must acquire the Payment row lock before validating"
+    )
+    lock_at = rr_src.index("_lock_payment_for_update")
+    validate_at = rr_src.index("_validate_refund_amount")
+    assert lock_at < validate_at, (
+        "the row lock must be taken BEFORE _validate_refund_amount sums refunds"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
@@ -618,6 +695,8 @@ if __name__ == "__main__":
         test_r5_o3_f4_request_refund_passes_current_user,
         test_r5_o3_f4_list_refunds_enforces_ownership,
         test_r8_j2_3_refund_amount_capped_to_charge,
+        test_r8_136_webhook_rejects_bad_signature,
+        test_r8_j2_3_concurrent_refund_serialised_by_row_lock,
     ]
 
     passed = failed = 0

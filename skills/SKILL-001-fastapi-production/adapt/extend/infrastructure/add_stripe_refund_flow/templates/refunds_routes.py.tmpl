@@ -14,8 +14,9 @@ Endpoints:
         List refunds for a payment the caller OWNS.  Requires authentication.
 
     POST /refunds/webhook/stripe
-        Stripe webhook receiver for refund events.
-        UNAUTHENTICATED — secured via Stripe-Signature header.
+        Stripe webhook receiver for refund events. Not user-authenticated —
+        secured by the ``Stripe-Signature`` HMAC, verified in the
+        ``verify_stripe_signature`` dependency before the handler runs.
 """
 from __future__ import annotations
 
@@ -23,7 +24,7 @@ import logging
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 
 from app.api.deps import CurrentUser
 from app.core.config import settings
@@ -112,6 +113,26 @@ def _resolve_payment_intent_from(payment: Any) -> str:
     return intent_id
 
 
+async def _lock_payment_for_update(session: Any, payment_id: uuid.UUID) -> None:
+    """Take a row lock on the Payment so concurrent refunds serialise (R8-J2-3).
+
+    The cumulative-cap check in ``_validate_refund_amount`` has a TOCTOU race:
+    two concurrent refunds can both sum prior refunds + pass the cap before
+    either inserts its own ``pending`` row, jointly exceeding the charge. We
+    close it by ``SELECT ... FOR UPDATE`` on the Payment row BEFORE summing +
+    validating + inserting, so the second transaction blocks on PostgreSQL
+    until the first commits and then re-reads the now-current total. Under
+    SQLite the global write lock already serialises writers, so the lock is a
+    harmless no-op. Payment model imported lazily (optional Checkout dep).
+    """
+    from sqlalchemy import select  # lazy: keeps route importable sans ORM dep
+
+    from app.models.payment import Payment  # lazy: optional Checkout dep
+
+    stmt = select(Payment).where(Payment.id == payment_id).with_for_update()
+    await session.execute(stmt)
+
+
 async def _validate_refund_amount(
     session: Any, payment: Any, amount_cents: int
 ) -> None:
@@ -121,7 +142,9 @@ async def _validate_refund_amount(
     and rejects with 409 when ``amount_cents + already_refunded`` exceeds the
     payment's ``amount_cents``. This — not the per-row Stripe idempotency key —
     is the primary guard against double / over-refunding; the idempotency key is
-    only a backstop against exact-duplicate API retries.
+    only a backstop against exact-duplicate API retries. Caller MUST hold the
+    Payment row lock (``_lock_payment_for_update``) so concurrent refunds
+    serialise and cannot jointly exceed the charge (TOCTOU close).
     """
     from app.crud.refund import sum_non_failed_refunds_for_payment  # lazy
 
@@ -224,6 +247,8 @@ async def request_refund(
             detail="refund amount exceeds maximum",
         )
     payment = await _load_owned_payment(session, body.payment_id, current_user)
+    # Row-lock the Payment so concurrent refunds serialise (R8-J2-3 TOCTOU).
+    await _lock_payment_for_update(session, body.payment_id)
     await _validate_refund_amount(session, payment, body.amount_cents)
     payment_intent_id = _resolve_payment_intent_from(payment)
     refund = await create_pending_refund(
@@ -316,12 +341,16 @@ async def _handle_refund_event(
             )
 
 
-@router.post("/webhook/stripe")
-async def stripe_refund_webhook(
-    request: Request,
-    session: SessionDep,
-) -> dict[str, bool]:
-    """Receive and verify a Stripe refund webhook, then dispatch the event."""
+async def verify_stripe_signature(request: Request) -> dict[str, Any]:
+    """Auth dependency for the webhook: verify the ``Stripe-Signature`` header.
+
+    Webhook auth is the signature, NOT a logged-in user. The raw body is
+    HMAC-verified against ``STRIPE_REFUND_WEBHOOK_SECRET`` via
+    ``stripe.Webhook.construct_event`` (HMAC-SHA256 + 5-minute replay window)
+    BEFORE any DB write; an invalid/absent signature raises 400 so the handler
+    never runs on unauthenticated input. Returned as a ``Depends`` so the
+    B0.11 admin-route auth rule recognises the route as guarded.
+    """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature", "")
     import stripe  # lazy import — keeps app.main importable without stripe
@@ -329,7 +358,7 @@ async def stripe_refund_webhook(
     stripe.api_key = settings.STRIPE_SECRET_KEY
     stripe.api_version = settings.STRIPE_API_VERSION
     try:
-        event = stripe.Webhook.construct_event(
+        return stripe.Webhook.construct_event(
             payload, sig_header, settings.STRIPE_REFUND_WEBHOOK_SECRET
         )
     except Exception as exc:  # noqa: BLE001
@@ -338,6 +367,19 @@ async def stripe_refund_webhook(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="invalid stripe signature",
         ) from exc
+
+
+@router.post("/webhook/stripe")
+async def stripe_refund_webhook(
+    session: SessionDep,
+    event: dict[str, Any] = Depends(verify_stripe_signature),
+) -> dict[str, bool]:
+    """Receive a signature-verified Stripe refund webhook, then dispatch it.
+
+    The ``Stripe-Signature`` HMAC check runs in ``verify_stripe_signature``
+    (an injected ``Depends``) before this body executes, so an invalid
+    signature returns 400 without ever touching the database.
+    """
     await _handle_refund_event(session, event)
     await session.commit()
     return {"received": True}
