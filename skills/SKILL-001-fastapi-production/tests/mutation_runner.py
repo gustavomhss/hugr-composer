@@ -82,53 +82,63 @@ def find_mutations(source: str) -> list[Mutation]:
             for i, op in enumerate(node.ops):
                 swap = _COMPARE_SWAPS.get(type(op))
                 if swap is not None:
-                    mutations.append(Mutation(
-                        line=node.lineno,
-                        col=node.col_offset,
-                        original=type(op).__name__,
-                        mutated=swap.__name__,
-                        kind=f"Compare[{i}]",
-                    ))
+                    mutations.append(
+                        Mutation(
+                            line=node.lineno,
+                            col=node.col_offset,
+                            original=type(op).__name__,
+                            mutated=swap.__name__,
+                            kind=f"Compare[{i}]",
+                        )
+                    )
         # Binary operators (+ - * //)
         elif isinstance(node, ast.BinOp):
             swap = _BINOP_SWAPS.get(type(node.op))
             if swap is not None:
-                mutations.append(Mutation(
-                    line=node.lineno,
-                    col=node.col_offset,
-                    original=type(node.op).__name__,
-                    mutated=swap.__name__,
-                    kind="BinOp",
-                ))
+                mutations.append(
+                    Mutation(
+                        line=node.lineno,
+                        col=node.col_offset,
+                        original=type(node.op).__name__,
+                        mutated=swap.__name__,
+                        kind="BinOp",
+                    )
+                )
         # Boolean operators (and or)
         elif isinstance(node, ast.BoolOp):
             swap = _BOOLOP_SWAPS.get(type(node.op))
             if swap is not None:
-                mutations.append(Mutation(
-                    line=node.lineno,
-                    col=node.col_offset,
-                    original=type(node.op).__name__,
-                    mutated=swap.__name__,
-                    kind="BoolOp",
-                ))
+                mutations.append(
+                    Mutation(
+                        line=node.lineno,
+                        col=node.col_offset,
+                        original=type(node.op).__name__,
+                        mutated=swap.__name__,
+                        kind="BoolOp",
+                    )
+                )
         # Boolean literals
         elif isinstance(node, ast.Constant) and isinstance(node.value, bool):
-            mutations.append(Mutation(
-                line=node.lineno,
-                col=node.col_offset,
-                original=str(node.value),
-                mutated=str(not node.value),
-                kind="BoolLiteral",
-            ))
+            mutations.append(
+                Mutation(
+                    line=node.lineno,
+                    col=node.col_offset,
+                    original=str(node.value),
+                    mutated=str(not node.value),
+                    kind="BoolLiteral",
+                )
+            )
         # `not` unary
         elif isinstance(node, ast.UnaryOp) and isinstance(node.op, ast.Not):
-            mutations.append(Mutation(
-                line=node.lineno,
-                col=node.col_offset,
-                original="not X",
-                mutated="X",
-                kind="UnaryNot",
-            ))
+            mutations.append(
+                Mutation(
+                    line=node.lineno,
+                    col=node.col_offset,
+                    original="not X",
+                    mutated="X",
+                    kind="UnaryNot",
+                )
+            )
 
     return mutations
 
@@ -141,7 +151,12 @@ class _Mutator(ast.NodeTransformer):
         self.applied = False
 
     def visit_Compare(self, node: ast.Compare) -> ast.AST:
-        if not self.applied and node.lineno == self.target.line and self.target.kind.startswith("Compare"):
+        if (
+            not self.applied
+            and node.lineno == self.target.line
+            and node.col_offset == self.target.col
+            and self.target.kind.startswith("Compare")
+        ):
             idx = int(self.target.kind.split("[")[1].rstrip("]"))
             if idx < len(node.ops):
                 swap = _COMPARE_SWAPS.get(type(node.ops[idx]))
@@ -151,7 +166,12 @@ class _Mutator(ast.NodeTransformer):
         return self.generic_visit(node)
 
     def visit_BinOp(self, node: ast.BinOp) -> ast.AST:
-        if not self.applied and node.lineno == self.target.line and self.target.kind == "BinOp":
+        if (
+            not self.applied
+            and node.lineno == self.target.line
+            and node.col_offset == self.target.col
+            and self.target.kind == "BinOp"
+        ):
             swap = _BINOP_SWAPS.get(type(node.op))
             if swap is not None and type(node.op).__name__ == self.target.original:
                 node.op = swap()
@@ -159,7 +179,12 @@ class _Mutator(ast.NodeTransformer):
         return self.generic_visit(node)
 
     def visit_BoolOp(self, node: ast.BoolOp) -> ast.AST:
-        if not self.applied and node.lineno == self.target.line and self.target.kind == "BoolOp":
+        if (
+            not self.applied
+            and node.lineno == self.target.line
+            and node.col_offset == self.target.col
+            and self.target.kind == "BoolOp"
+        ):
             swap = _BOOLOP_SWAPS.get(type(node.op))
             if swap is not None and type(node.op).__name__ == self.target.original:
                 node.op = swap()
@@ -167,20 +192,26 @@ class _Mutator(ast.NodeTransformer):
         return self.generic_visit(node)
 
     def visit_Constant(self, node: ast.Constant) -> ast.AST:
-        if (not self.applied
-                and node.lineno == self.target.line
-                and self.target.kind == "BoolLiteral"
-                and isinstance(node.value, bool)
-                and str(node.value) == self.target.original):
-            node.value = (self.target.mutated == "True")
+        if (
+            not self.applied
+            and node.lineno == self.target.line
+            and node.col_offset == self.target.col
+            and self.target.kind == "BoolLiteral"
+            and isinstance(node.value, bool)
+            and str(node.value) == self.target.original
+        ):
+            node.value = self.target.mutated == "True"
             self.applied = True
         return node
 
     def visit_UnaryOp(self, node: ast.UnaryOp) -> ast.AST:
-        if (not self.applied
-                and node.lineno == self.target.line
-                and self.target.kind == "UnaryNot"
-                and isinstance(node.op, ast.Not)):
+        if (
+            not self.applied
+            and node.lineno == self.target.line
+            and node.col_offset == self.target.col
+            and self.target.kind == "UnaryNot"
+            and isinstance(node.op, ast.Not)
+        ):
             self.applied = True
             return self.generic_visit(node.operand)
         return self.generic_visit(node)
@@ -206,8 +237,18 @@ def run_tests(test_file: str, target_file: str) -> bool:
     """
     try:
         r = subprocess.run(
-            [sys.executable, "-m", "pytest", test_file, "-x", "-q", "--no-header",
-             "--tb=no", "-p", "no:cacheprovider"],
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                test_file,
+                "-x",
+                "-q",
+                "--no-header",
+                "--tb=no",
+                "-p",
+                "no:cacheprovider",
+            ],
             cwd=str(Path(target_file).parents[3]),
             capture_output=True,
             text=True,
@@ -229,11 +270,11 @@ def run_mutation_test(target: str, tests: str, max_mutants: int | None = None) -
         mutations = mutations[:max_mutants]
 
     total = len(mutations)
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"MUTATION TESTING: {target}")
     print(f"Tests: {tests}")
     print(f"Mutations: {total}")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     # Baseline: tests must pass unchanged
     print("Baseline run...")
@@ -264,15 +305,24 @@ def run_mutation_test(target: str, tests: str, max_mutants: int | None = None) -
 
     target_path.write_text(source)  # final safety restore
 
+    if total == 0:
+        # No mutable operators in the target (e.g. a pure-template tool with
+        # no comparisons/arithmetic/booleans). Nothing to kill — N/A, not a
+        # failure.
+        print(f"\n{'=' * 70}")
+        print("RESULTS: no mutable operators found — N/A (nothing to mutate)")
+        print(f"{'=' * 70}\n")
+        return 0
+
     kill_rate = (killed / total * 100) if total else 0
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"RESULTS: killed={killed}/{total}  ({kill_rate:.1f}% kill rate)")
     print(f"         survived={survived}")
     if survivors:
-        print(f"\nSurvivors (tests cannot detect these mutations):")
+        print("\nSurvivors (tests cannot detect these mutations):")
         for s in survivors[:20]:
             print(f"  L{s.line} {s.kind}: {s.original} → {s.mutated}")
-    print(f"{'='*70}\n")
+    print(f"{'=' * 70}\n")
 
     # Exit 0 if kill rate >= 70% (target), else 1
     return 0 if kill_rate >= 70 else 1
