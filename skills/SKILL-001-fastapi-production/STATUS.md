@@ -1,7 +1,7 @@
 ---
 name: fastapi-production
 description: HuGR SKILL-001 — scaffolds AND customizes production-grade FastAPI backends. Rails-style 3-layer kit (skill + slice tools + primitives) invokable via MCP.
-version: 1.0.0-rc.1
+version: 1.0.0
 ---
 
 # SKILL-001 — FastAPI Production

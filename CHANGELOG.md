@@ -9,10 +9,10 @@ so a reader can tell — in one glance — whether to upgrade.
 
 ---
 
-## [1.0.0] — YYYY-MM-DD (template — fill in YYYY-MM-DD at freeze commit)
+## [1.0.0] — 2026-06-03
 
-> **This block is release-ready** except the `YYYY-MM-DD` placeholder
-> which Gustavo fills on the freeze day. Every count below is
+> **This block is release-ready.** Date set to the release-prep day
+> (2026-06-03); adjust if the tag lands on a different day. Every count below is
 > machine-verified (2026-04-21 audit) and `stable_hash` is the literal
 > hash at HEAD. Re-verify with `engine.inventory` + `jq -r .stable_hash
 > engine/index/catalog.json` before tagging.
@@ -44,12 +44,15 @@ tool / primitive renames going forward (CONTRACT §A10).
   discoverable, not promoted. Wave 1.5 deleted 3 (+3 quarantined
   copies) that the new motor+adapter pair replaced.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
-- **37/37 CONTRACT rules green.** (34 pre-freeze + §B4.6 VERSION
-  triplet sync + §B4.7 canonical counts sync + §B2.6 tier1 runtime
-  strings — all added as drift-guard rules during the pre-freeze
-  rigor audits.)
-- **Catalog `stable_hash`: `00cefc4cc477...`** (full 64-char value:
-  `00cefc4cc477618e737dbbddd375f8fb6cb0e3cecc3e63491685fa860c16f192`,
+- **47/47 CONTRACT items green.** (37 at freeze — incl. §B4.6 VERSION
+  triplet sync, §B4.7 canonical counts sync, §B2.6 tier1 runtime
+  strings — plus 10 hardening/drift-guard items added across the
+  Round 5–8 adversarial triage, notably the **B0.10–B0.16** security
+  & honesty family: no-dead-security, admin-route auth, no-module-state,
+  notes-match-behaviour, strict write schemas, init-inside-lifespan,
+  no-silent-broad-catch.)
+- **Catalog `stable_hash`: `03a8833f96fc...`** (full 64-char value:
+  `03a8833f96fc282950fccb633c5c6c7d2e98a97f6b9c2a3b6594b08f14a59c1e`,
   in `engine/index/catalog.json`) — consumers pin this for session
   reproducibility. Verify with `jq -r .stable_hash
   skills/SKILL-001-fastapi-production/engine/index/catalog.json`.

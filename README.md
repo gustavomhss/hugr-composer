@@ -17,7 +17,7 @@ scaffold (skill) + slice generators (tools) + reusable building blocks
 ## Current status
 
 ```
-Phase:      v1.0.0-rc.1 (golive frozen, awaiting ratification)
+Phase:      v1.0.0 (release-prep — awaiting ratification + tag)
 Skills:      1   (SKILL-001-fastapi-production)
 Tools:     217   (201 catalog + 7 tier-1 + 9 tree dispatchers)
 Primitives: 124  (production, 17-FastAPI + 1-Redis + 1-Stripe adapters, 10-tier gate)
