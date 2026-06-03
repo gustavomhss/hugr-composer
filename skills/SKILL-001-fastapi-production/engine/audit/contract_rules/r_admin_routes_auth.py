@@ -113,14 +113,16 @@ from ._common import SKILL_ROOT
 # (``*Adapter`` PascalCase); the two namespaces don't collide.
 #
 #   add_compliance_engine        → RESOLVED R8-J8-1 (superuser-gated, un-waived)
-#   add_outbox_pattern           → #131 (DLQ admin + stub data)
+#   add_outbox_pattern           → RESOLVED #131 (CurrentSuperuser-gated, un-waived)
 #   add_stripe_refund_flow       → #136 (webhook needs verify_stripe_signature dep)
 #   add_websocket_presence       → RESOLVED R8-J8-2 (CurrentUser-gated, un-waived)
 #   AuditLogAdapter              → #125 (auth + server-side actor + durable ledger)
 #   EventSourcedStoreAdapter     → #124 (auth + durable store)
-#   SagaAdapter                  → #137 (adapter auth-injection pattern, Phase A2)
+#   SagaAdapter                  → RESOLVED #137 (auth_dependency-injected, un-waived)
 # ---------------------------------------------------------------------------
-# Waived pending issue #131 — add_outbox_pattern (DLQ admin + real data)
+# RESOLVED (#131, R8-closeout) — add_outbox_pattern now superuser-gates both
+# admin surfaces: GET /outbox/metrics and GET /outbox/dlq each take
+# ``current_user: CurrentSuperuser``; un-waived so the rule enforces it.
 # Waived pending issue #136 — add_stripe_refund_flow (webhook needs signature verify dep)
 # RESOLVED (R5-S1-F1/F2) — AuditLogAdapter now superuser-gates every route and
 # records the actor from the authenticated principal; un-waived so the rule
@@ -134,12 +136,13 @@ from ._common import SKILL_ROOT
 # on both REST companion routes (GET /presence/online enumerated every online
 # user's UUID; GET /presence/{user_id} leaked any user's status/last_seen/device);
 # un-waived so the rule enforces auth on the presence polling surface.
-# Waived pending issue #137 — SagaAdapter (adapter auth-injection pattern)
+# RESOLVED (#137, R8-closeout) — SagaAdapter now takes a REQUIRED
+# ``auth_dependency`` on ``install(...)`` and applies ``Depends(auth_dependency)``
+# to every /admin/sagas route (start / step / status); un-waived so the rule
+# enforces it.
 _WAIVED_TOOLS: frozenset[str] = frozenset(
     {
-        "add_outbox_pattern",
         "add_stripe_refund_flow",
-        "SagaAdapter",
     }
 )
 

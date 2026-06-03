@@ -15,19 +15,18 @@ or without pytest::
 from __future__ import annotations
 
 import ast
+import json
 import sys
 from pathlib import Path
-
-import json
 
 from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_outbox_pattern import MCP_TOOL, add_outbox_pattern
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -45,6 +44,7 @@ def _assert_parse(root: Path) -> None:
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """T-01: Tool returns status='success' on a fresh project."""
@@ -108,8 +108,10 @@ def test_outbox_model_partial_index() -> None:
     add_outbox_pattern(ToolInput(project_dir=str(project_dir)))
     model_file = project_dir / "app" / "models" / "outbox.py"
     content = model_file.read_text()
-    assert "postgresql_where" in content or "partial" in content.lower() or (
-        "pending" in content and "Index" in content
+    assert (
+        "postgresql_where" in content
+        or "partial" in content.lower()
+        or ("pending" in content and "Index" in content)
     )
 
 
@@ -191,6 +193,11 @@ def test_admin_routes_created() -> None:
     content = admin_route.read_text()
     assert "/outbox/metrics" in content or "outbox_metrics" in content
     assert "/outbox/dlq" in content or "outbox_dlq" in content
+    # B0.11: both admin surfaces (metrics + DLQ) must be superuser-gated.
+    assert "CurrentSuperuser" in content, "outbox admin routes must require auth"
+    assert content.count("current_user: CurrentSuperuser") >= 2, (
+        "both /outbox/metrics and /outbox/dlq must carry CurrentSuperuser"
+    )
 
 
 def test_pydantic_schemas_created() -> None:
@@ -284,11 +291,19 @@ def test_next_steps_mention_alembic_and_arq() -> None:
 # CONTRACT §B1.0 + §B1.0.1 — primitive copy + thin glue
 # ---------------------------------------------------------------------------
 
+
 def test_primitive_copied() -> None:
     """CONTRACT §B1.0: the TransactionalOutbox primitive is copied into the project."""
     project_dir = create_fixture_project(name="obx_t24")
     add_outbox_pattern(ToolInput(project_dir=str(project_dir)))
-    p = project_dir / "core" / "venous" / "events" / "TransactionalOutbox" / "TransactionalOutbox.py"
+    p = (
+        project_dir
+        / "core"
+        / "venous"
+        / "events"
+        / "TransactionalOutbox"
+        / "TransactionalOutbox.py"
+    )
     assert p.exists(), f"primitive not copied: {p}"
     body = p.read_text()
     assert "InMemoryTransactionalOutbox" in body
@@ -383,7 +398,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-023 add_outbox_pattern: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)
