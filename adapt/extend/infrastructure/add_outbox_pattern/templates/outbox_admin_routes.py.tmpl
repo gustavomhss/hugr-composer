@@ -3,18 +3,28 @@
 Endpoints:
     GET /outbox/metrics  — counts by status
     GET /outbox/dlq      — dead-letter queue entries (paginated)
+
+Both routes are **superuser only** (B0.11): the metrics and dead-letter
+queue surfaces disclose internal delivery state and failed-message
+payloads, so they require an authenticated superuser via
+``CurrentSuperuser`` — never an anonymous caller.
 """
 
 from __future__ import annotations
 
 from fastapi import APIRouter, Query
 
+from app.api.deps import CurrentSuperuser
+
 router = APIRouter(prefix="/outbox", tags=["outbox"])
 
 
 @router.get("/metrics", response_model=dict)
-async def outbox_metrics() -> dict:
+async def outbox_metrics(current_user: CurrentSuperuser) -> dict:
     """Return counts of outbox events grouped by status.
+
+    Args:
+        current_user: Authenticated superuser inspecting outbox metrics.
 
     Returns:
         Dict mapping status strings to event counts.
@@ -33,12 +43,14 @@ async def outbox_metrics() -> dict:
 
 @router.get("/dlq", response_model=dict)
 async def outbox_dlq(
+    current_user: CurrentSuperuser,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=20, ge=1, le=100),
 ) -> dict:
     """List dead-letter queue entries (events that exhausted all retries).
 
     Args:
+        current_user: Authenticated superuser inspecting the DLQ.
         skip: Pagination offset.
         limit: Page size (1-100).
 
