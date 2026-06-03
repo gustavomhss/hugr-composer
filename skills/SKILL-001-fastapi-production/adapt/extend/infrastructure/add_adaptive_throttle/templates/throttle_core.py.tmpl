@@ -118,17 +118,23 @@ def client_ip(request: Request) -> str:
 def client_ip_is_bare(request: Request) -> bool:
     """True when the resolved client IP is a bare peer IP, not a real client.
 
-    The fingerprint falls back to ``request.client.host`` whenever no
-    trusted proxy is configured, or the peer is not a trusted proxy (so
-    X-Forwarded-For is ignored). Behind a CDN/LB the peer is the proxy's
-    single egress IP — identical for every downstream user — so a bare-peer
-    fingerprint is a SHARED bucket. The middleware uses this to fail OPEN:
-    per-request rate limiting may still apply, but penalty escalation and
-    bans must NOT fire on a shared bucket (a self-inflicted mass-ban DoS).
+    Two deployment modes, gated by ``ADAPTIVE_THROTTLE_BEHIND_PROXY``:
 
-    Returns True when ``ADAPTIVE_THROTTLE_TRUSTED_PROXIES`` is empty (no
-    proxy awareness) or the peer is not inside any trusted-proxy network.
+    * **Single-server (default, ``BEHIND_PROXY=False``)**: there is no proxy,
+      so ``request.client.host`` IS the real client. The peer is never a
+      shared bucket → always returns False so escalation/bans work normally.
+
+    * **Behind a proxy (``BEHIND_PROXY=True``)**: ``request.client.host`` is
+      the proxy's egress IP — identical for every downstream user — so the
+      real client must be resolved from X-Forwarded-For via a configured
+      trusted proxy. When ``ADAPTIVE_THROTTLE_TRUSTED_PROXIES`` is empty or
+      the peer is not inside any trusted-proxy network, the fingerprint pins
+      to that shared egress IP. This returns True so the middleware fails
+      OPEN — per-request limiting may still apply, but penalty escalation and
+      bans must NOT fire on a shared bucket (a self-inflicted mass-ban DoS).
     """
+    if not settings.ADAPTIVE_THROTTLE_BEHIND_PROXY:
+        return False
     nets = _trusted_proxy_networks()
     if not nets:
         return True

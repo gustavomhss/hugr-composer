@@ -439,12 +439,11 @@ def test_register_throttle_positioned_after_fastapi() -> None:
     )
 
 
-def test_config_has_six_fields() -> None:
-    """T-24: config.py must have exactly 6 ADAPTIVE_THROTTLE_* fields.
+def test_config_has_seven_fields() -> None:
+    """T-24: config.py must have exactly 7 ADAPTIVE_THROTTLE_* fields.
 
-    The 6th field (TRUSTED_PROXIES) was added in R7-N3 to make the throttle
-    fingerprint proxy-aware (resolve real client IP from X-Forwarded-For only
-    via trusted proxies).
+    TRUSTED_PROXIES (R7-N3) made the fingerprint proxy-aware; BEHIND_PROXY
+    (R8-closeout) selects single-server vs. behind-proxy fail-open semantics.
     """
     project_dir = create_fixture_project(name="at_t24")
     add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
@@ -456,6 +455,7 @@ def test_config_has_six_fields() -> None:
         "ADAPTIVE_THROTTLE_BASE_QUOTA",
         "ADAPTIVE_THROTTLE_PENALTY_ESCALATION",
         "ADAPTIVE_THROTTLE_TRUSTED_PROXIES",
+        "ADAPTIVE_THROTTLE_BEHIND_PROXY",
     ]
     for field in expected:
         assert field in content, f"Config field {field} missing"
@@ -464,9 +464,33 @@ def test_config_has_six_fields() -> None:
         for line in content.splitlines()
         if any(f in line for f in expected) and ":" in line and "=" in line
     }
-    assert len(distinct) == 6, (
-        f"Expected 6 ADAPTIVE_THROTTLE_* field lines, got {len(distinct)}: {distinct}"
+    assert len(distinct) == 7, (
+        f"Expected 7 ADAPTIVE_THROTTLE_* field lines, got {len(distinct)}: {distinct}"
     )
+
+
+def test_behind_proxy_defaults_to_false() -> None:
+    """R8-closeout: BEHIND_PROXY must default to False so single-server deploys
+    throttle on the peer IP instead of failing open (the #161 regression).
+
+    Also asserts client_ip_is_bare short-circuits on the flag: in single-server
+    mode it returns False before any trusted-proxy logic runs.
+    """
+    project_dir = create_fixture_project(name="at_behind_proxy")
+    add_adaptive_throttle(ToolInput(project_dir=str(project_dir)))
+    config = (project_dir / "app" / "core" / "config.py").read_text()
+    tree = ast.parse(config)
+    found = any(
+        isinstance(node, ast.AnnAssign)
+        and isinstance(node.target, ast.Name)
+        and node.target.id == "ADAPTIVE_THROTTLE_BEHIND_PROXY"
+        and isinstance(node.value, ast.Constant)
+        and node.value.value is False
+        for node in ast.walk(tree)
+    )
+    assert found, "ADAPTIVE_THROTTLE_BEHIND_PROXY must default to False"
+    core = (project_dir / "app" / "core" / "adaptive_throttle.py").read_text()
+    assert "ADAPTIVE_THROTTLE_BEHIND_PROXY" in core, "core must read BEHIND_PROXY flag"
 
 
 def test_fingerprint_is_proxy_aware() -> None:
@@ -602,7 +626,8 @@ if __name__ == "__main__":
         test_escalation_caps_at_tier_4,
         test_escalation_on_quota_not_only_downstream_429,
         test_register_throttle_positioned_after_fastapi,
-        test_config_has_six_fields,
+        test_config_has_seven_fields,
+        test_behind_proxy_defaults_to_false,
         test_fingerprint_is_proxy_aware,
         test_enabled_defaults_to_false,
         test_fail_open_guard_for_bare_peer,
