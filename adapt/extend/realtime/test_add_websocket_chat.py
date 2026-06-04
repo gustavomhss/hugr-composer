@@ -16,16 +16,33 @@ from __future__ import annotations
 
 import ast
 import sys
+import tempfile
 from pathlib import Path
 
 from adapt.contracts import ToolInput
-from adapt.extend.realtime.add_websocket_chat import add_websocket_chat
+from adapt.extend.realtime.add_websocket_chat import (
+    _patch_config,
+    _patch_main,
+    _patch_routes_init,
+    add_websocket_chat,
+)
 from tests.common.fixture_factory import create_fixture_project
+
+
+def _bare_project() -> Path:
+    """A valid (existing) dir MISSING config/requirements prereqs.
+
+    Exercises the auto-scaffold and prerequisite-error code paths.
+    """
+    d = Path(tempfile.mkdtemp()) / "bare"
+    d.mkdir()
+    return d
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _all_py_files(root: Path) -> list[Path]:
     return sorted(root.rglob("*.py"))
@@ -52,16 +69,20 @@ def _max_function_loc(root: Path, subdir: str = "app") -> int:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if hasattr(node, "end_lineno") and node.end_lineno:
-                    loc = node.end_lineno - node.lineno + 1
-                    max_loc = max(max_loc, loc)
+            if (
+                isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+                and hasattr(node, "end_lineno")
+                and node.end_lineno
+            ):
+                loc = node.end_lineno - node.lineno + 1
+                max_loc = max(max_loc, loc)
     return max_loc
 
 
 # ---------------------------------------------------------------------------
 # Category A — Tool execution
 # ---------------------------------------------------------------------------
+
 
 def test_success_status() -> None:
     """Tool returns status='success' on a fresh project."""
@@ -120,6 +141,7 @@ def test_files_modified_count() -> None:
 # ---------------------------------------------------------------------------
 # Category B — Generated code quality
 # ---------------------------------------------------------------------------
+
 
 def test_all_py_parse() -> None:
     """Every generated .py file AST-parses clean."""
@@ -181,6 +203,7 @@ def test_routes_registered() -> None:
 # ---------------------------------------------------------------------------
 # Category C — Domain-specific
 # ---------------------------------------------------------------------------
+
 
 def test_ws_chat_endpoint_file_created() -> None:
     """app/ws/chat.py exists with WebSocketManager references."""
@@ -296,6 +319,384 @@ def test_idempotent_project_still_parses() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Category D — Mutation hardening
+# ---------------------------------------------------------------------------
+
+
+def test_execution_time_within_sane_bound() -> None:
+    """execution_time_ms is a small positive number, not a monotonic blow-up.
+
+    Guards ``_ms`` against a ``monotonic() - start`` -> ``+`` mutation, which
+    would still be > 0 but absurdly large.
+    """
+    project_dir = create_fixture_project(name="wsc_m01")
+    ms = add_websocket_chat(ToolInput(project_dir=str(project_dir))).execution_time_ms
+    assert 0 < ms < 60_000, f"implausible execution_time_ms={ms}"
+
+
+def test_auto_scaffolds_missing_prereqs() -> None:
+    """A bare project (no config/requirements) is auto-scaffolded on a real run.
+
+    Guards ``auto_scaffold=not inp.dry_run`` (L75 UnaryNot: drop the ``not`` ->
+    no scaffold -> error) and ``files_created = list(scaffolded or [])`` (L85
+    BoolOp Or->And: scaffolded files silently dropped from the report).
+    """
+    p = _bare_project()
+    r = add_websocket_chat(ToolInput(project_dir=str(p)))
+    assert r.status == "success", r.error
+    created = set(r.files_created)
+    # scaffolded config.py must be reported (guards L85 ``scaffolded or []``).
+    assert any(c.endswith("config.py") for c in created), created
+    # physically scaffolded (without auto_scaffold these never exist).
+    assert (p / "app" / "core" / "config.py").exists()
+    assert (p / "requirements.txt").exists()
+
+
+def test_missing_prereqs_dry_run_reports_error() -> None:
+    """dry_run on a bare project: auto_scaffold OFF, so prereqs are missing.
+
+    Guards the error-message ``+`` concat path (a ``+`` -> ``-`` mutation would
+    raise ``TypeError`` instead of returning the error result).
+    """
+    p = _bare_project()
+    r = add_websocket_chat(ToolInput(project_dir=str(p), dry_run=True))
+    assert r.status == "error"
+    assert "Prerequisites not met" in (r.error or "")
+
+
+def test_ws_init_created_and_reported() -> None:
+    """app/ws/__init__.py is written on a fresh run and reported.
+
+    Guards L140 ``if not ws_init.exists()`` UnaryNot: flipping ``not`` would
+    skip creation, leaving the WS sub-package without an __init__.
+    """
+    project_dir = create_fixture_project(name="wsc_m02")
+    r = add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    ws_init = project_dir / "app" / "ws" / "__init__.py"
+    assert ws_init.exists(), "app/ws/__init__.py not created"
+    assert str(ws_init) in r.files_created, "ws/__init__.py not reported in files_created"
+
+
+def test_redis_module_created_and_reported() -> None:
+    """app/core/redis.py is written on a fresh run and reported.
+
+    Guards L190 ``if not redis_module.exists()`` UnaryNot: flipping ``not``
+    would skip creating the redis module.
+    """
+    project_dir = create_fixture_project(name="wsc_m03")
+    r = add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    redis_module = project_dir / "app" / "core" / "redis.py"
+    assert redis_module.exists(), "app/core/redis.py not created"
+    assert str(redis_module) in r.files_created, "redis.py not reported in files_created"
+
+
+def test_emitted_project_test_created_and_reported() -> None:
+    """tests/test_add_websocket_chat_emitted.py is written and reported.
+
+    Guards L243 ``if not emitted.exists()`` UnaryNot: flipping ``not`` would
+    skip emitting the project test.
+    """
+    project_dir = create_fixture_project(name="wsc_m04")
+    r = add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    emitted = project_dir / "tests" / "test_add_websocket_chat_emitted.py"
+    assert emitted.exists(), "emitted project test not created"
+    assert str(emitted) in r.files_created, "emitted test not reported in files_created"
+
+
+def test_migration_down_revision_is_real_head() -> None:
+    """The migration's down_revision is the real Alembic head, not a fallback.
+
+    Guards L158 ``find_migration_head(...) or "0001_initial"`` BoolOp Or->And:
+    ``and`` would yield the literal "0001_initial" (head is truthy), pointing
+    the new migration at the wrong parent.
+    """
+    project_dir = create_fixture_project(name="wsc_m05")
+    add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    mig = project_dir / "alembic" / "versions" / "0017_add_websocket_chat.py"
+    content = mig.read_text()
+    assert 'down_revision = "0002_baseline_schema"' in content, (
+        f"down_revision not pinned to real head:\n{content}"
+    )
+
+
+def test_config_block_inserted_after_anchor() -> None:
+    """The WEBSOCKET_CHAT block lands right after the ACCESS_TOKEN anchor.
+
+    Guards L272 ``if anchor in src`` Compare In->NotIn: NotIn skips the
+    anchor-replacement branch, so the block would instead be dumped before
+    ``settings = Settings()`` far from the anchor.
+    """
+    project_dir = create_fixture_project(name="wsc_m06")
+    add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "config.py").read_text()
+    anchor = "ACCESS_TOKEN_EXPIRE_MINUTES: int = 30"
+    field = "WEBSOCKET_CHAT_MAX_CONNECTIONS_PER_USER"
+    a_idx = content.find(anchor)
+    f_idx = content.find(field)
+    assert a_idx != -1 and f_idx != -1
+    # Block must follow the anchor closely (it is inserted right after it).
+    assert 0 < (f_idx - a_idx) < 200, (
+        f"WEBSOCKET block not adjacent to anchor (anchor={a_idx}, field={f_idx})"
+    )
+
+
+def test_config_block_uses_settings_fallback_branch() -> None:
+    """With the anchor absent, the block is placed BEFORE ``settings = Settings()``.
+
+    Guards L274 ``elif "settings = Settings()" in src`` Compare In->NotIn:
+    NotIn skips that branch, dumping the block at end-of-file (after
+    ``settings = Settings()``) instead.
+    """
+    project_dir = create_fixture_project(name="wsc_m07")
+    config_file = project_dir / "app" / "core" / "config.py"
+    # Remove the primary anchor so _patch_config takes the elif branch.
+    config_file.write_text(
+        config_file.read_text().replace(
+            "ACCESS_TOKEN_EXPIRE_MINUTES: int = 30",
+            "ACCESS_TOKEN_EXPIRE_MINUTES: int = 99",
+        )
+    )
+    r = add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    assert r.status == "success", r.error
+    content = config_file.read_text()
+    f_idx = content.find("WEBSOCKET_CHAT_MAX_CONNECTIONS_PER_USER")
+    s_idx = content.find("settings = Settings()")
+    assert f_idx != -1 and s_idx != -1
+    assert f_idx < s_idx, "WEBSOCKET block must precede settings = Settings()"
+
+
+def test_routes_import_ordered_after_last_app_import() -> None:
+    """Chat router import lands after the last ``from app.`` import, before APIRouter().
+
+    Guards L288 ``if last_app == -1`` Eq->NotEq (would recompute the anchor and
+    insert after APIRouter()) and L290 ``last_app + 1`` BinOp Add->Sub (would
+    insert before the last existing import).
+    """
+    project_dir = create_fixture_project(name="wsc_m08")
+    add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    src = (project_dir / "app" / "routes" / "__init__.py").read_text()
+    chat_imp = src.find("from app.api.routes.chat import router as chat_router")
+    health_imp = src.find("from app.routes.health import router as health_router")
+    apirouter = src.find("api_router = APIRouter()")
+    assert chat_imp != -1, "chat router import not added"
+    assert chat_imp > health_imp, "chat import must follow the last from-app import (L290)"
+    assert chat_imp < apirouter, "chat import must precede APIRouter() (L288)"
+
+
+def test_routes_include_ordered_after_last_include() -> None:
+    """Chat include lands after the last existing ``api_router.include_router``.
+
+    Guards L294 ``if last_inc == -1`` Eq->NotEq (would insert right after
+    APIRouter(), before the other includes) and L296 ``last_inc + 1`` BinOp
+    Add->Sub (would insert before the last existing include).
+    """
+    project_dir = create_fixture_project(name="wsc_m09")
+    add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    src = (project_dir / "app" / "routes" / "__init__.py").read_text()
+    chat_inc = src.find("api_router.include_router(chat_router)")
+    item_inc = src.find("api_router.include_router(item_router)")
+    assert chat_inc != -1, "chat include not added"
+    assert item_inc != -1
+    assert chat_inc > item_inc, "chat include must follow the last existing include (L294/L296)"
+
+
+def test_main_mounts_ws_chat_router() -> None:
+    """app/main.py imports and mounts the WS chat router, and is reported modified.
+
+    Guards L185 ``main_file.exists() and _patch_main(...)`` BoolOp And->Or
+    (``or`` short-circuits before patching), L302 ``if "...ws_chat_router" in
+    src`` In->NotIn (early bail), L306 ``last_from_app == -1`` Eq->NotEq, L312
+    ``inc == -1`` Eq->NotEq, and L316 ``return True`` BoolLiteral (False would
+    drop main.py from files_modified).
+    """
+    project_dir = create_fixture_project(name="wsc_m10")
+    r = add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    main_file = project_dir / "app" / "main.py"
+    content = main_file.read_text()
+    # _patch_main must actually run and rewrite the file (L185/L302/L306/L312).
+    assert "from app.ws.chat import router as ws_chat_router" in content, (
+        "ws chat router import missing from main.py"
+    )
+    assert "app.include_router(ws_chat_router)" in content, "ws_chat_router not mounted in main.py"
+    # _patch_main must return True so main.py is reported modified (L316).
+    assert str(main_file) in r.files_modified, "main.py not reported in files_modified"
+
+
+# ---------------------------------------------------------------------------
+# Category E — Mutation hardening (helper-level + requirements dedup)
+# ---------------------------------------------------------------------------
+
+
+def test_redis_requirement_not_duplicated_when_present() -> None:
+    """``redis`` already in requirements.txt must NOT be appended again.
+
+    Guards L198 ``if "redis" not in src`` Compare NotIn->In: flipping ``not in``
+    to ``in`` re-appends ``redis[hiredis]`` whenever redis is already declared,
+    yielding a duplicate dependency line.
+    """
+    project_dir = create_fixture_project(name="wsc_m11")
+    req = project_dir / "requirements.txt"
+    # Normalise to a single, known redis line so the dedup assertion is exact.
+    lines = [ln for ln in req.read_text().splitlines() if "redis" not in ln]
+    lines.append("redis[hiredis]>=5.2.0")
+    req.write_text("\n".join(lines) + "\n")
+    before = req.read_text()
+    redis_lines_before = [ln for ln in before.splitlines() if "redis" in ln]
+    assert len(redis_lines_before) == 1, "test setup must leave exactly one redis line"
+    r = add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    assert r.status == "success", r.error
+    after = req.read_text()
+    assert after == before, f"redis requirement was modified despite already present:\n{after}"
+    redis_lines_after = [ln for ln in after.splitlines() if "redis" in ln]
+    assert len(redis_lines_after) == 1, f"redis dependency duplicated:\n{after}"
+
+
+def test_redis_requirement_added_when_absent() -> None:
+    """``redis`` absent from requirements.txt must be appended exactly once.
+
+    Complements the dedup test: confirms the NotIn branch still fires (the add
+    path) so the Compare guard is asserted in both directions.
+    """
+    project_dir = create_fixture_project(name="wsc_m12")
+    req = project_dir / "requirements.txt"
+    req.write_text("fastapi\nuvicorn\n")  # no redis at all
+    add_websocket_chat(ToolInput(project_dir=str(project_dir)))
+    after = req.read_text()
+    redis_lines = [ln for ln in after.splitlines() if "redis[hiredis]" in ln]
+    assert len(redis_lines) == 1, f"redis dependency not added exactly once:\n{after}"
+
+
+def test_patch_main_bails_when_import_already_present() -> None:
+    """``_patch_main`` returns False (no change) if the WS import is already there.
+
+    Guards L303 ``return False`` BoolLiteral False->True: True would report a
+    spurious modification (and re-insert) even though the file is untouched.
+    """
+    d = Path(tempfile.mkdtemp())
+    mf = d / "main.py"
+    original = (
+        "from app.ws.chat import router as ws_chat_router\n"
+        "app = FastAPI()\n"
+        "app.include_router(ws_chat_router)\n"
+    )
+    mf.write_text(original)
+    assert _patch_main(mf) is False, "already-wired main.py must report no change"
+    assert mf.read_text() == original, "already-wired main.py must be left untouched"
+
+
+def test_patch_main_bails_when_no_from_app_import() -> None:
+    """``_patch_main`` returns False when there is no ``from app.`` anchor import.
+
+    Guards L307 ``return False`` BoolLiteral False->True (True would claim a
+    modification that never happened) and the file must remain byte-identical.
+    """
+    d = Path(tempfile.mkdtemp())
+    mf = d / "main.py"
+    original = "import os\napp = FastAPI()\n"
+    mf.write_text(original)
+    assert _patch_main(mf) is False, "main.py without a from-app import must report no change"
+    assert mf.read_text() == original, "file must be untouched when no from-app anchor exists"
+
+
+def test_patch_main_bails_when_no_mount_anchor() -> None:
+    """``_patch_main`` returns False when neither include_router nor FastAPI() exists.
+
+    Guards L313 ``return False`` BoolLiteral False->True. There is a ``from app.``
+    line (so it gets past L307 and inserts the import) but no place to mount, so
+    the function must back out with False.
+    """
+    d = Path(tempfile.mkdtemp())
+    mf = d / "main.py"
+    mf.write_text("from app.core.config import settings\nx = 1\n")
+    assert _patch_main(mf) is False, "main.py without a mount anchor must report no change"
+
+
+def test_patch_main_import_before_app_and_include_after() -> None:
+    """Normal patch: import lands AFTER the last from-app, include AFTER FastAPI/mount.
+
+    Guards L308 ``last_from_app + 1`` BinOp Add->Sub (Sub inserts the import
+    before the last existing from-app import) and L314 ``inc + 1`` BinOp Add->Sub
+    (Sub mounts the router before the anchor line). Also guards L309/L311
+    In->NotIn for the mount-anchor search.
+    """
+    d = Path(tempfile.mkdtemp())
+    mf = d / "main.py"
+    mf.write_text(
+        "from app.a import b\n"
+        "from app.c import dd\n"
+        "app = FastAPI()\n"
+        "app.include_router(health_router)\n"
+    )
+    assert _patch_main(mf) is True
+    lines = mf.read_text().splitlines()
+    last_from_app = max(i for i, ln in enumerate(lines) if ln == "from app.c import dd")
+    import_idx = next(i for i, ln in enumerate(lines) if "ws_chat_router" in ln and "import" in ln)
+    include_idx = next(i for i, ln in enumerate(lines) if "include_router(ws_chat_router)" in ln)
+    health_idx = next(i for i, ln in enumerate(lines) if "include_router(health_router)" in ln)
+    # L308: import must come AFTER the last from-app import (Sub would put it before).
+    assert import_idx == last_from_app + 1, f"import not right after last from-app: {lines}"
+    # L314 / L309: the WS include must follow the existing health include.
+    assert include_idx > health_idx, f"ws include must come after existing includes: {lines}"
+
+
+def test_patch_main_uses_fastapi_anchor_when_no_include() -> None:
+    """When no include_router exists, the mount falls back to the ``= FastAPI(`` line.
+
+    Guards L311 ``"= FastAPI(" in ln`` Compare In->NotIn: NotIn would match the
+    wrong (non-FastAPI) lines and mount in the wrong place / fail.
+    """
+    d = Path(tempfile.mkdtemp())
+    mf = d / "main.py"
+    mf.write_text('from app.x import y\napp = FastAPI(title="t")\nother = 1\n')
+    assert _patch_main(mf) is True
+    lines = mf.read_text().splitlines()
+    fastapi_idx = next(i for i, ln in enumerate(lines) if "= FastAPI(" in ln)
+    include_idx = next(i for i, ln in enumerate(lines) if "include_router(ws_chat_router)" in ln)
+    assert include_idx == fastapi_idx + 1, f"include not mounted right after FastAPI(): {lines}"
+
+
+def test_patch_routes_fallback_inserts_after_apirouter() -> None:
+    """With no ``from app.`` imports, both lines land after ``api_router = APIRouter()``.
+
+    Guards L289 ``"APIRouter()" in ln`` and L295 ``"APIRouter()" in ln`` Compare
+    In->NotIn in the fallback anchor search: NotIn would match the wrong line and
+    insert the import/include before ``APIRouter()`` (or in the wrong spot).
+    """
+    d = Path(tempfile.mkdtemp())
+    ri = d / "__init__.py"
+    ri.write_text("from fastapi import APIRouter\napi_router = APIRouter()\n")
+    _patch_routes_init(
+        ri,
+        "from app.api.routes.chat import router as chat_router",
+        "api_router.include_router(chat_router)",
+    )
+    lines = ri.read_text().splitlines()
+    apirouter_idx = next(i for i, ln in enumerate(lines) if "api_router = APIRouter()" in ln)
+    import_idx = next(i for i, ln in enumerate(lines) if "import router as chat_router" in ln)
+    include_idx = next(i for i, ln in enumerate(lines) if "include_router(chat_router)" in ln)
+    assert import_idx > apirouter_idx, f"import must follow APIRouter() in fallback: {lines}"
+    assert include_idx > apirouter_idx, f"include must follow APIRouter() in fallback: {lines}"
+
+
+def test_patch_config_fallback_appends_block_at_end() -> None:
+    """No anchor and no ``settings = Settings()``: block is appended at end-of-file.
+
+    Guards L279 ``src.rstrip("\\n") + "\\n" + block`` BinOp Add->Sub: a ``-``
+    mutation makes ``str - str`` raise TypeError instead of appending the block.
+    """
+    d = Path(tempfile.mkdtemp())
+    cf = d / "config.py"
+    cf.write_text("class Settings:\n    X: int = 1\n")
+    _patch_config(cf, 5, 4000, 30)
+    out = cf.read_text()
+    assert "WEBSOCKET_CHAT_MAX_CONNECTIONS_PER_USER: int = 5" in out, out
+    assert "WEBSOCKET_CHAT_MESSAGE_MAX_LENGTH: int = 4000" in out, out
+    assert "WEBSOCKET_CHAT_RATE_LIMIT_PER_MINUTE: int = 30" in out, out
+    # the original class body must still precede the appended block (end-of-file).
+    assert out.index("class Settings") < out.index("WEBSOCKET_CHAT_MAX_CONNECTIONS_PER_USER"), out
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -322,6 +723,27 @@ if __name__ == "__main__":
         test_execution_time_recorded,
         test_next_steps_present,
         test_idempotent_project_still_parses,
+        test_execution_time_within_sane_bound,
+        test_auto_scaffolds_missing_prereqs,
+        test_missing_prereqs_dry_run_reports_error,
+        test_ws_init_created_and_reported,
+        test_redis_module_created_and_reported,
+        test_emitted_project_test_created_and_reported,
+        test_migration_down_revision_is_real_head,
+        test_config_block_inserted_after_anchor,
+        test_config_block_uses_settings_fallback_branch,
+        test_routes_import_ordered_after_last_app_import,
+        test_routes_include_ordered_after_last_include,
+        test_main_mounts_ws_chat_router,
+        test_redis_requirement_not_duplicated_when_present,
+        test_redis_requirement_added_when_absent,
+        test_patch_main_bails_when_import_already_present,
+        test_patch_main_bails_when_no_from_app_import,
+        test_patch_main_bails_when_no_mount_anchor,
+        test_patch_main_import_before_app_and_include_after,
+        test_patch_main_uses_fastapi_anchor_when_no_include,
+        test_patch_routes_fallback_inserts_after_apirouter,
+        test_patch_config_fallback_appends_block_at_end,
     ]
 
     passed = failed = 0
@@ -334,7 +756,7 @@ if __name__ == "__main__":
             print(f"  FAIL  {test_fn.__name__}: {exc}")
             failed += 1
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"TOOL-017 add_websocket_chat: {passed} passed, {failed} failed")
     if failed:
         sys.exit(1)

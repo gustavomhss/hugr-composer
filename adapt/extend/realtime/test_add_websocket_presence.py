@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import ast
 import sys
+import tempfile
 from pathlib import Path
 
 from adapt.contracts import ToolInput
@@ -38,6 +39,16 @@ def _assert_parse(root: Path) -> None:
             ast.parse(source)
         except SyntaxError as exc:
             raise AssertionError(f"SyntaxError in {f}: {exc}") from exc
+
+
+def _bare_project() -> Path:
+    """A valid (existing) dir MISSING config/requirements prereqs.
+
+    Exercises the auto-scaffold and prerequisite-error code paths.
+    """
+    d = Path(tempfile.mkdtemp()) / "bare"
+    d.mkdir()
+    return d
 
 
 def _max_function_loc(root: Path, subdir: str = "app") -> int:
@@ -468,6 +479,384 @@ def test_requirements_redis_comment_does_not_suppress_add() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Mutation-hardening — bare-project prereq paths (L68, L78)
+# ---------------------------------------------------------------------------
+
+
+def test_auto_scaffolds_missing_prereqs() -> None:
+    """A bare project is auto-scaffolded on a real run.
+
+    Guards ``auto_scaffold=not inp.dry_run`` (L68: drop the ``not`` -> no
+    scaffold -> error) and ``files_created = list(scaffolded or [])``
+    (L78: ``or`` -> ``and`` -> scaffolded files silently dropped).
+    """
+    p = _bare_project()
+    r = add_websocket_presence(ToolInput(project_dir=str(p)))
+    assert r.status == "success", r.error
+    created = set(r.files_created)
+    # The scaffolded config.py must appear in files_created (L78 or->and
+    # would drop it because ``nonempty and [] == []``).
+    assert any(c.endswith("config.py") for c in created), created
+    # Physically scaffolded — without auto_scaffold these never exist (L68).
+    assert (p / "app" / "core" / "config.py").exists()
+    assert (p / "requirements.txt").exists()
+
+
+def test_missing_prereqs_dry_run_reports_error() -> None:
+    """dry_run on a bare project: auto_scaffold OFF -> prereqs missing.
+
+    Guards ``auto_scaffold=not inp.dry_run`` (L68): with the ``not`` dropped
+    the scaffold would run and there would be no error to report.
+    """
+    p = _bare_project()
+    r = add_websocket_presence(ToolInput(project_dir=str(p), dry_run=True))
+    assert r.status == "error"
+    assert "Prerequisites not met" in (r.error or "")
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — execution_time_ms upper bound (L57/L75/L207 _ms)
+# ---------------------------------------------------------------------------
+
+
+def test_execution_time_within_sane_bounds() -> None:
+    """execution_time_ms is positive and below a sane upper bound.
+
+    Guards the ``monotonic() - start`` BinOp (Sub -> Add would balloon the
+    value far past any sane wall-clock window).
+    """
+    project_dir = create_fixture_project(name="wsp_ms")
+    result = add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    assert 0 < result.execution_time_ms < 60_000, result.execution_time_ms
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — ws/__init__ and emitted-test guards (L129, L220)
+# ---------------------------------------------------------------------------
+
+
+def test_ws_init_created_and_reported() -> None:
+    """app/ws/__init__.py is created and reported in files_created.
+
+    Guards ``if not ws_init.exists()`` (L129): flipping the ``not`` skips
+    creation so the package marker never appears.
+    """
+    project_dir = create_fixture_project(name="wsp_wsinit")
+    result = add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    ws_init = project_dir / "app" / "ws" / "__init__.py"
+    assert ws_init.exists(), "app/ws/__init__.py not created"
+    assert any(c.endswith("ws/__init__.py") for c in result.files_created), (
+        f"ws/__init__.py not reported in files_created: {result.files_created}"
+    )
+
+
+def test_emitted_project_test_created_and_reported() -> None:
+    """tests/test_add_websocket_presence_emitted.py is created and reported.
+
+    Guards ``if not emitted.exists()`` (L220): flipping the ``not`` skips
+    emitting the project test file.
+    """
+    project_dir = create_fixture_project(name="wsp_emitted")
+    result = add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success"
+    emitted = project_dir / "tests" / "test_add_websocket_presence_emitted.py"
+    assert emitted.exists(), "emitted project test not created"
+    assert any(
+        c.endswith("test_add_websocket_presence_emitted.py") for c in result.files_created
+    ), f"emitted test not reported in files_created: {result.files_created}"
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — _patch_config TTL math + anchor placement (L244, L252)
+# ---------------------------------------------------------------------------
+
+
+def test_config_ttl_is_heartbeat_times_three() -> None:
+    """PRESENCE_TTL_SECONDS == heartbeat_seconds * 3 in config.py.
+
+    Guards ``ttl = heartbeat_seconds * 3`` (L244): Mult -> FloorDiv turns
+    30*3=90 into 30//3=10.
+    """
+    project_dir = create_fixture_project(name="wsp_cfgttl")
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "config.py").read_text()
+    assert "PRESENCE_TTL_SECONDS: int = 90" in content, (
+        "config TTL must be heartbeat(30) * 3 = 90 (Mult->FloorDiv would give 10)"
+    )
+    assert "PRESENCE_TTL_SECONDS: int = 10" not in content
+
+
+def test_config_block_inserted_after_access_token_anchor() -> None:
+    """The presence settings block is inserted right after the anchor field.
+
+    Guards ``if anchor in src`` (L252: In -> NotIn would skip the anchor
+    branch and fall through to a different insertion point) and the anchor
+    branch's ``+`` concat.
+    """
+    project_dir = create_fixture_project(name="wsp_anchor")
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    content = (project_dir / "app" / "core" / "config.py").read_text()
+    anchor = "ACCESS_TOKEN_EXPIRE_MINUTES: int = 30"
+    idx = content.find(anchor)
+    assert idx != -1, "anchor field missing from fixture config"
+    after = content[idx + len(anchor) : idx + len(anchor) + 80]
+    assert "Presence settings" in after, (
+        f"presence block not inserted immediately after anchor (L252): {after!r}"
+    )
+
+
+def test_config_block_inserted_before_settings_when_no_anchor() -> None:
+    """When the anchor is absent, the block lands before ``settings = Settings()``.
+
+    Guards ``elif "settings = Settings()" in src`` (L254: In -> NotIn would
+    skip this branch and append at end-of-file with wrong indentation, and
+    the block would no longer precede the instantiation line).
+    """
+    project_dir = create_fixture_project(name="wsp_noanchor")
+    config_file = project_dir / "app" / "core" / "config.py"
+    # Build a minimal config that has NO anchor field but DOES instantiate.
+    config_file.write_text(
+        "class Settings:\n    PROJECT_NAME: str = 'app'\n\nsettings = Settings()\n"
+    )
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    content = config_file.read_text()
+    assert "PRESENCE_HEARTBEAT_SECONDS" in content
+    block_idx = content.find("PRESENCE_HEARTBEAT_SECONDS")
+    settings_idx = content.find("settings = Settings()")
+    assert block_idx != -1 and settings_idx != -1
+    assert block_idx < settings_idx, (
+        "presence block must be inserted before 'settings = Settings()' (L254)"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — _patch_routes_init insertion math (L268,L270,L274,L276)
+# ---------------------------------------------------------------------------
+
+
+def test_presence_import_inserted_after_last_app_import() -> None:
+    """The presence import is inserted right after the last ``from app.`` line.
+
+    Guards ``if last_app == -1`` (L268: Eq->NotEq recomputes the anchor from
+    the APIRouter() line, misplacing the import) and ``last_app + 1``
+    (L270: Add->Sub inserts the import before an existing app import).
+    """
+    project_dir = create_fixture_project(name="wsp_routeimp")
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    lines = (project_dir / "app" / "routes" / "__init__.py").read_text().splitlines()
+    import_idx = next(
+        i for i, ln in enumerate(lines) if "presence import router as presence_router" in ln
+    )
+    # Must come after the last pre-existing ``from app.`` import (the health one)
+    # and the line directly above it must itself be a ``from app.`` import.
+    assert lines[import_idx - 1].startswith("from app."), (
+        f"presence import not placed right after the last app import: "
+        f"prev={lines[import_idx - 1]!r}"
+    )
+    # And it must precede the APIRouter() construction.
+    api_idx = next(i for i, ln in enumerate(lines) if "APIRouter()" in ln)
+    assert import_idx < api_idx, "import must precede api_router = APIRouter()"
+
+
+def test_presence_include_inserted_after_last_include() -> None:
+    """The include_router call lands right after the last existing include.
+
+    Guards ``if last_inc == -1`` (L274: Eq->NotEq) and ``last_inc + 1``
+    (L276: Add->Sub inserts before an existing include_router call).
+    """
+    project_dir = create_fixture_project(name="wsp_routeinc")
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    lines = (project_dir / "app" / "routes" / "__init__.py").read_text().splitlines()
+    inc_idx = next(i for i, ln in enumerate(lines) if "include_router(presence_router)" in ln)
+    # The line directly above must be another include_router call (it is
+    # appended after the last pre-existing include).
+    assert lines[inc_idx - 1].startswith("api_router.include_router"), (
+        f"presence include not placed after the last include: prev={lines[inc_idx - 1]!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — strict insertion-position math (L270, L276)
+# ---------------------------------------------------------------------------
+
+
+def test_presence_import_is_last_app_import() -> None:
+    """Presence import lands strictly AFTER every other ``from app.`` import.
+
+    Guards ``lines.insert(last_app + 1, import_line)`` (L270): with Add->Sub
+    (``last_app - 1``) the import is inserted *before* the final pre-existing
+    app imports. The weaker "line above is a ``from app.`` import" check still
+    passes under that mutation (the import lands between two app imports), so
+    we assert the presence import index exceeds ALL other app-import indices.
+    """
+    project_dir = create_fixture_project(name="wsp_lastimp")
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    lines = (project_dir / "app" / "routes" / "__init__.py").read_text().splitlines()
+    presence_idx = next(
+        i for i, ln in enumerate(lines) if "presence import router as presence_router" in ln
+    )
+    other_app_imports = [
+        i for i, ln in enumerate(lines) if ln.startswith("from app.") and i != presence_idx
+    ]
+    assert other_app_imports, "fixture must have pre-existing app imports"
+    assert presence_idx > max(other_app_imports), (
+        f"presence import (idx {presence_idx}) must come after the last "
+        f"pre-existing app import (idx {max(other_app_imports)}); Add->Sub on "
+        f"L270 would place it earlier"
+    )
+
+
+def test_presence_include_is_last_include() -> None:
+    """Presence include lands strictly AFTER every other ``include_router`` call.
+
+    Guards ``lines.insert(last_inc + 1, include_line)`` (L276): with Add->Sub
+    (``last_inc - 1``) the include is inserted *before* the final pre-existing
+    include. The weaker "line above is an include_router call" check survives
+    that mutation, so we assert the presence include index exceeds ALL other
+    include-router indices.
+    """
+    project_dir = create_fixture_project(name="wsp_lastinc")
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    lines = (project_dir / "app" / "routes" / "__init__.py").read_text().splitlines()
+    presence_idx = next(i for i, ln in enumerate(lines) if "include_router(presence_router)" in ln)
+    other_includes = [
+        i
+        for i, ln in enumerate(lines)
+        if ln.startswith("api_router.include_router") and i != presence_idx
+    ]
+    assert other_includes, "fixture must have pre-existing includes"
+    assert presence_idx > max(other_includes), (
+        f"presence include (idx {presence_idx}) must come after the last "
+        f"pre-existing include (idx {max(other_includes)}); Add->Sub on L276 "
+        f"would place it earlier"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — APIRouter() fallback anchors (L269, L275)
+# ---------------------------------------------------------------------------
+
+
+def test_routes_fallback_anchors_on_apirouter_line() -> None:
+    """With no app imports and no includes, both inserts anchor on APIRouter().
+
+    A minimal routes ``__init__`` (only ``api_router = APIRouter()``, then
+    ``__all__``) forces the ``last_app == -1`` / ``last_inc == -1`` fallback
+    branches. Those use ``max(i for ... if "APIRouter()" in ln)`` (L269, L275)
+    to anchor right after the APIRouter() construction — BEFORE ``__all__``.
+    With In->NotIn the comprehension anchors on the wrong line and both
+    statements are appended AFTER ``__all__`` instead.
+    """
+    project_dir = create_fixture_project(name="wsp_fallback")
+    routes_init = project_dir / "app" / "routes" / "__init__.py"
+    routes_init.write_text(
+        'from fastapi import APIRouter\n\napi_router = APIRouter()\n\n__all__ = ["api_router"]\n'
+    )
+    result = add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success", result.error
+    lines = routes_init.read_text().splitlines()
+    all_idx = next(i for i, ln in enumerate(lines) if ln.startswith("__all__"))
+    import_idx = next(
+        i for i, ln in enumerate(lines) if "presence import router as presence_router" in ln
+    )
+    include_idx = next(i for i, ln in enumerate(lines) if "include_router(presence_router)" in ln)
+    assert import_idx < all_idx, (
+        f"presence import (idx {import_idx}) must precede __all__ (idx {all_idx}); "
+        f"In->NotIn on L269 would append it after __all__"
+    )
+    assert include_idx < all_idx, (
+        f"presence include (idx {include_idx}) must precede __all__ (idx {all_idx}); "
+        f"In->NotIn on L275 would append it after __all__"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — _requirements_need_redis already-present (L287)
+# ---------------------------------------------------------------------------
+
+
+def test_redis_not_duplicated_when_already_present() -> None:
+    """An existing ``redis`` requirement is NOT re-added (no duplicate line).
+
+    Guards ``return False`` (L287) at the end of ``_requirements_need_redis``:
+    when redis is already declared the function returns False so no line is
+    appended. With BoolLiteral False->True the tool would append a second
+    ``redis[hiredis]`` line, producing two redis package entries.
+    """
+    project_dir = create_fixture_project(name="wsp_redisdup")
+    requirements_file = project_dir / "requirements.txt"
+    src = requirements_file.read_text()
+    cleaned = "\n".join(line for line in src.splitlines() if "redis" not in line.lower())
+    requirements_file.write_text(cleaned + "\nredis>=5.0.0\n")
+
+    add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+
+    redis_pkg_lines = [
+        line
+        for line in requirements_file.read_text().splitlines()
+        if line.strip()
+        and not line.strip().startswith(("#", "-"))
+        and line.strip().split("[")[0].split(">=")[0].split("==")[0].strip().lower() == "redis"
+    ]
+    assert len(redis_pkg_lines) == 1, (
+        f"redis must appear exactly once when already present; found "
+        f"{len(redis_pkg_lines)} (False->True on L287 would duplicate it): "
+        f"{redis_pkg_lines}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — _patch_config end-of-file fallback concat (L259)
+# ---------------------------------------------------------------------------
+
+
+def test_config_block_appended_when_no_anchor_and_no_settings() -> None:
+    """With neither anchor nor ``settings = Settings()``, block is appended.
+
+    A config with only a ``Settings`` class (no anchor field, no instantiation)
+    forces the final ``else`` branch ``src.rstrip("\\n") + "\\n" + block``
+    (L259). The ``+`` string concatenation is killable: Add->Sub on strings
+    raises ``TypeError`` -> the tool returns error / does not patch the field.
+    """
+    project_dir = create_fixture_project(name="wsp_cfgappend")
+    config_file = project_dir / "app" / "core" / "config.py"
+    config_file.write_text('class Settings:\n    PROJECT_NAME: str = "app"\n')
+
+    result = add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+
+    assert result.status == "success", result.error
+    content = config_file.read_text()
+    assert "PRESENCE_HEARTBEAT_SECONDS: int = 30" in content, (
+        "presence block must be appended via the end-of-file concat fallback (L259)"
+    )
+    assert "PRESENCE_TTL_SECONDS: int = 90" in content
+
+
+# ---------------------------------------------------------------------------
+# Mutation-hardening — ws_dir.mkdir exist_ok when dir pre-exists (L127)
+# ---------------------------------------------------------------------------
+
+
+def test_ws_dir_mkdir_tolerates_existing_dir() -> None:
+    """Pre-existing ``app/ws`` does not break the run (mkdir exist_ok=True).
+
+    Guards ``ws_dir.mkdir(parents=True, exist_ok=True)`` (L127): with the
+    ``exist_ok`` flag flipped to False, ``mkdir`` raises ``FileExistsError``
+    on the pre-created directory and the run fails. The default fixture lacks
+    ``app/ws`` so the flag is otherwise never exercised.
+    """
+    project_dir = create_fixture_project(name="wsp_wsexists")
+    (project_dir / "app" / "ws").mkdir(parents=True, exist_ok=True)
+    result = add_websocket_presence(ToolInput(project_dir=str(project_dir)))
+    assert result.status == "success", (
+        f"run must succeed with pre-existing app/ws (exist_ok=True on L127): {result.error}"
+    )
+    assert (project_dir / "app" / "ws" / "presence.py").exists()
+
+
+# ---------------------------------------------------------------------------
 # Standalone runner
 # ---------------------------------------------------------------------------
 
@@ -500,6 +889,22 @@ if __name__ == "__main__":
         test_requirements_patched,
         test_custom_heartbeat_seconds,
         test_dry_run_mentions_heartbeat_ttl,
+        test_auto_scaffolds_missing_prereqs,
+        test_missing_prereqs_dry_run_reports_error,
+        test_execution_time_within_sane_bounds,
+        test_ws_init_created_and_reported,
+        test_emitted_project_test_created_and_reported,
+        test_config_ttl_is_heartbeat_times_three,
+        test_config_block_inserted_after_access_token_anchor,
+        test_config_block_inserted_before_settings_when_no_anchor,
+        test_presence_import_inserted_after_last_app_import,
+        test_presence_include_inserted_after_last_include,
+        test_presence_import_is_last_app_import,
+        test_presence_include_is_last_include,
+        test_routes_fallback_anchors_on_apirouter_line,
+        test_redis_not_duplicated_when_already_present,
+        test_config_block_appended_when_no_anchor_and_no_settings,
+        test_ws_dir_mkdir_tolerates_existing_dir,
     ]
 
     passed = failed = 0
