@@ -233,20 +233,21 @@ def apply_mutation(source: str, mutation: Mutation) -> str:
     return ast.unparse(new_tree)
 
 
-def run_tests(test_file: str, target_file: str) -> bool:
-    """Run *test_file* against the current working tree.
+def run_tests(test_file, target_file: str) -> bool:
+    """Run *test_file* (a path or list of paths) against the current tree.
 
     Returns:
         True if all tests pass (mutant survived), False if any fail
         (mutant killed) or the run crashes.
     """
+    files = [test_file] if isinstance(test_file, str) else list(test_file)
     try:
         r = subprocess.run(
             [
                 sys.executable,
                 "-m",
                 "pytest",
-                test_file,
+                *files,
                 "-x",
                 "-q",
                 "--no-header",
@@ -336,7 +337,7 @@ def run_mutation_test(target: str, tests: str, max_mutants: int | None = None) -
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--target", required=True)
-    parser.add_argument("--tests", required=True)
+    parser.add_argument("--tests", required=True, nargs="+")
     parser.add_argument("--max", type=int, default=None)
     args = parser.parse_args()
     return run_mutation_test(args.target, args.tests, args.max)
