@@ -212,6 +212,6 @@ the plan-level transcript the agent used to build them.
 
 ---
 
-Signed: Gustavo Schneiter — v1.0.0-rc.1 (Phase 5 complete, golive pending).
+Signed: Gustavo Schneiter — v1.0.0 (Phase 5 complete, go-live 2026-06-05).
 Every claim above is machine-verifiable via the commands shown.
 Drift from this file is a §A8 bug to fix same-day.
