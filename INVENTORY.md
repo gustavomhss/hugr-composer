@@ -6,7 +6,7 @@
 
 ## Headline
 
-- **263 files carry `MCP_TOOL` metadata** (agent-visible surface).
+- **264 files carry `MCP_TOOL` metadata** (agent-visible surface).
 - **Catalog:** 1 skill, 6 bundles, 201 tools (201 local + 0 federated), 299 primitives, 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
 - **175 staged primitives** in `_staging/` (plus 42 quarantined).
@@ -46,7 +46,7 @@ to expose ~80-tool bundle slices via `fastapi_meta_list_bundle` /
 `fastapi_meta_activate_bundle` instead of flooding `tools/list` with
 the full surface.
 
-### `SKILL-001-fastapi-production` — v1.0.0-rc.1 (local)
+### `SKILL-001-fastapi-production` — v1.0.0 (local)
 
 | bundle | tools | tags |
 |---|---:|---|
