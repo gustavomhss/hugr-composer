@@ -9,13 +9,7 @@ so a reader can tell — in one glance — whether to upgrade.
 
 ---
 
-## [1.0.0] — 2026-06-03
-
-> **This block is release-ready.** Date set to the release-prep day
-> (2026-06-03); adjust if the tag lands on a different day. Every count below is
-> machine-verified (2026-04-21 audit) and `stable_hash` is the literal
-> hash at HEAD. Re-verify with `engine.inventory` + `jq -r .stable_hash
-> engine/index/catalog.json` before tagging.
+## [1.0.0] — 2026-06-05
 
 ### Summary
 
