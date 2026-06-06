@@ -22,9 +22,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[4].parent
-# /Users/…/HuGR_Arsenal (one level above skills/)
-SKILL_ROOT = REPO_ROOT / "skills" / "SKILL-001-fastapi-production"
+# SKILL_ROOT is the dir that holds engine/ — always parents[3] of this file
+# (engine/audit/contract_rules/_common.py), in both repo layouts.
+SKILL_ROOT = Path(__file__).resolve().parents[3]
+# Layout detection: in the Arsenal monorepo the skill lives under
+# <repo>/skills/SKILL-001-fastapi-production/, so REPO_ROOT is one level above
+# skills/. In a standalone skill repo (v1.0 extraction) the skill IS the repo
+# root, so REPO_ROOT == SKILL_ROOT. Detect by whether the parent dir is skills/.
+if SKILL_ROOT.parent.name == "skills":
+    REPO_ROOT = SKILL_ROOT.parent.parent  # monorepo root (one level above skills/)
+else:
+    REPO_ROOT = SKILL_ROOT  # standalone skill repo
 
 # Official semver 2.0.0 regex body (no anchors).
 # Source: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string

@@ -1,17 +1,35 @@
-# App-runtime extras imported by generated FastAPI projects (module-level).
-# Split out of the monorepo during the v1.0 standalone extraction: these
-# were previously satisfied only by leftover packages on the self-hosted
-# runner (hidden dependency debt). Declared here so boot/tests are
-# reproducible in a clean venv. Lazy-imported SDKs (stripe, boto3, celery,
-# redis) are NOT listed — they import inside function bodies and never break
-# app boot.
+# App-runtime + test extras imported by generated FastAPI projects.
+# Split out of the monorepo during the v1.0 standalone extraction: these were
+# previously satisfied only by leftover packages on the self-hosted runner
+# (hidden dependency debt). Declared here so boot/tests are reproducible in a
+# clean venv. Union of (a) the base project's emitted requirements.txt and
+# (b) per-tool module-level extras (graphql/admin/worker/etc.). Lazy-imported
+# SDKs (stripe, boto3, celery) are NOT listed — they import inside function
+# bodies and never break app boot.
+
+# --- base generated project (authoritative: emitted requirements.txt) ---
+PyJWT>=2.9.0
+asyncpg>=0.30.0
+email-validator>=2.2.0
+pwdlib[argon2]>=0.2.1
+pydantic-settings>=2.6.0
+python-multipart>=0.0.12
+redis[hiredis]>=5.2.0
+slowapi>=0.1.9
+structlog>=24.4.0
+uvicorn[standard]>=0.32.0
+aiosqlite>=0.20.0
+pytest-asyncio>=0.24.0
+
+# --- per-tool module-level extras ---
 aiodataloader
 anyio
 arq
 cryptography
 Jinja2
 msgpack
-PyJWT
 sqladmin
 strawberry-graphql
-structlog
+schemathesis
+faker
+locust
