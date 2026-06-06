@@ -35,7 +35,10 @@ from pathlib import Path
 import yaml
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
-REPO_ROOT = SKILL_ROOT.parents[1]
+# Layout-aware (matches engine/audit/contract_rules/_common.py): monorepo places
+# the skill under <repo>/skills/<name>/ so top-level docs live one level above
+# skills/; the standalone skill repo holds them at its own root.
+REPO_ROOT = SKILL_ROOT.parents[1] if SKILL_ROOT.parent.name == "skills" else SKILL_ROOT
 REGISTRY_PATH = SKILL_ROOT / "engine" / "primitives_by_concern.yaml"
 VENOUS_ROOT = SKILL_ROOT / "core" / "venous"
 ADAPT_ROOT = SKILL_ROOT / "adapt"
