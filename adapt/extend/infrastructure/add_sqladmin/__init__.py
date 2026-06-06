@@ -92,7 +92,8 @@ def add_sqladmin(
         )
 
     models_init = app_dir / "models" / "__init__.py"
-    model_names = _discover_models(models_init) if models_init.exists() else ["User"]
+    models = _discover_models(models_init) if models_init.exists() else [("User", "app.models.user")]
+    model_names = [name for name, _ in models]
     require_str = "True" if require_superuser else "False"
 
     if inp.dry_run:
@@ -127,7 +128,7 @@ def add_sqladmin(
     files_created.append(str(auth_file))
 
     views_file = admin_dir / "views.py"
-    views_content = _build_views_content(model_names)
+    views_content = _build_views_content(models)
     views_file.write_text(views_content)
     files_created.append(str(views_file))
 
@@ -198,20 +199,27 @@ def _write_and_replace(tmpl_name: str, dest: Path, replacements: dict[str, str])
     dest.write_text(content)
 
 
-def _discover_models(models_init: Path) -> list[str]:
-    """Extract model class names from app/models/__init__.py.
+def _discover_models(models_init: Path) -> list[tuple[str, str]]:
+    """Extract (class_name, module_path) pairs from app/models/__init__.py.
+
+    Reading the real module path from each ``from app.models.<mod> import
+    <Name>`` statement (rather than guessing ``<name>.lower()``) is required:
+    multi-word models live in snake_case modules (``EmailDelivery`` →
+    ``app.models.email_delivery``), so the lowercase-no-underscore guess
+    produced an unimportable path and broke admin boot in tool chains.
 
     Args:
         models_init: Path to app/models/__init__.py.
 
     Returns:
-        Sorted list of model class names; falls back to ["User"].
+        Sorted list of (class_name, module_path) pairs; falls back to
+        ``[("User", "app.models.user")]``.
     """
     try:
         tree = ast.parse(models_init.read_text())
     except SyntaxError:
-        return ["User"]
-    names: list[str] = []
+        return [("User", "app.models.user")]
+    pairs: list[tuple[str, str]] = []
     for node in ast.walk(tree):
         if (
             isinstance(node, ast.ImportFrom)
@@ -221,25 +229,25 @@ def _discover_models(models_init: Path) -> list[str]:
             for alias in node.names:
                 real_name = alias.asname or alias.name
                 if real_name[0].isupper() and real_name != "Base":
-                    names.append(real_name)
-    return sorted(names) if names else ["User"]
+                    pairs.append((real_name, node.module))
+    return sorted(pairs) if pairs else [("User", "app.models.user")]
 
 
-def _build_views_content(model_names: list[str]) -> str:
+def _build_views_content(models: list[tuple[str, str]]) -> str:
     """Generate app/admin/views.py source for all discovered models.
 
     Args:
-        model_names: List of model class names to generate views for.
+        models: List of (class_name, module_path) pairs to generate views for.
 
     Returns:
         Complete Python source code as a string.
     """
     header = (_HERE / "templates" / "views_header.py.tmpl").read_text()
     imports_block = "\n".join(
-        f"from app.models.{name.lower()} import {name}" for name in model_names
+        f"from {module} import {name}" for name, module in models
     )
-    view_classes = [_build_single_view(name) for name in model_names]
-    model_admins_list = ", ".join(f"{name}Admin" for name in model_names)
+    view_classes = [_build_single_view(name) for name, _ in models]
+    model_admins_list = ", ".join(f"{name}Admin" for name, _ in models)
     return (
         header
         + imports_block
@@ -268,9 +276,8 @@ def _build_single_view(name: str) -> str:
     else:
         plural = name + "s"
     return (
-        f"class {name}Admin(ModelView):\n"
+        f"class {name}Admin(ModelView, model={name}):\n"
         f'    """Admin view for the {name} model."""\n\n'
-        f"    model = {name}\n"
         "    column_exclude_list = [\n"
         '        "hashed_password", "secret_enc", "entry_hash", "prev_hash",\n'
         "    ]\n"

@@ -16,8 +16,10 @@ try:
 except ImportError:
     # Provide a dummy base so this module can be imported for type
     # checking even when sqladmin is not installed. Real ModelView
-    # subclasses declare their SQLAlchemy model via a ``model`` class
-    # attribute; the dummy just needs to be subclassable.
+    # subclasses pass their SQLAlchemy model as a ``model=`` class
+    # keyword argument; the __init_subclass__ override swallows it so
+    # the class body can be defined without sqladmin present.
     class ModelView:  # type: ignore[no-redef]
-        pass
+        def __init_subclass__(cls, **kwargs: object) -> None:
+            super().__init_subclass__()
 
