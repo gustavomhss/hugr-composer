@@ -290,18 +290,18 @@ _B09_LEGACY_TERM_EXEMPTIONS = (
     # This rule's own source file MUST mention the discontinued term to
     # define + document the audit; exempting the file avoids a
     # self-referential false positive.
-    "skills/SKILL-001-fastapi-production/engine/audit/contract_check.py",
+    "engine/audit/contract_check.py",
     # Post-WP-16 split: the rule body moved into the phase0_identity
     # module; the same self-reference exemption applies to its new home.
     # phase2_tier1.py preserves the historical Codex audit comment
     # "the Maestro starts ignoring the descriptions" verbatim — exempt
     # the file to avoid a self-flag on the (unchanged) rule docstring.
-    "skills/SKILL-001-fastapi-production/engine/audit/contract_rules/phase0_identity.py",
-    "skills/SKILL-001-fastapi-production/engine/audit/contract_rules/phase2_tier1.py",
+    "engine/audit/contract_rules/phase0_identity.py",
+    "engine/audit/contract_rules/phase2_tier1.py",
     # _registry.py carries the Rule(...) tuple whose description text
     # quotes the discontinued term ("no discontinued 'Maestro' terminology
     # in live tree"); same self-reference exemption pattern.
-    "skills/SKILL-001-fastapi-production/engine/audit/contract_rules/_registry.py",
+    "engine/audit/contract_rules/_registry.py",
 )
 
 

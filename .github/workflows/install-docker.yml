@@ -1,0 +1,100 @@
+name: install.sh — fresh Docker smoke
+
+# B4.1 — validates that `install.sh` runs to completion in a hermetic
+# python:3.12-slim container.
+#
+# Live triggers (post 2026-05-28): nightly cron + workflow_dispatch only.
+# The earlier `push` / `pull_request` triggers on install-related paths
+# (`install.sh`, `pyproject.toml`, `VERSION`, `requirements-mcp.txt`)
+# were removed when GH Actions billing was blocked — see the comment
+# block under `on:` below. Until the self-hosted-runner migration lands,
+# install-touching PRs do NOT auto-smoke; reviewers must dispatch this
+# workflow manually (`gh workflow run install-docker.yml`) or run
+# `bash install.sh` locally before merge. Failure here still beats a
+# failure in a user's terminal — the cron run remains the persistent
+# safety net.
+
+# PARTIALLY DISABLED 2026-05-28: this workflow uses `container: image:
+# python:3.12-slim` on `ubuntu-latest`. With GH Actions minutes billing-blocked,
+# it dies in ~3s on every PR/push and pollutes PR checks. Migration to
+# self-hosted is non-trivial (mac runners don't all have Docker clean state).
+# Push + pull_request triggers removed (the PR-pollution sources); `schedule:`
+# kept because nightly cron runs fail silently in cron history and do NOT
+# appear on PR checks — keeping the B4.1 contract honest until migration.
+on:
+  schedule:
+    - cron: '23 4 * * *'   # 04:23 UTC nightly (silent fail until self-hosted)
+  workflow_dispatch:
+
+jobs:
+  install-fresh-docker:
+    name: install.sh in python:3.12-slim
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    container:
+      image: python:3.12-slim
+    steps:
+      - name: Preflight (git only — python already in image)
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update -qq
+          apt-get install -y --no-install-recommends git ca-certificates >/dev/null
+          git --version && python3 --version
+
+      - uses: actions/checkout@v4
+        with:
+          path: hugr-skills-src
+
+      - name: Run install.sh (hermetic)
+        shell: bash
+        env:
+          INSTALL_DIR: /opt/hugr-skills
+          SKILL: fastapi-production
+        run: |
+          set -euo pipefail
+          # Seed the install dir with the checkout — install.sh uses
+          # `git pull` which will warn-and-continue offline; the local
+          # copy is authoritative for CI.
+          mkdir -p "${INSTALL_DIR}"
+          cp -a hugr-skills-src/. "${INSTALL_DIR}/"
+          bash "${INSTALL_DIR}/install.sh"
+
+      - name: Smoke — MCP server imports and lists tools
+        shell: bash
+        env:
+          INSTALL_DIR: /opt/hugr-skills
+          SKILL_DIR: /opt/hugr-skills/skills/SKILL-001-fastapi-production
+        run: |
+          set -euo pipefail
+          PYTHONPATH="${SKILL_DIR}" "${SKILL_DIR}/.venv/bin/python" -c "
+          from mcp_tools.server import mcp
+          from mcp_tools.discovery import discover_and_register
+          n = discover_and_register(mcp)
+          assert n >= 100, f'expected >= 100 MCP tools, got {n}'
+          print(f'MCP discovery OK: {n} tools registered')
+          "
+
+      - name: Smoke — contract_check green
+        shell: bash
+        env:
+          SKILL_DIR: /opt/hugr-skills/skills/SKILL-001-fastapi-production
+        run: |
+          set -euo pipefail
+          cd "${SKILL_DIR}"
+          PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check --quiet
+
+      - name: Smoke — benchmark score readable + non-regressive
+        shell: bash
+        env:
+          SKILL_DIR: /opt/hugr-skills/skills/SKILL-001-fastapi-production
+        run: |
+          set -euo pipefail
+          "${SKILL_DIR}/.venv/bin/python" - <<'PY'
+          import json, sys, pathlib
+          p = pathlib.Path("/opt/hugr-skills/skills/SKILL-001-fastapi-production/benchmarks/latest_score.json")
+          data = json.loads(p.read_text())
+          overall = float(data["overall"])
+          assert overall >= 30.0, f"benchmark regressed: overall={overall} < 30 floor"
+          print(f"benchmark overall={overall:.2f} (methodology={data.get('methodology','?')})")
+          PY
