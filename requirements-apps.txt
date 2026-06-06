@@ -33,3 +33,4 @@ strawberry-graphql
 schemathesis
 faker
 locust
+openpyxl
