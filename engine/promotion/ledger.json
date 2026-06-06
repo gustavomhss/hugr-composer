@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-05-29T02:02:53+00:00",
+  "generated_at": "2026-06-06T14:30:43+00:00",
   "classifier_version": "1.0",
   "total_staged": 176,
   "total_quarantined": 42,
@@ -10,13 +10,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `AdaptiveThrottle`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_adaptive_throttle.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_adaptive_throttle.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AdaptiveThrottleMiddleware",
@@ -50,13 +44,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `AdminAuth`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_sqladmin.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_sqladmin.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AdminAuthBackend",
@@ -89,13 +77,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Anomaly`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_anomaly_detector.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_anomaly_detector.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AnomalyMiddleware",
@@ -129,13 +111,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `CORSConfig`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cors_config.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cors_config.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CORSConfigMiddleware",
@@ -168,13 +144,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `CSRF`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_csrf_protection.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_csrf_protection.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CSRFMiddleware",
@@ -208,13 +178,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `CedarAuthz`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_cedar_policies.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_cedar_policies.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CedarAuthzMiddleware",
@@ -248,13 +212,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Chaos`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_chaos_testing.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_chaos_testing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ChaosMiddleware",
@@ -288,13 +246,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Cost`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CostMiddleware",
@@ -361,13 +313,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `DLP`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_dlp_shield.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_dlp_shield.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DLPMiddleware",
@@ -401,13 +347,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_data_seeder.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_data_seeder.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DataSeeder",
@@ -440,13 +380,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_transactional_email.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_transactional_email.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DeliveryTracker",
@@ -479,13 +413,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_dependency_health_map.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_dependency_health_map.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DependencyChecker",
@@ -518,13 +446,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Deprecation`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_api_deprecation.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_api_deprecation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DeprecationMiddleware",
@@ -558,13 +480,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_event_sourcing.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_event_sourcing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "EventStore",
@@ -597,13 +513,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Fingerprint`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_request_fingerprint.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_request_fingerprint.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FingerprintMiddleware",
@@ -637,13 +547,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_data_import.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_data_import.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ImportProcessor",
@@ -676,13 +580,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `LeakDetector`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_secret_rotation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_secret_rotation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "LeakDetectorMiddleware",
@@ -716,13 +614,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `LoadShedding`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_load_shedding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_load_shedding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "LoadSheddingMiddleware",
@@ -756,13 +648,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Metering`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_api_monetization.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_api_monetization.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "MeteringMiddleware",
@@ -796,13 +682,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Notification`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_notifications.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_notifications.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "NotificationService",
@@ -835,13 +715,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `OPA`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_opa_integration.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_opa_integration.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OPAMiddleware",
@@ -875,13 +749,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `OTEL`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_opentelemetry.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_opentelemetry.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OTELMiddleware",
@@ -915,13 +783,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Outbox`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_outbox_pattern.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_outbox_pattern.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OutboxService",
@@ -954,13 +816,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_bola_guard.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_bola_guard.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OwnershipVerifier",
@@ -994,13 +850,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_event_sourcing.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_event_sourcing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "Projector",
@@ -1033,13 +883,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Prometheus`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_prometheus_metrics.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_prometheus_metrics.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "PrometheusMiddleware",
@@ -1073,13 +917,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_cqrs.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_cqrs.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ReadReplicaSession",
@@ -1112,13 +950,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Recorder`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_api_replay_debugger.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_api_replay_debugger.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RecorderMiddleware",
@@ -1152,13 +984,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Registry`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_ml_model_registry.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_ml_model_registry.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RegistryService",
@@ -1191,13 +1017,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `RequestSigning`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_request_signing.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_request_signing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RequestSigningMiddleware",
@@ -1231,13 +1051,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `ResponseArmor`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_response_armor.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_response_armor.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ResponseArmorMiddleware",
@@ -1271,13 +1085,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_saga.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_saga.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SagaCoordinator",
@@ -1310,13 +1118,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Sanitize`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_input_sanitization.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_input_sanitization.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SanitizeMiddleware",
@@ -1350,13 +1152,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `SchemaEnforcer`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_schema_enforcer.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_schema_enforcer.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SchemaEnforcerMiddleware",
@@ -1390,13 +1186,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Shutdown`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_graceful_shutdown.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_graceful_shutdown.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ShutdownMiddleware",
@@ -1430,13 +1220,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_bola_guard.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_bola_guard.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TenantIsolationFilter",
@@ -1469,13 +1253,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, sqlalchemy, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Tenant`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_multi_tenancy.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_multi_tenancy.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TenantMiddleware",
@@ -1510,13 +1288,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Tracing`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_request_tracing_ui.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_request_tracing_ui.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TracingMiddleware",
@@ -1550,13 +1322,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `UploadSize`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_s3_storage.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_s3_storage.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "UploadSizeMiddleware",
@@ -1590,13 +1356,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `VersionResolver`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_api_versioning.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_api_versioning.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VersionResolverMiddleware",
@@ -1630,13 +1390,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Versioning`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_data_versioning.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_data_versioning.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VersioningService",
@@ -1669,13 +1423,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Deprecation`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_api_deprecation.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_api_deprecation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DeprecationMiddleware",
@@ -1711,13 +1459,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_webhook_receiver.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_webhook_receiver.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "GitHubVerifier",
@@ -1750,13 +1492,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_webhook_receiver.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_webhook_receiver.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "InternalVerifier",
@@ -1789,13 +1525,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_cqrs.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_cqrs.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ReadReplicaSession",
@@ -1830,13 +1560,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_webhook_sender.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_webhook_sender.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SignatureHeader",
@@ -1867,13 +1591,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_webhook_receiver.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_webhook_receiver.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "StripeVerifier",
@@ -1906,13 +1624,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_long_running_task.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_long_running_task.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TaskManager",
@@ -1943,13 +1655,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_long_running_task.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_long_running_task.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TaskRegistry",
@@ -1980,13 +1686,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_sse.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_sse.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TokenBucket",
@@ -2017,13 +1717,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_websocket_presence.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_websocket_presence.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "UserPresence",
@@ -2056,13 +1750,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_webhook_receiver.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_webhook_receiver.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VerifiedEvent",
@@ -2093,13 +1781,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_api_versioning.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_api_versioning.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VersionInfo",
@@ -2130,13 +1812,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_api_versioning.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_api_versioning.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VersionRegistry",
@@ -2167,13 +1843,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `VersionResolver`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/api_design/add_api_versioning.py",
-          "detail": "Primitive was extracted from `adapt/extend/api_design/add_api_versioning.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VersionResolverMiddleware",
@@ -2210,13 +1880,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_websocket_chat.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_websocket_chat.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "WebSocketManager",
@@ -2247,13 +1911,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_webhook_sender.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_webhook_sender.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "WebhookDelivery",
@@ -2286,13 +1944,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Webhook`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_webhook_sender.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_webhook_sender.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "WebhookEndpoint",
@@ -2325,13 +1977,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/realtime/add_webhook_sender.py",
-          "detail": "Primitive was extracted from `adapt/extend/realtime/add_webhook_sender.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "WebhookEndpointCreated",
@@ -2362,13 +2008,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_api_key_auth.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_api_key_auth.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "APIKey",
@@ -2401,13 +2041,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_cedar_policies.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_cedar_policies.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CedarEngine",
@@ -2440,13 +2074,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_feature_flags.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FeatureFlag",
@@ -2479,13 +2107,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_feature_flags.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FeatureFlagAudit",
@@ -2518,13 +2140,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_feature_flags.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FeatureFlagPublic",
@@ -2555,13 +2171,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_feature_flags.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_feature_flags.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FlagContext",
@@ -2820,13 +2430,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `OPA`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_opa_integration.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_opa_integration.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OPAMiddleware",
@@ -2862,13 +2466,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_sms_otp.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_sms_otp.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OtpCode",
@@ -2901,13 +2499,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_passkey_auth.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_passkey_auth.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "Passkey",
@@ -2940,13 +2532,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_rbac.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_rbac.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "Permission",
@@ -2979,13 +2565,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_rbac.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_rbac.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "PermissionCache",
@@ -3016,13 +2596,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_bola_guard.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_bola_guard.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ResourceAccessPolicy",
@@ -3053,13 +2627,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_rbac.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_rbac.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RoleNode",
@@ -3090,13 +2658,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_rbac.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_rbac.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RolePermission",
@@ -3129,13 +2691,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_api_key_auth.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_api_key_auth.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ScopeCheckResult",
@@ -3166,13 +2722,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_social_login.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_social_login.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SocialAccount",
@@ -3205,13 +2755,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_social_login.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_social_login.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SocialAuthProvider",
@@ -3242,13 +2786,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_bola_guard.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_bola_guard.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TenantIsolationFilter",
@@ -3283,13 +2821,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/auth_access/add_multi_tenancy.py",
-          "detail": "Primitive was extracted from `adapt/extend/auth_access/add_multi_tenancy.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TenantScopedMixin",
@@ -3322,13 +2854,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_audit_log.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_audit_log.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AuditLog",
@@ -3361,13 +2887,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_data_versioning.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_data_versioning.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ContentVersion",
@@ -3438,11 +2958,6 @@
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
       "signals": [
         {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_event_sourcing.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_event_sourcing.py` (still in catalog); origin tool remains a live caller pattern."
-        },
-        {
           "kind": "benchmark_ref",
           "source": "benchmarks/specs/mid/03_event_sourced_orders.md",
           "detail": "Spec `03_event_sourced_orders.md` mentions `Event` by name \u2014 benchmark-signal candidate (verify manually before treating as \u00a7A12(a))."
@@ -3480,13 +2995,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_event_sourcing.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_event_sourcing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "EventStore",
@@ -3522,13 +3031,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_data_import.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_data_import.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ImportJob",
@@ -3561,13 +3064,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_data_import.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_data_import.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ImportProcessor",
@@ -3602,13 +3099,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_file_upload.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_file_upload.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "LocalStorage",
@@ -3639,13 +3130,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_data_export.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_data_export.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "LocalStorageBackend",
@@ -3676,13 +3161,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_file_upload.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_file_upload.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "S3Storage",
@@ -3713,13 +3192,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_soft_delete.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_soft_delete.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SoftDeleteMixin",
@@ -3752,13 +3225,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_file_upload.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_file_upload.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "StorageBackend",
@@ -3789,13 +3256,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_audit_log.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_audit_log.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VerificationResult",
@@ -3826,13 +3287,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Versioning`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/crud_data/add_data_versioning.py",
-          "detail": "Primitive was extracted from `adapt/extend/crud_data/add_data_versioning.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VersioningService",
@@ -3868,13 +3323,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_api_fuzzer.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_api_fuzzer.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "APIFuzzer",
@@ -3905,13 +3354,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_load_profile.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_load_profile.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ActiveUserScenario",
@@ -3942,13 +3385,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_load_profile.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_load_profile.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AdminScenario",
@@ -3979,13 +3416,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_load_profile.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_load_profile.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AuthMixin",
@@ -4016,13 +3447,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_load_profile.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_load_profile.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "BrowsingScenario",
@@ -4053,13 +3478,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_schema_evolution_guard.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_schema_evolution_guard.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ComparisonResult",
@@ -4090,13 +3509,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_data_seeder.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_data_seeder.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DataSeeder",
@@ -4131,13 +3544,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_data_seeder.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_data_seeder.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DependencyGraph",
@@ -4168,13 +3575,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_data_seeder.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_data_seeder.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FieldGenerator",
@@ -4205,13 +3606,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_api_fuzzer.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_api_fuzzer.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FuzzResult",
@@ -4242,13 +3637,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_api_fuzzer.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_api_fuzzer.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FuzzRunner",
@@ -4279,13 +3668,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_database_migrations_ci.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_database_migrations_ci.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "MigrationCIRunner",
@@ -4316,13 +3699,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_database_migrations_ci.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_database_migrations_ci.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SafetyChecker",
@@ -4353,13 +3730,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `SchemaEnforcer`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/testing_tools/add_schema_enforcer.py",
-          "detail": "Primitive was extracted from `adapt/extend/testing_tools/add_schema_enforcer.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SchemaEnforcerMiddleware",
@@ -4395,13 +3766,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "APICostEstimator",
@@ -4432,13 +3797,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_push_notifications_native.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_push_notifications_native.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "APNsProvider",
@@ -4469,13 +3828,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `AdaptiveThrottle`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_adaptive_throttle.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_adaptive_throttle.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AdaptiveThrottleMiddleware",
@@ -4511,13 +3864,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_adaptive_timeouts.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_adaptive_timeouts.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AdaptiveTimeout",
@@ -4548,13 +3895,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `AdminAuth`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_sqladmin.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_sqladmin.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AdminAuthBackend",
@@ -4590,13 +3931,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_anomaly_detector.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_anomaly_detector.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AlertDispatcher",
@@ -4627,13 +3962,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_anomaly_detector.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_anomaly_detector.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AnomalyDetector",
@@ -4664,13 +3993,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Anomaly`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_anomaly_detector.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_anomaly_detector.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AnomalyMiddleware",
@@ -4706,13 +4029,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_runtime_sentinel.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_runtime_sentinel.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AttackPatternRegistry",
@@ -4743,13 +4060,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_secret_rotation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_secret_rotation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "AwsSecretProvider",
@@ -4780,13 +4091,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_bulkhead_isolation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_bulkhead_isolation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "BulkheadConfig",
@@ -4817,13 +4122,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `CORSConfig`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cors_config.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cors_config.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CORSConfigMiddleware",
@@ -4858,13 +4157,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `CSRF`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_csrf_protection.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_csrf_protection.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CSRFMiddleware",
@@ -4901,13 +4194,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_csrf_protection.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_csrf_protection.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CSRFProtection",
@@ -4940,13 +4227,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cache_layer.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cache_layer.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CacheBackend",
@@ -4977,13 +4258,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_canary_tokens.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_canary_tokens.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CanaryRegistry",
@@ -5014,13 +4289,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_canary_tokens.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_canary_tokens.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CanaryToken",
@@ -5051,13 +4320,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_chaos_testing.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_chaos_testing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ChaosEngine",
@@ -5088,13 +4351,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Chaos`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_chaos_testing.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_chaos_testing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ChaosMiddleware",
@@ -5130,13 +4387,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_compliance_engine.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_compliance_engine.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ComplianceEngine",
@@ -5167,13 +4418,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_compliance_engine.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_compliance_engine.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ComplianceEvent",
@@ -5206,13 +4451,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_tenant_onboarding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ConfigureBillingStep",
@@ -5243,13 +4482,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CostEstimate",
@@ -5280,13 +4513,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CostEstimatorProtocol",
@@ -5317,13 +4544,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Cost`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CostMiddleware",
@@ -5359,13 +4580,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_tenant_onboarding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CreateAdminUserStep",
@@ -5396,13 +4611,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_tenant_onboarding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "CreateTenantStep",
@@ -5433,13 +4642,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DBQueryCostEstimator",
@@ -5470,13 +4673,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `DLP`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_dlp_shield.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_dlp_shield.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DLPMiddleware",
@@ -5513,13 +4710,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_load_shedding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_load_shedding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DegradationManager",
@@ -5550,13 +4741,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_transactional_email.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_transactional_email.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DeliveryTracker",
@@ -5592,13 +4777,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_dependency_health_map.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_dependency_health_map.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DependencyChecker",
@@ -5634,13 +4813,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_ml_gpu_inference.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_ml_gpu_inference.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DeviceManager",
@@ -5671,13 +4844,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_push_notifications_native.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_push_notifications_native.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "DeviceToken",
@@ -5710,13 +4877,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_transactional_email.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_transactional_email.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "EmailEvent",
@@ -5749,13 +4910,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_email_templates.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_email_templates.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "EmailProvider",
@@ -5786,13 +4941,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_secret_rotation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_secret_rotation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "EnvSecretProvider",
@@ -5823,13 +4972,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_chaos_testing.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_chaos_testing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ErrorInjector",
@@ -5862,13 +5005,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_push_notifications_native.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_push_notifications_native.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FCMProvider",
@@ -5899,13 +5036,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Fingerprint`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_request_fingerprint.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_request_fingerprint.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FingerprintMiddleware",
@@ -5941,13 +5072,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_request_fingerprint.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_request_fingerprint.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "FingerprintStore",
@@ -5978,13 +5103,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_dependency_health_map.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_dependency_health_map.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "HealthMapBuilder",
@@ -6015,13 +5134,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_health_deep.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_health_deep.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "HealthRegistry",
@@ -6052,13 +5165,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_input_sanitization.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_input_sanitization.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "InputSanitizer",
@@ -6089,13 +5196,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_arq_worker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_arq_worker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "Job",
@@ -6128,13 +5229,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_arq_worker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_arq_worker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "JobStatus",
@@ -6165,13 +5260,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_chaos_testing.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_chaos_testing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "LatencyInjector",
@@ -6202,13 +5291,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `LeakDetector`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_secret_rotation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_secret_rotation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "LeakDetectorMiddleware",
@@ -6245,13 +5328,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `LoadShedding`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_load_shedding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_load_shedding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "LoadSheddingMiddleware",
@@ -6287,13 +5364,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_ml_model_registry.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_ml_model_registry.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "MLModel",
@@ -6326,13 +5397,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_sqladmin.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_sqladmin.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "MODEL_NAMEAdmin",
@@ -6363,13 +5428,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_ml_gpu_inference.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_ml_gpu_inference.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "MemoryGuard",
@@ -6400,13 +5459,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_api_monetization.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_api_monetization.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "MeterEventBuffer",
@@ -6437,13 +5490,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Metering`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_api_monetization.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_api_monetization.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "MeteringMiddleware",
@@ -6479,13 +5526,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_notifications.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_notifications.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "Notification",
@@ -6518,13 +5559,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Notification`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_notifications.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_notifications.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "NotificationService",
@@ -6559,13 +5594,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `OTEL`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_opentelemetry.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_opentelemetry.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OTELMiddleware",
@@ -6601,13 +5630,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_tenant_onboarding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OnboardingOrchestrator",
@@ -6638,13 +5661,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_tenant_onboarding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OnboardingProgress",
@@ -6675,13 +5692,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_tenant_onboarding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OnboardingStep",
@@ -6712,13 +5723,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_outbox_pattern.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_outbox_pattern.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OutboxDlq",
@@ -6751,13 +5756,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_outbox_pattern.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_outbox_pattern.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OutboxEvent",
@@ -6790,13 +5789,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Outbox`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_outbox_pattern.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_outbox_pattern.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "OutboxService",
@@ -6831,13 +5824,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Prometheus`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_prometheus_metrics.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_prometheus_metrics.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "PrometheusMiddleware",
@@ -6873,13 +5860,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_push_notifications_native.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_push_notifications_native.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "PushService",
@@ -6910,13 +5891,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Recorder`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_api_replay_debugger.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_api_replay_debugger.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RecorderMiddleware",
@@ -6953,13 +5928,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_stripe_refund_flow.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_stripe_refund_flow.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "Refund",
@@ -6992,13 +5961,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_stripe_refund_flow.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_stripe_refund_flow.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RefundStatus",
@@ -7029,13 +5992,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Registry`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_ml_model_registry.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_ml_model_registry.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RegistryService",
@@ -7070,13 +6027,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_pdf_reports.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_pdf_reports.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ReportEngine",
@@ -7107,13 +6058,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_request_fingerprint.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_request_fingerprint.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RequestFingerprinter",
@@ -7144,13 +6089,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_prometheus_metrics.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_prometheus_metrics.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RequestMetrics",
@@ -7181,13 +6120,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_api_replay_debugger.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_api_replay_debugger.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RequestRecorder",
@@ -7218,13 +6151,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_api_replay_debugger.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_api_replay_debugger.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "RequestReplayer",
@@ -7255,13 +6182,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_email_templates.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_email_templates.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ResendProvider",
@@ -7292,13 +6213,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `ResponseArmor`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_response_armor.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_response_armor.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ResponseArmorMiddleware",
@@ -7334,13 +6249,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_s3_storage.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_s3_storage.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "S3Client",
@@ -7371,13 +6280,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_cost_tracker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_cost_tracker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "S3CostEstimator",
@@ -7408,13 +6311,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_email_templates.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_email_templates.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SMTPProvider",
@@ -7445,13 +6342,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_saga.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_saga.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "Saga",
@@ -7482,13 +6373,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_saga.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_saga.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SagaCoordinator",
@@ -7523,13 +6408,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_saga.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_saga.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SagaInstance",
@@ -7562,13 +6441,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_saga.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_saga.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SagaStepExecution",
@@ -7601,13 +6474,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Sanitize`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_input_sanitization.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_input_sanitization.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SanitizeMiddleware",
@@ -7644,13 +6511,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_scheduled_tasks.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_scheduled_tasks.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SchedulerFactory",
@@ -7681,13 +6542,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_secret_rotation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_secret_rotation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SecretProvider",
@@ -7718,13 +6573,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_runtime_sentinel.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_runtime_sentinel.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SecurityEvent",
@@ -7755,13 +6604,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_tenant_onboarding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SeedDataStep",
@@ -7792,13 +6635,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_tenant_onboarding.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_tenant_onboarding.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SendWelcomeEmailStep",
@@ -7829,13 +6666,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_transactional_email.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_transactional_email.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SendgridProvider",
@@ -7866,13 +6697,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_dlp_shield.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_dlp_shield.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "SensitivePattern",
@@ -7903,13 +6728,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_graceful_shutdown.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_graceful_shutdown.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ShutdownHealthGate",
@@ -7942,13 +6761,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Shutdown`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_graceful_shutdown.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_graceful_shutdown.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "ShutdownMiddleware",
@@ -7984,13 +6797,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_s3_storage.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_s3_storage.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "StorageConfig",
@@ -8021,13 +6828,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_email_templates.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_email_templates.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TemplateName",
@@ -8058,13 +6859,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_temporal_workflow.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_temporal_workflow.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TemporalClientFactory",
@@ -8095,13 +6890,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_chaos_testing.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_chaos_testing.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TimeoutInjector",
@@ -8132,13 +6921,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_adaptive_timeouts.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_adaptive_timeouts.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TimeoutRegistry",
@@ -8169,13 +6952,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_request_tracing_ui.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_request_tracing_ui.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TimingCollector",
@@ -8206,13 +6983,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `Tracing`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_request_tracing_ui.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_request_tracing_ui.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "TracingMiddleware",
@@ -8248,13 +7019,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. Suggested motor name: `UploadSize`.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_s3_storage.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_s3_storage.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "UploadSizeMiddleware",
@@ -8291,13 +7056,7 @@
       "verdict": "extract_motor_pair",
       "tier": "none",
       "rationale": "Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per \u00a7B1.0.1. No common framework suffix; motor name must be chosen manually.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_api_monetization.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_api_monetization.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "UsageRecord",
@@ -8330,13 +7089,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_secret_rotation.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_secret_rotation.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "VaultSecretProvider",
@@ -8367,13 +7120,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_temporal_workflow.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_temporal_workflow.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "WorkerFactory",
@@ -8404,13 +7151,7 @@
       "verdict": "needs_caller",
       "tier": "none",
       "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [
-        {
-          "kind": "generator_ref",
-          "source": "adapt/extend/infrastructure/add_arq_worker.py",
-          "detail": "Primitive was extracted from `adapt/extend/infrastructure/add_arq_worker.py` (still in catalog); origin tool remains a live caller pattern."
-        }
-      ],
+      "signals": [],
       "blockers": [],
       "state": {
         "name": "WorkerSettings",

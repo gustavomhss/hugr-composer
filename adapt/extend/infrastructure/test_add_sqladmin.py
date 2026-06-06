@@ -207,9 +207,9 @@ def test_views_model_admins() -> None:
     content = views_file.read_text()
     assert "MODEL_ADMINS" in content, "MODEL_ADMINS list not found"
     # Count Admin classes
-    admin_count = content.count("Admin(ModelAdmin")
+    admin_count = content.count("Admin(ModelView")
     assert admin_count >= 2, (
-        f"Expected >= 2 ModelAdmin entries, found {admin_count}"
+        f"Expected >= 2 ModelView entries, found {admin_count}"
     )
 
 

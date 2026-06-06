@@ -1,7 +1,7 @@
 """TOOL-025: add_sqladmin — add a production-grade admin panel to a FastAPI project.
 
 Writes an ``app/admin/`` package containing a SQLAdmin setup module,
-authentication backend (superuser-gated), and auto-generated ModelAdmin
+authentication backend (superuser-gated), and auto-generated ModelView
 classes for every SQLAlchemy model discovered in ``app/models/__init__.py``.
 
 The tool is idempotent: a second run detects ``setup_admin`` in
@@ -167,9 +167,9 @@ def add_sqladmin(
         files_modified=files_modified,
         notes=[
             "SQLAdmin panel added: setup module, auth backend "
-            "(superuser-gated), auto-generated ModelAdmin views.",
+            "(superuser-gated), auto-generated ModelView views.",
             f"Admin mounted at {admin_path!r} with title {admin_title!r}.",
-            f"ModelAdmin classes generated for: {', '.join(model_names)}.",
+            f"ModelView classes generated for: {', '.join(model_names)}.",
             "SessionMiddleware registered in setup_admin() for cookie-based sessions.",
             "sqladmin is imported lazily inside setup_admin() — app boots without it.",
             "Sensitive columns (hashed_password, secret_enc, entry_hash, prev_hash) excluded.",
@@ -251,7 +251,7 @@ def _build_views_content(model_names: list[str]) -> str:
 
 
 def _build_single_view(name: str) -> str:
-    """Generate a single ModelAdmin class for the given model name.
+    """Generate a single ModelView class for the given model name.
 
     Args:
         name: The model class name (e.g. "User").
@@ -268,8 +268,9 @@ def _build_single_view(name: str) -> str:
     else:
         plural = name + "s"
     return (
-        f"class {name}Admin(ModelAdmin, model={name}):\n"
+        f"class {name}Admin(ModelView):\n"
         f'    """Admin view for the {name} model."""\n\n'
+        f"    model = {name}\n"
         "    column_exclude_list = [\n"
         '        "hashed_password", "secret_enc", "entry_hash", "prev_hash",\n'
         "    ]\n"
