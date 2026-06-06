@@ -1,0 +1,17 @@
+# App-runtime extras imported by generated FastAPI projects (module-level).
+# Split out of the monorepo during the v1.0 standalone extraction: these
+# were previously satisfied only by leftover packages on the self-hosted
+# runner (hidden dependency debt). Declared here so boot/tests are
+# reproducible in a clean venv. Lazy-imported SDKs (stripe, boto3, celery,
+# redis) are NOT listed — they import inside function bodies and never break
+# app boot.
+aiodataloader
+anyio
+arq
+cryptography
+Jinja2
+msgpack
+PyJWT
+sqladmin
+strawberry-graphql
+structlog
