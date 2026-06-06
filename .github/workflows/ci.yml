@@ -1,135 +1,238 @@
-# SKILL-001: FastAPI Production — CI Pipeline
-#
-# Runs on every push and pull request to main/develop.
-# Jobs:
-#   1. test     — all 1020+ adapt tool unit tests (make test)
-#   2. audit-l1 — correctness audit: tools parse, tests pass, orchestrator works
-#   3. e2e      — full end-to-end chain (generate → adapt → validate)
-#
-# Matrix: Python 3.12 × 3.13
+name: CI (self-hosted, parallel)
 
-name: CI
+# Parallel CI on self-hosted runners (Gustavo's mac). The skill IS the repo
+# root here (standalone extraction), so every command runs from the checkout
+# root with PYTHONPATH=. — no monorepo skill subdir prefix.
+#
+# This splits the suite into independent JOBS that run concurrently across
+# multiple persistent runner instances on the same mac → ~max(job) instead of
+# sum(steps). All runners share one venv at $HOME/.hugr-ci-venv (built once by
+# the `setup` job, reused — runners are persistent).
+#
+# Dependency install mirrors the two-file split this repo uses:
+#   - requirements-mcp.txt  (MCP server + adapt-tool contracts + audit)
+#   - requirements-apps.txt (app-runtime extras: strawberry, sqladmin, arq,
+#                            slowapi, ... — without it boot/unit fail)
+#
+# Local Postgres on :5432 (user/pass/db = skill/skill/skill_e2e) for the pg jobs.
 
 on:
   push:
-    branches: [main, develop, "feature/**", "fix/**"]
+    branches: [main]
+    paths:
+      - '**'
   pull_request:
-    branches: [main, develop]
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * *'   # nightly full run (07:00 UTC)
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  # Fixed group (NOT per-ref): only one CI run at a time on the shared single
+  # runner pool. A new run cancels the prior — newest wins, never piles up.
+  group: "ci-skill-001-selfhosted"
   cancel-in-progress: true
 
 env:
-  # The skill root is the repo root; all make targets reference $(SKILL_ROOT).
-  PYTHONPATH: .
+  VENV: /Users/gustavoschneiter/.hugr-ci-venv
+  SECRET_KEY: ci-test-secret-key-must-be-32-chars-long!!!
+  MFA_FERNET_KEY: L7gvXDh2v6syV65J0-iwLQMTYbVavNXO2vuXgntcFBo=
+  RATE_LIMITING_ENABLED: 'false'
+  ENVIRONMENT: local
 
 jobs:
-  # ──────────────────────────────────────────────────────────────────────────
-  # Job 1: Unit tests (all 1020+ adapt tool tests)
-  # ──────────────────────────────────────────────────────────────────────────
-  test:
-    name: "test / Python ${{ matrix.python-version }}"
-    runs-on: ubuntu-latest
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12", "3.13"]
-
+  # --- Shared venv build (idempotent; persistent runners reuse it) ----------
+  setup:
+    name: setup (shared venv)
+    runs-on: [self-hosted, macos, local]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
         with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: requirements-mcp.txt
-
-      - name: Install dependencies
+          fetch-depth: 0
+      - name: Ensure shared venv
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-mcp.txt
+          set -euo pipefail
+          REQ_HASH=$(cat requirements-mcp.txt requirements-apps.txt | shasum | awk '{print $1}')
+          STAMP="${VENV}/.req_hash"
+          if [ ! -x "${VENV}/bin/python" ] || [ "$(cat "$STAMP" 2>/dev/null)" != "$REQ_HASH" ]; then
+            echo "Building shared venv at ${VENV}"
+            /usr/local/bin/python3.12 -m venv "${VENV}" || python3.12 -m venv "${VENV}"
+            "${VENV}/bin/pip" install --quiet --upgrade pip
+            "${VENV}/bin/pip" install --quiet -r requirements-mcp.txt
+            "${VENV}/bin/pip" install --quiet -r requirements-apps.txt
+            # Test-runner extras not pulled in by the two requirements files.
+            "${VENV}/bin/pip" install --quiet pytest pytest-xdist ruff
+            echo "$REQ_HASH" > "$STAMP"
+          else
+            echo "Shared venv up to date (req hash $REQ_HASH)"
+          fi
 
-      - name: Run all adapt tool tests
-        run: make test
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # Job 2: L1 correctness audit
-  # ──────────────────────────────────────────────────────────────────────────
-  audit-l1:
-    name: "audit-l1 / Python ${{ matrix.python-version }}"
-    runs-on: ubuntu-latest
-    needs: test          # only run if unit tests pass
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12", "3.13"]
-
+  # --- Lint (ruff, scoped to PR diff) ---------------------------------------
+  lint:
+    name: lint
+    needs: setup
+    runs-on: [self-hosted, macos, local]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: requirements-mcp.txt
-
-      - name: Install dependencies
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Lint (ruff check + format, scoped to PR diff)
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-mcp.txt
+          set -euo pipefail
+          TARGET="${GITHUB_BASE_REF:-main}"
+          git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
+          BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
+          if [ -z "$BASE" ] && [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+            git fetch -q --no-tags --unshallow origin 2>/dev/null || true
+            git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
+            BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
+          fi
+          [ -z "$BASE" ] && { echo "::error::cannot determine diff base"; exit 1; }
+          CHANGED=$(git diff --name-only --diff-filter=ACMR "$BASE" HEAD)
+          # Mirror pyproject.toml ruff extend-exclude (ignored when ruff is
+          # invoked with explicit files):
+          #   - core/venous/_staging/ — staged-primitive pool (dirty by design)
+          #   - *.protocol.py — type-protocol stubs (N999 + F821 by design)
+          PYF=$(echo "$CHANGED" | grep '\.py$' | grep -vE '\.venv|/emitted/|core/venous/_staging/|core/venous/_extracted/|\.protocol\.py$' || true)
+          if [ -n "$PYF" ]; then
+            "${VENV}/bin/python" -m ruff check $PYF
+            "${VENV}/bin/python" -m ruff format --check $PYF
+          fi
+      - name: Hygiene — no committed venvs/site-packages/emitted/db
+        run: "${VENV}/bin/python scripts/checks/no_committed_venv.py"
+      - name: Hygiene — narrative markdown only under docs/
+        run: "${VENV}/bin/python scripts/checks/md_location.py"
 
-      - name: Run L1 correctness audit
-        run: make audit-l1
-
-  # ──────────────────────────────────────────────────────────────────────────
-  # Job 3: E2E chain (generate project → apply adapt tools → validate output)
-  # ──────────────────────────────────────────────────────────────────────────
-  e2e:
-    name: "e2e / Python ${{ matrix.python-version }}"
-    runs-on: ubuntu-latest
-    needs: [test, audit-l1]   # final gate — requires both earlier jobs
-
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.12", "3.13"]
-
+  # --- Unit suite (the long pole; internally parallel) ----------------------
+  unit:
+    name: unit (pytest adapt/)
+    needs: setup
+    runs-on: [self-hosted, macos, local]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: Unit tests
+        env: { PYTHONPATH: . }
+        # -n 4 (not auto/12): the 12-core mac is SHARED with other projects' CI
+        # + dev work. Budget to ~half the machine to avoid cross-project CPU
+        # thrash + boot-timeout flakes.
+        run: "${VENV}/bin/python -m pytest adapt/ -q --tb=short -n 4 --dist loadfile"
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
-          cache: pip
-          cache-dependency-path: requirements-mcp.txt
+  # --- Boot sweep: every tool boots a fresh project (internally threaded) ----
+  boot:
+    name: boot (100 tools)
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: Per-tool boot sweep (4 threads)
+        env: { PYTHONPATH: . }
+        run: "${VENV}/bin/python tests/test_boot.py"
 
-      - name: Install dependencies
+  # --- Composition chains (forward/reverse full + hot-path chains) -----------
+  boot-chains:
+    name: boot chains
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: Chains (parallel)
+        env: { PYTHONPATH: . }
+        run: "${VENV}/bin/python -m pytest tests/test_boot_chains.py -n 3 -q --tb=short"
+
+  # --- Regression net: P0 gates + property tests + contract/doc audit --------
+  gates:
+    name: regression + property + contract
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: P0 gates + property + contract audit
+        env: { PYTHONPATH: . }
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements-mcp.txt
+          set -euo pipefail
+          "${VENV}/bin/python" tests/test_p0_regression_gates.py
+          "${VENV}/bin/python" tests/property_tests.py
+          "${VENV}/bin/python" -m engine.audit.contract_check
 
-      - name: Run E2E chain
-        run: make e2e
+  # --- Integration: SQLite e2e + emitted-project audit ----------------------
+  integration:
+    name: integration (sqlite e2e)
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: SQLite E2E + emitted audit
+        env: { PYTHONPATH: . }
+        run: |
+          set -euo pipefail
+          "${VENV}/bin/python" tests/test_e2e_hardcore.py
+          "${VENV}/bin/python" tests/test_emitted_project_audit.py
 
-      # ── Reference project smoke tests ──────────────────────────────────
-      # Run each reference example script as an additional smoke test.
-      # These scripts generate a complete project into a temp dir, apply
-      # all adapt tools, and validate that every .py file parses cleanly.
+  # --- Gate: auth gate + MCP discovery --------------------------------------
+  auth-mcp:
+    name: auth + mcp gate
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: Auth gate + MCP discovery
+        env: { PYTHONPATH: . }
+        run: |
+          set -euo pipefail
+          "${VENV}/bin/python" tests/test_auth_gate.py
+          # Post WAVE-0-F2 (ADR-0003): default discovery surfaces Tier-1 meta +
+          # a small default bundle slice (~18 tools) instead of the full 201;
+          # the rest activate on demand. Assert two surfaces:
+          #   (a) the lean default tools/list (<= 30 — clutter cap),
+          #   (b) the full catalogue still reaches >= 170 after every bundle is
+          #       activated (no tool got dropped during the refactor).
+          "${VENV}/bin/python" -c "
+          import asyncio, json, pathlib
+          from mcp_tools.server import mcp
+          from mcp_tools.discovery import discover_and_register, activate_bundle
+          discover_and_register(mcp)
+          default = len(asyncio.run(mcp.list_tools()))
+          print(f'MCP discovery default surface: {default} tools')
+          assert default <= 30, f'tier-1 surface must stay lean (<=30), got {default}'
+          cat = json.loads(pathlib.Path('engine/index/catalog.json').read_text())
+          for s in cat.get('skills', []):
+              for b in s.get('bundles', []):
+                  activate_bundle(b['name'])
+          full = len(asyncio.run(mcp.list_tools()))
+          print(f'MCP discovery full surface (all bundles active): {full} tools')
+          assert full >= 170, f'expected >=170 after activating all bundles, got {full}'
+          "
 
-      - name: Smoke test — E-commerce reference
-        run: PYTHONPATH=. python3 docs/examples/ecommerce.py
-
-      - name: Smoke test — SaaS B2B reference
-        run: PYTHONPATH=. python3 docs/examples/saas_b2b.py
-
-      - name: Smoke test — Event-Driven reference
-        run: PYTHONPATH=. python3 docs/examples/event_driven.py
+  # --- Postgres-backed: pg e2e + behavior scenarios -------------------------
+  postgres-behavior:
+    name: postgres + behavior
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    env:
+      E2E_POSTGRES_URL: postgresql+asyncpg://skill:skill@localhost:5432/skill_e2e
+      POSTGRES_SERVER: localhost
+      POSTGRES_PORT: '5432'
+      POSTGRES_USER: skill
+      POSTGRES_PASSWORD: skill
+      POSTGRES_DB: skill_e2e
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: PostgreSQL E2E + behavior scenarios
+        env: { PYTHONPATH: . }
+        run: |
+          set -euo pipefail
+          "${VENV}/bin/python" tests/test_e2e_postgres.py
+          "${VENV}/bin/python" tests/test_behavior_scenarios.py

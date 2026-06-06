@@ -2,7 +2,7 @@ SKILL_ROOT := $(shell pwd)
 PYTHON     := PYTHONPATH=$(SKILL_ROOT) python3
 AUDIT_DIR  := $(SKILL_ROOT)/audit
 
-.PHONY: help test audit audit-l1 audit-l2 audit-security audit-quality e2e clean
+.PHONY: help test audit audit-l1 audit-l2 audit-security audit-quality e2e clean hygiene
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) \
@@ -36,6 +36,12 @@ audit:  ## Run full audit (L1+L2+security+quality+e2e)
 e2e:  ## Full E2E chain (generate+adapt tools+validate)
 	@echo "==> E2E chain …"
 	@$(PYTHON) $(AUDIT_DIR)/audit_everything.py --e2e-only
+
+hygiene:  ## Run hygiene checks (no-committed-venv, md-location, file-size); NOT a CI gate
+	@echo "==> Hygiene checks …"
+	@$(PYTHON) $(SKILL_ROOT)/scripts/checks/no_committed_venv.py
+	@$(PYTHON) $(SKILL_ROOT)/scripts/checks/md_location.py
+	@$(PYTHON) $(SKILL_ROOT)/scripts/checks/file_size.py
 
 clean:  ## Clean temp files and __pycache__
 	@echo "==> Cleaning …"
