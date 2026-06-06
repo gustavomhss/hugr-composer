@@ -1,0 +1,83 @@
+HuGR Arsenal — Proprietary Software License
+
+Copyright (c) 2026 HumanGR Labs. All rights reserved.
+
+
+1. Grant
+
+Subject to the terms below, HumanGR Labs ("Licensor") grants the
+named licensee ("Licensee") a non-exclusive, non-transferable,
+revocable license to internally use, copy, and modify the HuGR
+Arsenal software and documentation (the "Software") for the
+Licensee's own backend-engineering work.
+
+The license is granted only upon a separate, signed commercial
+agreement between Licensor and Licensee. Absence of such an
+agreement means no license is granted and this file is the notice
+of reservation of rights.
+
+
+2. Restrictions
+
+Unless expressly permitted in writing by Licensor, Licensee may NOT:
+
+   (a) distribute, sublicense, sell, rent, lease, or make the
+       Software available to any third party;
+   (b) remove or alter this copyright notice or any trademarks,
+       proprietary legends, or license text on the Software;
+   (c) use the Software to build a service that competes with
+       HumanGR Labs' own products;
+   (d) reverse-engineer, decompile, or derive the source of any
+       component distributed only in binary form;
+   (e) publish benchmark results or comparison studies without
+       prior written consent.
+
+
+3. Ownership
+
+The Software is licensed, not sold. Licensor retains all right,
+title, and interest in and to the Software, including all
+intellectual property rights. Any feedback, suggestions, or
+contributions by Licensee to the Software become the property of
+Licensor unless a separate written agreement says otherwise.
+
+
+4. Third-party components
+
+The Software may include third-party open-source components, each
+governed by its own license. Those licenses are preserved in the
+source tree and in generated projects where applicable. Nothing in
+this file overrides a bona-fide third-party license.
+
+
+5. No warranty
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+NON-INFRINGEMENT. IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY
+CLAIM, DAMAGES, OR OTHER LIABILITY ARISING FROM OR IN CONNECTION
+WITH THE SOFTWARE OR ITS USE.
+
+
+6. Termination
+
+This license terminates automatically if Licensee breaches any
+term. Upon termination, Licensee must destroy all copies of the
+Software in its possession.
+
+
+7. Governing law
+
+This license is governed by the laws of Brazil. Any dispute shall
+be resolved in the courts of São Paulo, SP.
+
+
+8. Licensing inquiries
+
+Contact: gustavo@humangr.com
+
+For open-source component requests or commercial licensing
+discussions, reach out at the address above. This file is
+authoritative; any verbal or informal representation to the
+contrary does not bind Licensor.

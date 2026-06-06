@@ -6,3 +6,8 @@ __pycache__/
 
 # Phase 2 docs site — regenerated deterministically by `python -m engine.docs.build`
 docs_site/
+tools_latent_primitives.json
+primitive_candidates_ranked.json
+dedupe_report.json
+ambiguous_primitives.json
+_t0_report.json

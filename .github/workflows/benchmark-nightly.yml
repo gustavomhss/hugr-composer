@@ -1,0 +1,74 @@
+name: benchmark-nightly
+
+on:
+  schedule:
+    - cron: "17 3 * * *"     # 03:17 UTC daily
+  workflow_dispatch:
+    inputs:
+      adapter:
+        description: "Agent adapter"
+        required: true
+        default: "stub"
+        type: choice
+        options: ["stub", "claude"]
+      model:
+        description: "Claude model (if adapter=claude)"
+        required: false
+        default: "claude-opus-4-7"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: "benchmark"
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: skills/SKILL-001-fastapi-production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Install minimal deps
+        run: python -m pip install pyyaml anthropic
+
+      - name: Run benchmark (stub)
+        if: ${{ github.event_name == 'schedule' || inputs.adapter == 'stub' }}
+        run: PYTHONPATH=. python -m engine.bench.runner --adapter stub --out benchmarks/latest_score.json
+
+      - name: Run benchmark (Claude agent)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.adapter == 'claude' }}
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          HUGR_MAESTRO_MODEL: ${{ inputs.model }}
+        run: PYTHONPATH=. python -m engine.bench.run_claude --out benchmarks/latest_score.json
+
+      - name: Publish score artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-score
+          path: skills/SKILL-001-fastapi-production/benchmarks/latest_score.json
+
+      # IMPORTANT: only a REAL (claude-adapter) run may be published to main.
+      # The scheduled stub run is a smoke test only -- it uploads an artifact
+      # above but must NEVER commit, or it clobbers the published score with a
+      # degenerate stub number (this caused a B3.5 contract violation once).
+      - name: Commit score on main
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.adapter == 'claude' && github.ref == 'refs/heads/main' }}
+        run: |
+          git config user.name "hugr-bench"
+          git config user.email "bench@humangr.com"
+          git add benchmarks/latest_score.json
+          if git diff --cached --quiet; then
+            echo "no score change"
+          else
+            git commit -m "chore(bench): publish real Claude benchmark score"
+            git push
+          fi

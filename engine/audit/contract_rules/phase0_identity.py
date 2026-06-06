@@ -336,6 +336,24 @@ def _r_no_legacy_terminology() -> tuple[bool, str]:
             rel = path.relative_to(REPO_ROOT).as_posix()
         except ValueError:
             continue
+        # Skip non-source trees: virtualenvs, VCS, and tool caches. In the
+        # standalone repo the .venv lives inside REPO_ROOT, and third-party
+        # packages (e.g. faker's pt_PT providers) legitimately contain the
+        # card-brand word "Maestro" — those are not live HuGR doc/code.
+        if any(
+            f"/{seg}/" in f"/{rel}"
+            for seg in (
+                ".venv",
+                ".git",
+                "__pycache__",
+                "node_modules",
+                ".mypy_cache",
+                ".pytest_cache",
+                ".ruff_cache",
+                ".hypothesis",
+            )
+        ):
+            continue
         if any(ex in rel for ex in _B09_LEGACY_TERM_EXEMPTIONS):
             continue
         try:
