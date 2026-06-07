@@ -67,6 +67,58 @@ jobs:
             echo "Shared venv up to date (req hash $REQ_HASH)"
           fi
 
+  # --- Change detector: gate the heavy tool/app suites by path ---------------
+  # The heavy suites (unit/boot/boot-chains/integration/postgres-behavior)
+  # exercise the TOOLS and the emitted APP. Changes confined to dev-time engine
+  # machinery (engine/**), docs, *.md, or skill.toml don't touch any of that, so
+  # those suites are skipped for such PRs — the always-on `gates` job
+  # (contract_check + property + p0 regression) is the engine safety net.
+  # FAIL-SAFE: non-PR events (push to main / schedule / manual) and any
+  # undetermined diff base run EVERYTHING; anything outside the light set
+  # (deps, tests/, .github/, adapt/, app/, ...) flips heavy=true.
+  changes:
+    name: detect changes
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    outputs:
+      heavy: ${{ steps.detect.outputs.heavy }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: detect
+        run: |
+          set -euo pipefail
+          if [ "${GITHUB_EVENT_NAME}" != "pull_request" ]; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            echo "non-PR event (${GITHUB_EVENT_NAME}) → heavy=true (full suite)"
+            exit 0
+          fi
+          TARGET="${GITHUB_BASE_REF:-main}"
+          git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
+          BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
+          if [ -z "$BASE" ] && [ "$(git rev-parse --is-shallow-repository 2>/dev/null)" = "true" ]; then
+            git fetch -q --no-tags --unshallow origin 2>/dev/null || true
+            git fetch -q --no-tags origin "+refs/heads/${TARGET}:refs/remotes/origin/${TARGET}" || true
+            BASE=$(git merge-base "origin/${TARGET}" HEAD 2>/dev/null || true)
+          fi
+          if [ -z "$BASE" ]; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::cannot determine diff base → heavy=true (fail-safe full suite)"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only --diff-filter=ACMR "$BASE" HEAD)
+          echo "changed files:"; echo "$CHANGED"
+          # LIGHT set = dev-time engine machinery + narrative/metadata only.
+          # Everything else is HEAVY (fail-safe default).
+          HEAVY_HITS=$(echo "$CHANGED" | grep -vE '^(engine/|docs/|skill\.toml$)' | grep -vE '\.md$' || true)
+          if [ -n "$HEAVY_HITS" ]; then
+            echo "heavy=true" >> "$GITHUB_OUTPUT"
+            echo "heavy paths touched → full suite:"; echo "$HEAVY_HITS"
+          else
+            echo "heavy=false" >> "$GITHUB_OUTPUT"
+            echo "engine/docs-only change → skipping heavy tool/app suites (gates still runs)"
+          fi
+
   # --- Lint (ruff, scoped to PR diff) ---------------------------------------
   lint:
     name: lint
@@ -105,7 +157,8 @@ jobs:
   # --- Unit suite (the long pole; internally parallel) ----------------------
   unit:
     name: unit (pytest adapt/)
-    needs: setup
+    needs: [setup, changes]
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
@@ -121,7 +174,8 @@ jobs:
   # --- Boot sweep: every tool boots a fresh project (internally threaded) ----
   boot:
     name: boot (100 tools)
-    needs: setup
+    needs: [setup, changes]
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
@@ -134,7 +188,8 @@ jobs:
   # --- Composition chains (forward/reverse full + hot-path chains) -----------
   boot-chains:
     name: boot chains
-    needs: setup
+    needs: [setup, changes]
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
@@ -164,7 +219,8 @@ jobs:
   # --- Integration: SQLite e2e + emitted-project audit ----------------------
   integration:
     name: integration (sqlite e2e)
-    needs: setup
+    needs: [setup, changes]
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: [self-hosted, macos, local]
     steps:
       - uses: actions/checkout@v4
@@ -217,7 +273,8 @@ jobs:
   # --- Postgres-backed: pg e2e + behavior scenarios -------------------------
   postgres-behavior:
     name: postgres + behavior
-    needs: setup
+    needs: [setup, changes]
+    if: needs.changes.outputs.heavy == 'true'
     runs-on: [self-hosted, macos, local]
     env:
       E2E_POSTGRES_URL: postgresql+asyncpg://skill:skill@localhost:5432/skill_e2e
