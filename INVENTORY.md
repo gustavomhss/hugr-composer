@@ -16,7 +16,7 @@
 
 ---
 
-## 1. adapt/ — 131 tools
+## 1. adapt/ — 134 tools
 
 | bucket | count |
 |---|---:|
@@ -24,7 +24,7 @@
 | `verify` | 6 |
 | `operate` | 8 |
 | `evolve` | 8 |
-| `proactive` | 1 |
+| `proactive` | 4 |
 | `contracts` | 4 |
 
 ### adapt/extend/ sub-domains (104 tools)
@@ -57,7 +57,7 @@ the full surface.
 | `realtime` | 7 | streaming, sse, websocket |
 | `testing_tools` | 12 | testing, fixtures |
 
-## 3. generators/ — 56 tools
+## 3. generators/ — 60 tools
 
 | category | count |
 |---|---:|
@@ -67,7 +67,7 @@ the full surface.
 | `endpoints` | 4 |
 | `infra` | 11 |
 | `middleware` | 7 |
-| `observability` | 3 |
+| `observability` | 7 |
 | `schemas` | 3 |
 | `testing` | 0 |
 | `tools` | 9 |
