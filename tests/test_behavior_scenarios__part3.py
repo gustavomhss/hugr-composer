@@ -10,7 +10,6 @@ import importlib
 
 from tests.test_behavior_scenarios__shared import Scenario, ScenarioContext
 
-
 # ===========================================================================
 # SCENARIO 11 — Email templates (Jinja2 + pluggable provider)
 # ===========================================================================

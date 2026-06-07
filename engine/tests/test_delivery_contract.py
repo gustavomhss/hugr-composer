@@ -31,17 +31,17 @@ def _run() -> int:
     # the same behaviour it had before the file was split.
     from engine.tests import (  # noqa: F401
         test_delivery_contract__part1 as _p1,
+    )
+    from engine.tests import (
         test_delivery_contract__part2 as _p2,
+    )
+    from engine.tests import (
         test_delivery_contract__part3 as _p3,
     )
 
     tests: list = []
     for mod in (_p1, _p2, _p3):
-        tests.extend(
-            v
-            for k, v in vars(mod).items()
-            if k.startswith("test_") and callable(v)
-        )
+        tests.extend(v for k, v in vars(mod).items() if k.startswith("test_") and callable(v))
 
     passed = 0
     failed: list[tuple[str, str]] = []

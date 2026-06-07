@@ -28,16 +28,16 @@ from tests.common.fixture_factory import create_fixture_project  # noqa: E402
 # ---------------------------------------------------------------------------
 
 TOOLS_10: list[tuple[str, str, str]] = [
-    ("add_soft_delete",      "adapt.extend.crud_data.add_soft_delete",      "add_soft_delete"),
-    ("add_multi_tenancy",    "adapt.extend.auth_access.add_multi_tenancy",  "add_multi_tenancy"),
-    ("add_rbac",             "adapt.extend.auth_access.add_rbac",           "add_rbac"),
-    ("add_mfa",              "adapt.extend.auth_access.add_mfa",            "add_mfa"),
-    ("add_api_key_auth",     "adapt.extend.auth_access.add_api_key_auth",   "add_api_key_auth"),
-    ("add_audit_log",        "adapt.extend.crud_data.add_audit_log",        "add_audit_log"),
-    ("add_cache_layer",      "adapt.extend.infrastructure.add_cache_layer", "add_cache_layer"),
-    ("add_sse",              "adapt.extend.realtime.add_sse",               "add_sse"),
-    ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver",  "add_webhook_receiver"),
-    ("add_search",           "adapt.extend.crud_data.add_search",           "add_search"),
+    ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete", "add_soft_delete"),
+    ("add_multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy", "add_multi_tenancy"),
+    ("add_rbac", "adapt.extend.auth_access.add_rbac", "add_rbac"),
+    ("add_mfa", "adapt.extend.auth_access.add_mfa", "add_mfa"),
+    ("add_api_key_auth", "adapt.extend.auth_access.add_api_key_auth", "add_api_key_auth"),
+    ("add_audit_log", "adapt.extend.crud_data.add_audit_log", "add_audit_log"),
+    ("add_cache_layer", "adapt.extend.infrastructure.add_cache_layer", "add_cache_layer"),
+    ("add_sse", "adapt.extend.realtime.add_sse", "add_sse"),
+    ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver", "add_webhook_receiver"),
+    ("add_search", "adapt.extend.crud_data.add_search", "add_search"),
 ]
 
 
@@ -61,6 +61,7 @@ def _build_10_tool_project(tmp_dir: Path) -> Path:
 # AST helpers
 # ---------------------------------------------------------------------------
 
+
 def _parse_file(path: Path) -> ast.Module:
     """Parse a Python file to AST, raising SyntaxError with path context."""
     source = path.read_text(encoding="utf-8")
@@ -74,8 +75,7 @@ def _collect_py_files(directory: Path, *, exclude_dirs: set[str] | None = None) 
     """Return all .py files under directory, excluding given subdirectory names."""
     excludes = exclude_dirs or set()
     return [
-        p for p in sorted(directory.rglob("*.py"))
-        if not any(part in excludes for part in p.parts)
+        p for p in sorted(directory.rglob("*.py")) if not any(part in excludes for part in p.parts)
     ]
 
 

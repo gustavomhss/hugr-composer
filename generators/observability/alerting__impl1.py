@@ -31,7 +31,7 @@ BURN_RATE_SLOW: float = 1.0
 # Paired window durations -- long window detects sustained burn,
 # short = long / 12 confirms the problem is still active.
 FAST_WINDOW_LONG: str = "1h"
-FAST_WINDOW_SHORT: str = "5m"     # 1h / 12 ~= 5m
+FAST_WINDOW_SHORT: str = "5m"  # 1h / 12 ~= 5m
 
 MEDIUM_WINDOW_LONG: str = "6h"
 MEDIUM_WINDOW_SHORT: str = "30m"  # 6h / 12 = 30m
@@ -95,13 +95,10 @@ def _validate_slo_params(slo_availability: float, slo_latency_p99_ms: int) -> No
     """
     if not 0 < slo_availability < 1:
         raise ValueError(
-            f"slo_availability must be between 0 and 1 (exclusive), "
-            f"got {slo_availability}"
+            f"slo_availability must be between 0 and 1 (exclusive), got {slo_availability}"
         )
     if slo_latency_p99_ms <= 0:
-        raise ValueError(
-            f"slo_latency_p99_ms must be positive, got {slo_latency_p99_ms}"
-        )
+        raise ValueError(f"slo_latency_p99_ms must be positive, got {slo_latency_p99_ms}")
 
 
 # ---------------------------------------------------------------------------

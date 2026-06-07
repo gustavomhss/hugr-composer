@@ -14,11 +14,11 @@ from tests.test_behavior_scenarios_batch5__shared import (
     run_scenario_assert,
 )
 
-
 # ===========================================================================
 # SCENARIO 30 — Security: Throttle + Schema + Armor
 # TOOL-116 add_adaptive_throttle, TOOL-117 add_schema_enforcer, TOOL-118 add_response_armor
 # ===========================================================================
+
 
 async def flow_security_throttle_schema_armor(ctx: ScenarioContext) -> None:
     """AdaptiveThrottle behavioral fingerprint + cascading penalties, SchemaEnforcer drift, ResponseArmor hmac.compare_digest."""
@@ -26,14 +26,18 @@ async def flow_security_throttle_schema_armor(ctx: ScenarioContext) -> None:
     client = ctx.client
 
     import sys
+
     key = str(project_dir)
     if key not in sys.path:
         sys.path.insert(0, key)
 
     # ---- AdaptiveThrottle has behavioral fingerprinting + cascading penalties ----
     throttle_path = project_dir / "app" / "core" / "adaptive_throttle.py"
-    ctx.record("adaptive_throttle_file_exists", throttle_path.exists(),
-               str(throttle_path.relative_to(project_dir) if throttle_path.exists() else "NOT FOUND"))
+    ctx.record(
+        "adaptive_throttle_file_exists",
+        throttle_path.exists(),
+        str(throttle_path.relative_to(project_dir) if throttle_path.exists() else "NOT FOUND"),
+    )
 
     if throttle_path.exists():
         throttle_src = throttle_path.read_text()
@@ -48,29 +52,49 @@ async def flow_security_throttle_schema_armor(ctx: ScenarioContext) -> None:
             or "penalt" in throttle_src.lower()
             or "escalat" in throttle_src.lower()
         )
-        ctx.record("adaptive_throttle_config_class_present", has_config_class,
-                   "AdaptiveThrottleConfig in adaptive_throttle.py")
-        ctx.record("adaptive_throttle_has_behavioral_fingerprinting", has_behavioral,
-                   "fingerprint/behavioral/header_order pattern in adaptive_throttle.py")
-        ctx.record("adaptive_throttle_has_cascading_penalties", has_cascade,
-                   "cascad/penalt/escalat pattern in adaptive_throttle.py")
+        ctx.record(
+            "adaptive_throttle_config_class_present",
+            has_config_class,
+            "AdaptiveThrottleConfig in adaptive_throttle.py",
+        )
+        ctx.record(
+            "adaptive_throttle_has_behavioral_fingerprinting",
+            has_behavioral,
+            "fingerprint/behavioral/header_order pattern in adaptive_throttle.py",
+        )
+        ctx.record(
+            "adaptive_throttle_has_cascading_penalties",
+            has_cascade,
+            "cascad/penalt/escalat pattern in adaptive_throttle.py",
+        )
     else:
-        for lbl in ["adaptive_throttle_config_class_present",
-                    "adaptive_throttle_has_behavioral_fingerprinting",
-                    "adaptive_throttle_has_cascading_penalties"]:
+        for lbl in [
+            "adaptive_throttle_config_class_present",
+            "adaptive_throttle_has_behavioral_fingerprinting",
+            "adaptive_throttle_has_cascading_penalties",
+        ]:
             ctx.record(lbl, False, "adaptive_throttle.py not found")
 
     # ---- SchemaEnforcer has drift detection mode --------------------------------
     schema_enforcer_mw = project_dir / "app" / "middleware" / "schema_enforcer.py"
-    ctx.record("schema_enforcer_middleware_exists", schema_enforcer_mw.exists(),
-               str(schema_enforcer_mw.relative_to(project_dir)
-                   if schema_enforcer_mw.exists() else "NOT FOUND"))
+    ctx.record(
+        "schema_enforcer_middleware_exists",
+        schema_enforcer_mw.exists(),
+        str(
+            schema_enforcer_mw.relative_to(project_dir)
+            if schema_enforcer_mw.exists()
+            else "NOT FOUND"
+        ),
+    )
 
     if schema_enforcer_mw.exists():
         mw_src = schema_enforcer_mw.read_text()
         has_mw_class = "SchemaEnforcerMiddleware" in mw_src
-        ctx.record("schema_enforcer_middleware_class_present", has_mw_class,
-                   "SchemaEnforcerMiddleware in middleware/schema_enforcer.py")
+        ctx.record(
+            "schema_enforcer_middleware_class_present",
+            has_mw_class,
+            "SchemaEnforcerMiddleware in middleware/schema_enforcer.py",
+        )
     else:
         ctx.record("schema_enforcer_middleware_class_present", False, "file not found")
 
@@ -78,23 +102,33 @@ async def flow_security_throttle_schema_armor(ctx: ScenarioContext) -> None:
     if schema_enforcer_core.exists():
         core_src = schema_enforcer_core.read_text()
         has_drift = "drift" in core_src.lower() or "detect_shadow" in core_src
-        ctx.record("schema_enforcer_has_drift_detection", has_drift,
-                   "drift/detect_shadow pattern in core/schema_enforcer.py")
+        ctx.record(
+            "schema_enforcer_has_drift_detection",
+            has_drift,
+            "drift/detect_shadow pattern in core/schema_enforcer.py",
+        )
     else:
-        ctx.record("schema_enforcer_has_drift_detection", False,
-                   "core/schema_enforcer.py not found")
+        ctx.record(
+            "schema_enforcer_has_drift_detection", False, "core/schema_enforcer.py not found"
+        )
 
     # ---- ResponseArmor has error sanitizer + hmac.compare_digest ----------------
     armor_core = project_dir / "app" / "core" / "response_armor.py"
     timing_safe = project_dir / "app" / "core" / "timing_safe.py"
-    ctx.record("response_armor_core_exists", armor_core.exists(),
-               str(armor_core.relative_to(project_dir) if armor_core.exists() else "NOT FOUND"))
+    ctx.record(
+        "response_armor_core_exists",
+        armor_core.exists(),
+        str(armor_core.relative_to(project_dir) if armor_core.exists() else "NOT FOUND"),
+    )
 
     if armor_core.exists():
         armor_src = armor_core.read_text()
         has_sanitizer = "sanitize_error" in armor_src or "ErrorSanitizer" in armor_src
-        ctx.record("response_armor_has_error_sanitizer", has_sanitizer,
-                   "sanitize_error/ErrorSanitizer in response_armor.py")
+        ctx.record(
+            "response_armor_has_error_sanitizer",
+            has_sanitizer,
+            "sanitize_error/ErrorSanitizer in response_armor.py",
+        )
     else:
         ctx.record("response_armor_has_error_sanitizer", False, "response_armor.py not found")
 
@@ -106,8 +140,11 @@ async def flow_security_throttle_schema_armor(ctx: ScenarioContext) -> None:
             if "compare_digest" in src:
                 compare_digest_found = True
                 break
-    ctx.record("response_armor_has_hmac_compare_digest", compare_digest_found,
-               "hmac.compare_digest/compare_digest in timing_safe.py or response_armor.py")
+    ctx.record(
+        "response_armor_has_hmac_compare_digest",
+        compare_digest_found,
+        "hmac.compare_digest/compare_digest in timing_safe.py or response_armor.py",
+    )
 
 
 SECURITY_THROTTLE_SCHEMA_ARMOR = Scenario(
@@ -116,8 +153,8 @@ SECURITY_THROTTLE_SCHEMA_ARMOR = Scenario(
     models={"Alert": {"kind": "str", "severity": "str"}},
     tools=[
         ("add_adaptive_throttle", "adapt.extend.infrastructure.add_adaptive_throttle"),
-        ("add_schema_enforcer",   "adapt.extend.testing_tools.add_schema_enforcer"),
-        ("add_response_armor",    "adapt.extend.infrastructure.add_response_armor"),
+        ("add_schema_enforcer", "adapt.extend.testing_tools.add_schema_enforcer"),
+        ("add_response_armor", "adapt.extend.infrastructure.add_response_armor"),
     ],
     flow=flow_security_throttle_schema_armor,
     needs_boot=False,  # File-level assertions; boot not needed for these checks
@@ -129,26 +166,33 @@ SECURITY_THROTTLE_SCHEMA_ARMOR = Scenario(
 # TOOL-119 add_api_monetization, TOOL-120 add_cost_tracker, TOOL-121 add_tenant_onboarding
 # ===========================================================================
 
+
 async def flow_business_stack(ctx: ScenarioContext) -> None:
     """MeteringMiddleware present, GET /billing/usage exists, CostTracker estimator, OnboardingOrchestrator compensatable steps."""
     project_dir = ctx.project_dir
     client = ctx.client
 
     import sys
+
     key = str(project_dir)
     if key not in sys.path:
         sys.path.insert(0, key)
 
     # ---- MeteringMiddleware class present ---------------------------------------
     metering_path = project_dir / "app" / "billing" / "metering.py"
-    ctx.record("metering_file_exists", metering_path.exists(),
-               str(metering_path.relative_to(project_dir) if metering_path.exists() else "NOT FOUND"))
+    ctx.record(
+        "metering_file_exists",
+        metering_path.exists(),
+        str(metering_path.relative_to(project_dir) if metering_path.exists() else "NOT FOUND"),
+    )
 
     if metering_path.exists():
         metering_src = metering_path.read_text()
-        ctx.record("metering_middleware_class_present",
-                   "MeteringMiddleware" in metering_src,
-                   "MeteringMiddleware class in billing/metering.py")
+        ctx.record(
+            "metering_middleware_class_present",
+            "MeteringMiddleware" in metering_src,
+            "MeteringMiddleware class in billing/metering.py",
+        )
     else:
         ctx.record("metering_middleware_class_present", False, "metering.py not found")
 
@@ -162,63 +206,87 @@ async def flow_business_stack(ctx: ScenarioContext) -> None:
         or billing_routes_path.exists()
         or (project_dir / "app" / "billing").is_dir()
     )
-    ctx.record("billing_usage_endpoint_or_package_exists",
-               billing_accessible,
-               f"GET /billing/usage: {r_usage.status_code}, "
-               f"billing/ dir: {(project_dir / 'app' / 'billing').is_dir()}")
+    ctx.record(
+        "billing_usage_endpoint_or_package_exists",
+        billing_accessible,
+        f"GET /billing/usage: {r_usage.status_code}, "
+        f"billing/ dir: {(project_dir / 'app' / 'billing').is_dir()}",
+    )
     if r_usage.status_code == 200:
         try:
             body = r_usage.json()
-            ctx.record("billing_usage_response_is_structured",
-                       isinstance(body, (dict, list)),
-                       f"body type: {type(body).__name__}")
+            ctx.record(
+                "billing_usage_response_is_structured",
+                isinstance(body, (dict, list)),
+                f"body type: {type(body).__name__}",
+            )
         except Exception:
             ctx.record("billing_usage_response_is_structured", True, "skipped")
     else:
-        ctx.record("billing_usage_response_is_structured", True,
-                   f"skipped (status {r_usage.status_code})")
+        ctx.record(
+            "billing_usage_response_is_structured", True, f"skipped (status {r_usage.status_code})"
+        )
 
     # ---- CostTracker has estimator pattern --------------------------------------
     cost_tracker_path = project_dir / "app" / "costs" / "tracker.py"
     estimators_path = project_dir / "app" / "costs" / "estimators.py"
-    ctx.record("cost_tracker_file_exists", cost_tracker_path.exists(),
-               str(cost_tracker_path.relative_to(project_dir)
-                   if cost_tracker_path.exists() else "NOT FOUND"))
+    ctx.record(
+        "cost_tracker_file_exists",
+        cost_tracker_path.exists(),
+        str(
+            cost_tracker_path.relative_to(project_dir)
+            if cost_tracker_path.exists()
+            else "NOT FOUND"
+        ),
+    )
 
     if cost_tracker_path.exists():
         tracker_src = cost_tracker_path.read_text()
-        ctx.record("cost_tracker_class_present",
-                   "CostTracker" in tracker_src,
-                   "CostTracker class in costs/tracker.py")
+        ctx.record(
+            "cost_tracker_class_present",
+            "CostTracker" in tracker_src,
+            "CostTracker class in costs/tracker.py",
+        )
     else:
         ctx.record("cost_tracker_class_present", False, "tracker.py not found")
 
     if estimators_path.exists():
         est_src = estimators_path.read_text()
         has_estimator = "estimat" in est_src.lower() or "Estimator" in est_src
-        ctx.record("cost_tracker_has_estimator_pattern", has_estimator,
-                   "estimator/Estimator pattern in costs/estimators.py")
+        ctx.record(
+            "cost_tracker_has_estimator_pattern",
+            has_estimator,
+            "estimator/Estimator pattern in costs/estimators.py",
+        )
     else:
-        ctx.record("cost_tracker_has_estimator_pattern", False,
-                   "costs/estimators.py not found")
+        ctx.record("cost_tracker_has_estimator_pattern", False, "costs/estimators.py not found")
 
     # ---- OnboardingOrchestrator has step-based workflow with compensatable steps -
     orchestrator_path = project_dir / "app" / "onboarding" / "orchestrator.py"
-    ctx.record("onboarding_orchestrator_file_exists", orchestrator_path.exists(),
-               str(orchestrator_path.relative_to(project_dir)
-                   if orchestrator_path.exists() else "NOT FOUND"))
+    ctx.record(
+        "onboarding_orchestrator_file_exists",
+        orchestrator_path.exists(),
+        str(
+            orchestrator_path.relative_to(project_dir)
+            if orchestrator_path.exists()
+            else "NOT FOUND"
+        ),
+    )
 
     if orchestrator_path.exists():
         orch_src = orchestrator_path.read_text()
         has_orchestrator = "OnboardingOrchestrator" in orch_src
-        has_compensate = (
-            "compensat" in orch_src.lower()
-            or "rollback" in orch_src.lower()
+        has_compensate = "compensat" in orch_src.lower() or "rollback" in orch_src.lower()
+        ctx.record(
+            "onboarding_orchestrator_class_present",
+            has_orchestrator,
+            "OnboardingOrchestrator class in onboarding/orchestrator.py",
         )
-        ctx.record("onboarding_orchestrator_class_present", has_orchestrator,
-                   "OnboardingOrchestrator class in onboarding/orchestrator.py")
-        ctx.record("onboarding_has_compensatable_steps", has_compensate,
-                   "compensat/rollback pattern in orchestrator.py")
+        ctx.record(
+            "onboarding_has_compensatable_steps",
+            has_compensate,
+            "compensat/rollback pattern in orchestrator.py",
+        )
     else:
         ctx.record("onboarding_orchestrator_class_present", False, "file not found")
         ctx.record("onboarding_has_compensatable_steps", False, "file not found")
@@ -229,8 +297,8 @@ BUSINESS_STACK = Scenario(
     archetype="ApiMonetization (MeteringMiddleware) + CostTracker + TenantOnboarding (compensatable)",
     models={"Tenant": {"name": "str", "plan": "str"}},
     tools=[
-        ("add_api_monetization",  "adapt.extend.infrastructure.add_api_monetization"),
-        ("add_cost_tracker",      "adapt.extend.infrastructure.add_cost_tracker"),
+        ("add_api_monetization", "adapt.extend.infrastructure.add_api_monetization"),
+        ("add_cost_tracker", "adapt.extend.infrastructure.add_cost_tracker"),
         ("add_tenant_onboarding", "adapt.extend.infrastructure.add_tenant_onboarding"),
     ],
     flow=flow_business_stack,
@@ -243,70 +311,90 @@ BUSINESS_STACK = Scenario(
 # TOOL-124 add_api_fuzzer
 # ===========================================================================
 
+
 async def flow_observability_fuzzer(ctx: ScenarioContext) -> None:
     """TracingBuffer ring buffer, GET /tracing/requests, HealthMapBuilder, APIFuzzer type-aware generators."""
     project_dir = ctx.project_dir
     client = ctx.client
 
     import sys
+
     key = str(project_dir)
     if key not in sys.path:
         sys.path.insert(0, key)
 
     # ---- TracingBuffer has ring buffer -----------------------------------------
     tracing_init = project_dir / "app" / "tracing_ui" / "__init__.py"
-    ctx.record("tracing_buffer_file_exists", tracing_init.exists(),
-               str(tracing_init.relative_to(project_dir) if tracing_init.exists() else "NOT FOUND"))
+    ctx.record(
+        "tracing_buffer_file_exists",
+        tracing_init.exists(),
+        str(tracing_init.relative_to(project_dir) if tracing_init.exists() else "NOT FOUND"),
+    )
 
     if tracing_init.exists():
         tracing_src = tracing_init.read_text()
         has_buffer = "TracingBuffer" in tracing_src
         has_ring_buffer = (
-            "deque" in tracing_src
-            or "maxlen" in tracing_src
-            or "ring" in tracing_src.lower()
+            "deque" in tracing_src or "maxlen" in tracing_src or "ring" in tracing_src.lower()
         )
-        ctx.record("tracing_buffer_class_present", has_buffer,
-                   "TracingBuffer class in tracing_ui/__init__.py")
-        ctx.record("tracing_buffer_is_ring_buffer", has_ring_buffer,
-                   "deque/maxlen/ring pattern in tracing_ui/__init__.py")
+        ctx.record(
+            "tracing_buffer_class_present",
+            has_buffer,
+            "TracingBuffer class in tracing_ui/__init__.py",
+        )
+        ctx.record(
+            "tracing_buffer_is_ring_buffer",
+            has_ring_buffer,
+            "deque/maxlen/ring pattern in tracing_ui/__init__.py",
+        )
     else:
         ctx.record("tracing_buffer_class_present", False, "tracing_ui/__init__.py not found")
         ctx.record("tracing_buffer_is_ring_buffer", False, "file not found")
 
     # ---- GET /tracing/requests returns list -------------------------------------
     r_tracing = await client.get("/tracing/requests")
-    ctx.record("tracing_requests_endpoint_exists",
-               r_tracing.status_code != 404,
-               f"GET /tracing/requests: {r_tracing.status_code} (404 = route missing)")
+    ctx.record(
+        "tracing_requests_endpoint_exists",
+        r_tracing.status_code != 404,
+        f"GET /tracing/requests: {r_tracing.status_code} (404 = route missing)",
+    )
     if r_tracing.status_code == 200:
         try:
             body = r_tracing.json()
-            ctx.record("tracing_requests_returns_list",
-                       isinstance(body, list) or isinstance(body, dict),
-                       f"body type: {type(body).__name__}")
+            ctx.record(
+                "tracing_requests_returns_list",
+                isinstance(body, (list, dict)),
+                f"body type: {type(body).__name__}",
+            )
         except Exception:
             ctx.record("tracing_requests_returns_list", True, "skipped")
     else:
-        ctx.record("tracing_requests_returns_list", True,
-                   f"skipped (status {r_tracing.status_code})")
+        ctx.record(
+            "tracing_requests_returns_list", True, f"skipped (status {r_tracing.status_code})"
+        )
 
     # ---- HealthMapBuilder discovers dependencies --------------------------------
     hmap_init = project_dir / "app" / "health_map" / "__init__.py"
-    ctx.record("health_map_builder_file_exists", hmap_init.exists(),
-               str(hmap_init.relative_to(project_dir) if hmap_init.exists() else "NOT FOUND"))
+    ctx.record(
+        "health_map_builder_file_exists",
+        hmap_init.exists(),
+        str(hmap_init.relative_to(project_dir) if hmap_init.exists() else "NOT FOUND"),
+    )
 
     if hmap_init.exists():
         hmap_src = hmap_init.read_text()
         has_builder = "HealthMapBuilder" in hmap_src
-        has_discover = (
-            "discover" in hmap_src.lower()
-            or "depend" in hmap_src.lower()
+        has_discover = "discover" in hmap_src.lower() or "depend" in hmap_src.lower()
+        ctx.record(
+            "health_map_builder_class_present",
+            has_builder,
+            "HealthMapBuilder class in health_map/__init__.py",
         )
-        ctx.record("health_map_builder_class_present", has_builder,
-                   "HealthMapBuilder class in health_map/__init__.py")
-        ctx.record("health_map_builder_discovers_deps", has_discover,
-                   "discover/depend pattern in health_map/__init__.py")
+        ctx.record(
+            "health_map_builder_discovers_deps",
+            has_discover,
+            "discover/depend pattern in health_map/__init__.py",
+        )
     else:
         ctx.record("health_map_builder_class_present", False, "file not found")
         ctx.record("health_map_builder_discovers_deps", False, "file not found")
@@ -314,14 +402,19 @@ async def flow_observability_fuzzer(ctx: ScenarioContext) -> None:
     # ---- APIFuzzer has type-aware generators (boundary ints, unicode, SQL payloads) -
     fuzzer_init = project_dir / "app" / "fuzzer" / "__init__.py"
     fuzzer_generators = project_dir / "app" / "fuzzer" / "generators.py"
-    ctx.record("api_fuzzer_file_exists", fuzzer_init.exists(),
-               str(fuzzer_init.relative_to(project_dir) if fuzzer_init.exists() else "NOT FOUND"))
+    ctx.record(
+        "api_fuzzer_file_exists",
+        fuzzer_init.exists(),
+        str(fuzzer_init.relative_to(project_dir) if fuzzer_init.exists() else "NOT FOUND"),
+    )
 
     if fuzzer_init.exists():
         fuzzer_src = fuzzer_init.read_text()
-        ctx.record("api_fuzzer_class_present",
-                   "APIFuzzer" in fuzzer_src,
-                   "APIFuzzer class in fuzzer/__init__.py")
+        ctx.record(
+            "api_fuzzer_class_present",
+            "APIFuzzer" in fuzzer_src,
+            "APIFuzzer class in fuzzer/__init__.py",
+        )
     else:
         ctx.record("api_fuzzer_class_present", False, "fuzzer/__init__.py not found")
 
@@ -340,25 +433,36 @@ async def flow_observability_fuzzer(ctx: ScenarioContext) -> None:
             or "DROP" in gen_src
             or "injection" in gen_src.lower()
         )
-        ctx.record("api_fuzzer_has_boundary_int_generator",
-                   has_boundary_ints,
-                   "boundary int generation pattern in generators.py")
-        ctx.record("api_fuzzer_has_unicode_generator",
-                   has_unicode,
-                   "unicode/emoji edge case in generators.py")
-        ctx.record("api_fuzzer_has_sql_payload_generator",
-                   has_sql_payload,
-                   "SQL payload/injection in generators.py")
+        ctx.record(
+            "api_fuzzer_has_boundary_int_generator",
+            has_boundary_ints,
+            "boundary int generation pattern in generators.py",
+        )
+        ctx.record(
+            "api_fuzzer_has_unicode_generator",
+            has_unicode,
+            "unicode/emoji edge case in generators.py",
+        )
+        ctx.record(
+            "api_fuzzer_has_sql_payload_generator",
+            has_sql_payload,
+            "SQL payload/injection in generators.py",
+        )
     else:
-        for lbl in ["api_fuzzer_has_boundary_int_generator",
-                    "api_fuzzer_has_unicode_generator",
-                    "api_fuzzer_has_sql_payload_generator"]:
+        for lbl in [
+            "api_fuzzer_has_boundary_int_generator",
+            "api_fuzzer_has_unicode_generator",
+            "api_fuzzer_has_sql_payload_generator",
+        ]:
             ctx.record(lbl, False, "fuzzer/generators.py not found")
 
     # ---- Fuzzer script exists ---------------------------------------------------
     fuzz_script = project_dir / "scripts" / "run_fuzz.py"
-    ctx.record("fuzzer_script_exists", fuzz_script.exists(),
-               str(fuzz_script.relative_to(project_dir) if fuzz_script.exists() else "NOT FOUND"))
+    ctx.record(
+        "fuzzer_script_exists",
+        fuzz_script.exists(),
+        str(fuzz_script.relative_to(project_dir) if fuzz_script.exists() else "NOT FOUND"),
+    )
 
 
 OBSERVABILITY_FUZZER = Scenario(
@@ -366,9 +470,9 @@ OBSERVABILITY_FUZZER = Scenario(
     archetype="RequestTracingUI (TracingBuffer ring) + DependencyHealthMap + APIFuzzer (type-aware)",
     models={"Endpoint": {"path": "str", "method": "str"}},
     tools=[
-        ("add_request_tracing_ui",    "adapt.extend.infrastructure.add_request_tracing_ui"),
+        ("add_request_tracing_ui", "adapt.extend.infrastructure.add_request_tracing_ui"),
         ("add_dependency_health_map", "adapt.extend.infrastructure.add_dependency_health_map"),
-        ("add_api_fuzzer",            "adapt.extend.testing_tools.add_api_fuzzer"),
+        ("add_api_fuzzer", "adapt.extend.testing_tools.add_api_fuzzer"),
     ],
     flow=flow_observability_fuzzer,
 )

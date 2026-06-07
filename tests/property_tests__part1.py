@@ -14,11 +14,11 @@ import traceback
 from adapt.contracts import ToolInput, ToolResult
 from tests.common.fixture_factory import create_fixture_project
 from tests.property_tests__helpers import (
-    _Results,
     _all_py_parse,
     _call_tool,
     _dir_sha256,
     _load_tool,
+    _Results,
 )
 
 # ---------------------------------------------------------------------------

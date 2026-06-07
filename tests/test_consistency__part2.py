@@ -20,10 +20,10 @@ from tests.test_consistency__shared import (  # noqa: E402
     _parse_file,
 )
 
-
 # ---------------------------------------------------------------------------
 # Test 3 — Pydantic schema consistency
 # ---------------------------------------------------------------------------
+
 
 def _collect_pydantic_schemas(app_dir: Path) -> dict[str, dict]:
     """Collect all FastAPI-compatible response model classes via AST.
@@ -85,11 +85,7 @@ def _collect_pydantic_schemas(app_dir: Path) -> dict[str, dict]:
             return True
         return any(_is_response_model_compatible(bn, visited) for bn in info["base_names"])
 
-    return {
-        name: info
-        for name, info in raw_classes.items()
-        if _is_response_model_compatible(name)
-    }
+    return {name: info for name, info in raw_classes.items() if _is_response_model_compatible(name)}
 
 
 # Sensitive field patterns — "Public" schemas MUST NOT expose these
@@ -181,9 +177,18 @@ def test_3_schema_consistency(project_dir: Path) -> tuple[bool, str]:
     response_model_usages = _collect_response_model_names(app_dir)
     all_known_schemas = set(schemas.keys())
     # Builtins and well-known non-schema names that can appear in response_model
-    _ALLOWED_NON_SCHEMA = {
-        "dict", "list", "None", "Any", "bool", "str", "int",
-        "float", "bytes", "set", "tuple",
+    _ALLOWED_NON_SCHEMA = {  # noqa: N806 -- SCREAMING_CASE constant set, scoped to this test
+        "dict",
+        "list",
+        "None",
+        "Any",
+        "bool",
+        "str",
+        "int",
+        "float",
+        "bytes",
+        "set",
+        "tuple",
     }
     for schema_name, fn_name, route_file in response_model_usages:
         if schema_name in _ALLOWED_NON_SCHEMA:
@@ -191,8 +196,7 @@ def test_3_schema_consistency(project_dir: Path) -> tuple[bool, str]:
         if schema_name not in all_known_schemas:
             rel = route_file.relative_to(project_dir)
             failures.append(
-                f"{fn_name} ({rel}): response_model={schema_name!r} not found "
-                "in app/schemas/"
+                f"{fn_name} ({rel}): response_model={schema_name!r} not found in app/schemas/"
             )
 
     if failures:
@@ -263,7 +267,9 @@ def _collect_routes(app_dir: Path) -> list[dict]:
                         continue
 
                     # Build fully-qualified path for duplicate detection
-                    full_path = (router_prefix.rstrip("/") + "/" + path.lstrip("/")).rstrip("/") or "/"
+                    full_path = (router_prefix.rstrip("/") + "/" + path.lstrip("/")).rstrip(
+                        "/"
+                    ) or "/"
 
                     # Check for Depends in function params (direct or via alias)
                     has_depends = _fn_has_depends_param(node)
@@ -271,15 +277,17 @@ def _collect_routes(app_dir: Path) -> list[dict]:
                     # Check decorator-level dependencies=[Depends(...)]
                     has_dec_depends = _decorator_has_depends(decorator)
 
-                    routes.append({
-                        "method": method,
-                        "path": path,
-                        "full_path": full_path,
-                        "fn_name": node.name,
-                        "is_async": isinstance(node, ast.AsyncFunctionDef),
-                        "has_depends": has_depends or has_dec_depends,
-                        "file": py_file,
-                    })
+                    routes.append(
+                        {
+                            "method": method,
+                            "path": path,
+                            "full_path": full_path,
+                            "fn_name": node.name,
+                            "is_async": isinstance(node, ast.AsyncFunctionDef),
+                            "has_depends": has_depends or has_dec_depends,
+                            "file": py_file,
+                        }
+                    )
 
     return routes
 
@@ -378,7 +386,7 @@ def test_4_route_consistency(project_dir: Path) -> tuple[bool, str]:
 
     # (c) Mutating methods (POST/PATCH/DELETE) must have Depends-based injection
     # Exception: public endpoints like /signup, /password-recovery, /login, webhooks
-    _PUBLIC_PATH_PATTERNS = re.compile(
+    _PUBLIC_PATH_PATTERNS = re.compile(  # noqa: N806 -- SCREAMING_CASE constant pattern, scoped to this test
         r"(/signup|/login|/password-recovery|/reset-password|/access-token|"
         r"/incoming/|/refresh)"
     )

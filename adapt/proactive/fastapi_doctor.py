@@ -75,10 +75,10 @@ MCP_TOOL = {
 }
 
 
-
 # ---------------------------------------------------------------------------
 # Public entry point
 # ---------------------------------------------------------------------------
+
 
 def fastapi_doctor(inp: ToolInput) -> ToolResult:
     """Run a holistic FastAPI health check over an existing project.
@@ -155,10 +155,7 @@ def fastapi_doctor(inp: ToolInput) -> ToolResult:
         if f.get("severity") == "CRITICAL":
             warnings.append(f"[CRITICAL] {f['title']}")
 
-    next_steps: list[str] = [
-        item["run_command"]
-        for item in report.get("fix_plan", [])[:5]
-    ]
+    next_steps: list[str] = [item["run_command"] for item in report.get("fix_plan", [])[:5]]
     if not next_steps:
         next_steps = ["No fix plan items — project looks healthy."]
 
@@ -184,6 +181,7 @@ def fastapi_doctor(inp: ToolInput) -> ToolResult:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
 
 def _elapsed_ms(start: float) -> int:
     """Return elapsed milliseconds since *start* (from ``time.monotonic()``).

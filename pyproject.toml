@@ -179,3 +179,6 @@ ignore = [
 "mcp_tools/**" = ["E402"]
 # generators/** also place module-level config dicts (FEATURE_FLAGS, etc.) before imports.
 "generators/**" = ["E402"]
+# audit/** does a sys.path bootstrap before imports (same pattern as generators/,
+# mcp_tools/, engine/discovery/). E402 is expected and intentional.
+"audit/**" = ["E402"]

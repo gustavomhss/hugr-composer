@@ -23,9 +23,9 @@ import textwrap
 import time
 import traceback
 import uuid
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Awaitable, Callable
 
 # ---------------------------------------------------------------------------
 # Env setup — must happen before any app import
@@ -35,9 +35,10 @@ os.environ.setdefault("RATE_LIMITING_ENABLED", "false")
 os.environ.setdefault("ENVIRONMENT", "local")
 os.environ.setdefault("SECRET_KEY", "behavior-new-tools-secret-key-32+chars-ok!")
 os.environ.setdefault("MFA_FERNET_KEY", "L7gvXDh2v6syV65J0-iwLQMTYbVavNXO2vuXgntcFBo=")
-os.environ.pop("REDIS_URL", None)   # no Redis in these tests
+os.environ.pop("REDIS_URL", None)  # no Redis in these tests
 
 import asyncio
+
 import pytest
 
 # ---------------------------------------------------------------------------
@@ -103,7 +104,7 @@ class Scenario:
 class ScenarioContext:
     client: object  # httpx.AsyncClient
     session: object  # AsyncSession
-    engine: object   # AsyncEngine
+    engine: object  # AsyncEngine
     project_dir: Path
     report_section: list[tuple[str, bool, str]] = field(default_factory=list)
 
@@ -114,6 +115,7 @@ class ScenarioContext:
 # ---------------------------------------------------------------------------
 # Shared helpers
 # ---------------------------------------------------------------------------
+
 
 def _patch_project(project_dir: Path) -> None:
     """Overwrite db.py with SQLite engine and idempotency with pass-through stub."""
@@ -127,10 +129,7 @@ def _load_app(project_dir: Path):
     key = str(project_dir)
     # Remove ALL previous project dirs that contain an 'app' package so
     # stale entries from prior scenarios don't shadow the current one.
-    sys.path[:] = [
-        p for p in sys.path
-        if not (p != key and Path(p, "app").is_dir())
-    ]
+    sys.path[:] = [p for p in sys.path if not (p != key and Path(p, "app").is_dir())]
     if key not in sys.path:
         sys.path.insert(0, key)
     for m in list(sys.modules):
@@ -141,8 +140,8 @@ def _load_app(project_dir: Path):
 
 
 async def _make_client(project_dir: Path):
-    from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
     from httpx import ASGITransport, AsyncClient
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
     app = _load_app(project_dir)
     get_session_mod = importlib.import_module("app.core.session")
@@ -178,19 +177,29 @@ def _th(token: str | None) -> dict[str, str]:
 
 
 async def _signup(client, email: str, pwd: str, name: str) -> str:
-    r = await client.post("/api/v1/users/signup", json={
-        "email": email, "password": pwd, "full_name": name,
-    })
+    r = await client.post(
+        "/api/v1/users/signup",
+        json={
+            "email": email,
+            "password": pwd,
+            "full_name": name,
+        },
+    )
     assert r.status_code in (200, 201), f"signup {email}: {r.status_code} {r.text[:300]}"
-    r = await client.post("/api/v1/login/access-token", data={
-        "username": email, "password": pwd,
-    })
+    r = await client.post(
+        "/api/v1/login/access-token",
+        data={
+            "username": email,
+            "password": pwd,
+        },
+    )
     assert r.status_code == 200, f"login {email}: {r.status_code} {r.text[:300]}"
     return r.json()["access_token"]
 
 
 async def _promote_superuser(session, email: str) -> None:
     from sqlalchemy import text
+
     await session.execute(
         text("UPDATE users SET is_superuser = true WHERE email = :e"),
         {"e": email},
@@ -199,8 +208,8 @@ async def _promote_superuser(session, email: str) -> None:
 
 
 def _build_project(scenario: Scenario, tmp: Path) -> Path:
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
+    from tests.common.fixture_factory import create_fixture_project
 
     project_dir = create_fixture_project(
         name=f"scn_{scenario.name}",
@@ -224,20 +233,20 @@ async def _run_scenario(scenario: Scenario) -> tuple[int, int, list[tuple[str, b
         try:
             project_dir = _build_project(scenario, Path(tmp))
         except Exception as exc:
-            return 0, 1, [("generate_and_apply", False,
-                           f"{type(exc).__name__}: {str(exc)[:300]}")]
+            return 0, 1, [("generate_and_apply", False, f"{type(exc).__name__}: {str(exc)[:300]}")]
 
         if not scenario.needs_boot:
             # File-only scenario: run flow with a stub context (no HTTP client)
             ctx = ScenarioContext(
-                client=None, session=None, engine=None,
+                client=None,
+                session=None,
+                engine=None,
                 project_dir=project_dir,
             )
             try:
                 await scenario.flow(ctx)
             except Exception as exc:
-                ctx.record("flow", False,
-                           f"EXCEPTION: {type(exc).__name__}: {str(exc)[:300]}")
+                ctx.record("flow", False, f"EXCEPTION: {type(exc).__name__}: {str(exc)[:300]}")
                 traceback.print_exc()
             passed = sum(1 for _, ok, _ in ctx.report_section if ok)
             total = len(ctx.report_section)
@@ -246,18 +255,18 @@ async def _run_scenario(scenario: Scenario) -> tuple[int, int, list[tuple[str, b
         try:
             app, client, session, engine = await _make_client(project_dir)
         except Exception as exc:
-            return 0, 1, [("boot", False,
-                           f"{type(exc).__name__}: {str(exc)[:300]}")]
+            return 0, 1, [("boot", False, f"{type(exc).__name__}: {str(exc)[:300]}")]
 
         ctx = ScenarioContext(
-            client=client, session=session, engine=engine,
+            client=client,
+            session=session,
+            engine=engine,
             project_dir=project_dir,
         )
         try:
             await scenario.flow(ctx)
         except Exception as exc:
-            ctx.record("flow", False,
-                       f"EXCEPTION: {type(exc).__name__}: {str(exc)[:300]}")
+            ctx.record("flow", False, f"EXCEPTION: {type(exc).__name__}: {str(exc)[:300]}")
             traceback.print_exc()
         finally:
             await _teardown(app, client, session, engine)
@@ -270,6 +279,7 @@ async def _run_scenario(scenario: Scenario) -> tuple[int, int, list[tuple[str, b
 # ---------------------------------------------------------------------------
 # Shared pytest helper — used by each part's parametrized test
 # ---------------------------------------------------------------------------
+
 
 async def _assert_scenario(scenario: Scenario) -> None:
     """Run a behavior scenario end-to-end and assert all checks pass."""

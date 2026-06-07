@@ -3,6 +3,7 @@
 Split out of multi_call.py to keep modules <=500 LOC. Not a public API; import
 from `spec_orchestrator.multi_call` instead.
 """
+
 from __future__ import annotations
 
 from textwrap import dedent
@@ -19,13 +20,17 @@ from spec_orchestrator.multi_call__impl1 import (
 # ============================================================================
 # CALL D — Section 9 ALONE (25 User Stories)
 # ============================================================================
-SYSTEM_D = dedent(
-    """
+SYSTEM_D = (
+    dedent(
+        """
     You are continuing a rigorous engineering specification. You will produce ONLY
     section 9 (User Stories): exactly 25 stories in 5 sub-sections of 5 each.
     Stories must cross-reference the tool's invariants from section 8.
     """
-).strip() + "\n\n" + SHARED_RULES
+    ).strip()
+    + "\n\n"
+    + SHARED_RULES
+)
 
 
 def build_prompt_d(*, tool_num: str, tool_name: str, brief: str, prior: str) -> str:
@@ -109,13 +114,17 @@ def build_prompt_d(*, tool_num: str, tool_name: str, brief: str, prior: str) -> 
 # ============================================================================
 # CALL E — Section 10 ALONE (30 Test Plan)
 # ============================================================================
-SYSTEM_E = dedent(
-    """
+SYSTEM_E = (
+    dedent(
+        """
     You are continuing a rigorous engineering specification. You will produce ONLY
     section 10 (Test Plan): exactly 30 unique tests T-01..T-30 in 5-6 sub-sections.
     Every invariant from section 8 MUST have at least one matching test.
     """
-).strip() + "\n\n" + SHARED_RULES
+    ).strip()
+    + "\n\n"
+    + SHARED_RULES
+)
 
 
 def build_prompt_e(*, tool_num: str, tool_name: str, brief: str, prior: str) -> str:
@@ -182,14 +191,18 @@ def build_prompt_e(*, tool_num: str, tool_name: str, brief: str, prior: str) -> 
 # ============================================================================
 # CALL F — Sections 11-16 (Operations)
 # ============================================================================
-SYSTEM_F = dedent(
-    """
+SYSTEM_F = (
+    dedent(
+        """
     You are completing a rigorous engineering specification. You will produce
     sections 11 through 16. These cover interaction with other tools, rollback,
     edge cases, acceptance criteria, implementation checklist, and the documentation
     output JSON.
     """
-).strip() + "\n\n" + SHARED_RULES
+    ).strip()
+    + "\n\n"
+    + SHARED_RULES
+)
 
 
 def build_prompt_f(*, tool_num: str, tool_name: str, brief: str, prior: str) -> str:

@@ -98,7 +98,9 @@ class TestTool035BlastRadius:
         assert result.status == "success", f"Tool failed: {result.error}"
         self.result = result
         import inspect
+
         from adapt.operate import blast_radius as br_module
+
         self.src = inspect.getsource(br_module)
 
     def test_inv_br_01_ast_not_regex(self):

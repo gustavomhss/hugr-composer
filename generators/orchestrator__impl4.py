@@ -39,11 +39,10 @@ from generators.middleware.idempotency import generate_idempotency_middleware
 from generators.middleware.request_logging import generate_request_logging
 from generators.middleware.security_headers import generate_security_headers
 from generators.middleware.stack import generate_middleware_stack
+from generators.orchestrator__impl2 import _generate_package_inits
 from generators.schemas.input_schema import generate_input_schema
 from generators.schemas.list_response import generate_list_response
 from generators.schemas.output_schema import generate_output_schema
-
-from generators.orchestrator__impl2 import _generate_package_inits
 
 if TYPE_CHECKING:  # pragma: no cover
     from generators.orchestrator__impl1 import _Ctx

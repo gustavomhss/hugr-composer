@@ -37,7 +37,6 @@ import asyncio
 import sys
 import time
 
-from tests.test_behavior_scenarios_new_tools__shared import Scenario, _run_scenario
 from tests.test_behavior_scenarios_new_tools__part1 import (
     SCENARIOS as _SCENARIOS_1,
 )
@@ -47,7 +46,7 @@ from tests.test_behavior_scenarios_new_tools__part2 import (
 from tests.test_behavior_scenarios_new_tools__part3 import (
     SCENARIOS as _SCENARIOS_3,
 )
-
+from tests.test_behavior_scenarios_new_tools__shared import Scenario, _run_scenario
 
 # ===========================================================================
 # Scenario registry (aggregated from all part files)
@@ -60,10 +59,11 @@ SCENARIOS: list[Scenario] = [*_SCENARIOS_1, *_SCENARIOS_2, *_SCENARIOS_3]
 # Standalone runner (no pytest required)
 # ===========================================================================
 
+
 def main() -> int:
     print("=" * 74)
     print(f"  SKILL-001 NEW TOOL BEHAVIOR SCENARIOS — {len(SCENARIOS)} scenarios")
-    print(f"  Backend: SQLite in-memory (no PostgreSQL required)")
+    print("  Backend: SQLite in-memory (no PostgreSQL required)")
     print("=" * 74)
     print()
 
@@ -96,8 +96,10 @@ def main() -> int:
 
     elapsed = time.monotonic() - t_start
     print("=" * 74)
-    print(f"  OVERALL: {overall_passed}/{overall_total} assertions "
-          f"across {len(SCENARIOS)} scenarios  ({elapsed:.1f}s)")
+    print(
+        f"  OVERALL: {overall_passed}/{overall_total} assertions "
+        f"across {len(SCENARIOS)} scenarios  ({elapsed:.1f}s)"
+    )
     print("=" * 74)
 
     failed_scenarios = [r for r in scenario_results if r[1] < r[2]]

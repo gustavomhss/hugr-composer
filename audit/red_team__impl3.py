@@ -9,49 +9,46 @@ from __future__ import annotations
 import shutil
 import subprocess
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable
-
-from audit.red_team__impl1 import (
-    ATTACK_TIMEOUT,
-    ToolInput,
-    _TimeoutError,
-    _make_result,
-    _run_with_timeout,
-    create_fixture_project,
-)
 
 # Category 1 + 2 attacks live in impl1; Category 3 attacks live in impl2.
 # They are imported here so ALL_ATTACKS stays a single ordered registry.
 from audit.red_team__impl1 import (
-    _attack_path_traversal,
-    _attack_nonexistent_dir,
+    ATTACK_TIMEOUT,
+    ToolInput,
     _attack_empty_string,
+    _attack_file_instead_of_dir,
+    _attack_nonexistent_dir,
+    _attack_null_bytes_in_path,
+    _attack_path_traversal,
+    _attack_permission_denied,
+    _attack_space_only_path,
+    _attack_symlink_loop,
     _attack_unicode_bomb,
     _attack_very_long_path,
-    _attack_permission_denied,
-    _attack_symlink_loop,
-    _attack_file_instead_of_dir,
-    _attack_null_bytes_in_path,
-    _attack_space_only_path,
+    _make_result,
+    _run_with_timeout,
+    _TimeoutError,
+    create_fixture_project,
 )
 from audit.red_team__impl2 import (
-    _attack_idempotency_100x,
-    _attack_delete_and_rerun,
-    _attack_concurrent_tools_same_project,
-    _attack_dry_run_50x_no_writes,
-    _attack_corrupt_then_rerun,
-    _attack_soft_delete_plus_bulk_operations,
-    _attack_mfa_plus_oauth2,
-    _attack_search_plus_cursor_pagination,
-    _attack_multi_tenancy_after_audit_log,
     _attack_all_27_extend_tools,
+    _attack_concurrent_tools_same_project,
+    _attack_corrupt_then_rerun,
+    _attack_delete_and_rerun,
+    _attack_dry_run_50x_no_writes,
+    _attack_idempotency_100x,
+    _attack_mfa_plus_oauth2,
+    _attack_multi_tenancy_after_audit_log,
+    _attack_search_plus_cursor_pagination,
+    _attack_soft_delete_plus_bulk_operations,
 )
-
 
 # ===========================================================================
 # CATEGORY 4 — Generated Code Quality (5 attacks)
 # ===========================================================================
+
 
 def _attack_ruff_clean_after_soft_delete() -> dict:
     """Generate project + add_soft_delete → tool must not introduce new ruff E/F violations.
@@ -68,9 +65,17 @@ def _attack_ruff_clean_after_soft_delete() -> dict:
     def _ruff_violation_set(project: Path) -> set[str]:
         """Return a frozenset of '<file>:<line>:<col>: <code>' strings."""
         proc = subprocess.run(
-            ["ruff", "check", str(project), "--select=E,F", "--ignore=E501",
-             "--output-format=text"],
-            capture_output=True, text=True, timeout=30,
+            [
+                "ruff",
+                "check",
+                str(project),
+                "--select=E,F",
+                "--ignore=E501",
+                "--output-format=text",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         violations: set[str] = set()
         for line in proc.stdout.splitlines():
@@ -96,8 +101,15 @@ def _attack_ruff_clean_after_soft_delete() -> dict:
             new_violations = after - before
             if new_violations:
                 sample = list(new_violations)[:3]
-                return False, f"tool introduced {len(new_violations)} new ruff violation(s): " + "; ".join(sample)
-            return True, f"no new ruff E/F violations introduced by add_soft_delete (pre={len(before)}, post={len(after)})"
+                return (
+                    False,
+                    f"tool introduced {len(new_violations)} new ruff violation(s): "
+                    + "; ".join(sample),
+                )
+            return (
+                True,
+                f"no new ruff E/F violations introduced by add_soft_delete (pre={len(before)}, post={len(after)})",
+            )
 
         ok, msg = _run_with_timeout(_run)
         return _make_result(name, "code_quality", ok, msg)
@@ -109,10 +121,10 @@ def _attack_ruff_clean_after_soft_delete() -> dict:
 
 def _attack_no_duplicate_imports_after_5_tools() -> dict:
     """Generate + run 5 tools → no duplicate import lines in any single file."""
-    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
+    from adapt.extend.auth_access.add_rbac import add_rbac
     from adapt.extend.crud_data.add_cursor_pagination import add_cursor_pagination
     from adapt.extend.crud_data.add_search import add_search
-    from adapt.extend.auth_access.add_rbac import add_rbac
+    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
     from adapt.extend.infrastructure.add_cache_layer import add_cache_layer
 
     name = "no_duplicate_imports_after_5_tools"
@@ -124,20 +136,26 @@ def _attack_no_duplicate_imports_after_5_tools() -> dict:
         for fn in [add_soft_delete, add_cursor_pagination, add_search, add_rbac, add_cache_layer]:
             r = fn(inp)
             if r.status not in ("success", "no_op"):
-                return _make_result(name, "code_quality", False, f"{fn.__name__} returned {r.status}: {r.error}")
+                return _make_result(
+                    name, "code_quality", False, f"{fn.__name__} returned {r.status}: {r.error}"
+                )
 
         def _run():
             duplicates = []
             for py_file in sorted(project_dir.rglob("*.py")):
                 lines = py_file.read_text(encoding="utf-8").splitlines()
-                import_lines = [l.strip() for l in lines if l.strip().startswith(("import ", "from "))]
+                import_lines = [
+                    ln.strip() for ln in lines if ln.strip().startswith(("import ", "from "))
+                ]
                 seen: set[str] = set()
                 for line in import_lines:
                     if line in seen:
                         duplicates.append(f"{py_file.name}: {line!r}")
                     seen.add(line)
             if duplicates:
-                return False, f"duplicate imports found ({len(duplicates)}): " + "; ".join(duplicates[:3])
+                return False, f"duplicate imports found ({len(duplicates)}): " + "; ".join(
+                    duplicates[:3]
+                )
             return True, "no duplicate import lines found in any generated file"
 
         ok, msg = _run_with_timeout(_run)
@@ -150,9 +168,9 @@ def _attack_no_duplicate_imports_after_5_tools() -> dict:
 
 def _attack_no_fstring_sql() -> dict:
     """Generated code must contain no f-string SQL interpolation."""
+    from adapt.extend.crud_data.add_audit_log import add_audit_log
     from adapt.extend.crud_data.add_search import add_search
     from adapt.extend.crud_data.add_soft_delete import add_soft_delete
-    from adapt.extend.crud_data.add_audit_log import add_audit_log
 
     name = "no_fstring_sql"
     tmp = tempfile.mkdtemp(prefix="rt_fsql_")
@@ -163,7 +181,9 @@ def _attack_no_fstring_sql() -> dict:
         for fn in [add_search, add_soft_delete, add_audit_log]:
             r = fn(inp)
             if r.status not in ("success", "no_op"):
-                return _make_result(name, "code_quality", False, f"{fn.__name__} returned {r.status}: {r.error}")
+                return _make_result(
+                    name, "code_quality", False, f"{fn.__name__} returned {r.status}: {r.error}"
+                )
 
         def _run():
             # Detect f-strings that interpolate a variable directly into a SQL
@@ -176,6 +196,7 @@ def _attack_no_fstring_sql() -> dict:
             # Examples that must NOT match:
             #   f"{settings.EMAILS_FROM_NAME} <{settings.EMAILS_FROM_EMAIL}>"  (FROM mid-word)
             import re
+
             # \b ensures the keyword is a standalone token, not a substring of an identifier.
             sql_keywords = re.compile(
                 r'f["\'](?:[^"\'\\]|\\.)*?\b(SELECT|INSERT|UPDATE|DELETE|WHERE|JOIN)\b'
@@ -201,9 +222,9 @@ def _attack_no_fstring_sql() -> dict:
 
 def _attack_migrations_have_downgrade() -> dict:
     """All generated Alembic migrations must define a downgrade() function."""
-    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
-    from adapt.extend.crud_data.add_bulk_operations import add_bulk_operations
     from adapt.extend.auth_access.add_mfa import add_mfa
+    from adapt.extend.crud_data.add_bulk_operations import add_bulk_operations
+    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
 
     name = "migrations_have_downgrade"
     tmp = tempfile.mkdtemp(prefix="rt_downgrade_")
@@ -214,7 +235,9 @@ def _attack_migrations_have_downgrade() -> dict:
         for fn in [add_soft_delete, add_bulk_operations, add_mfa]:
             r = fn(inp)
             if r.status not in ("success", "no_op"):
-                return _make_result(name, "code_quality", False, f"{fn.__name__} returned {r.status}: {r.error}")
+                return _make_result(
+                    name, "code_quality", False, f"{fn.__name__} returned {r.status}: {r.error}"
+                )
 
         def _run():
             versions_dir = project_dir / "alembic" / "versions"
@@ -242,8 +265,8 @@ def _attack_migrations_have_downgrade() -> dict:
 
 def _attack_routes_have_auth_deps() -> dict:
     """Generated CRUD route files must include at least one auth dependency reference."""
-    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
     from adapt.extend.auth_access.add_rbac import add_rbac
+    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
 
     name = "routes_have_auth_deps"
     tmp = tempfile.mkdtemp(prefix="rt_auth_deps_")
@@ -254,7 +277,9 @@ def _attack_routes_have_auth_deps() -> dict:
         for fn in [add_soft_delete, add_rbac]:
             r = fn(inp)
             if r.status not in ("success", "no_op"):
-                return _make_result(name, "code_quality", False, f"{fn.__name__} returned {r.status}: {r.error}")
+                return _make_result(
+                    name, "code_quality", False, f"{fn.__name__} returned {r.status}: {r.error}"
+                )
 
         def _run():
             routes_dir = project_dir / "app" / "api" / "routes"
@@ -266,6 +291,7 @@ def _attack_routes_have_auth_deps() -> dict:
 
             # Auth deps: CurrentUser, current_user, get_current_user, Depends(get_current_active_user)
             import re
+
             auth_pattern = re.compile(
                 r"CurrentUser|current_user|get_current_active_user|CurrentSuperuser"
             )
@@ -329,6 +355,7 @@ ALL_ATTACKS: list[Callable[[], dict]] = [
 # Runner
 # ===========================================================================
 
+
 def run_red_team() -> dict:
     """Run all adversarial attacks and return aggregated results.
 
@@ -340,7 +367,7 @@ def run_red_team() -> dict:
     """
     details: list[dict] = []
     for attack_fn in ALL_ATTACKS:
-        label = attack_fn.__name__.lstrip("_attack_")
+        label = attack_fn.__name__.removeprefix("_attack_")
         print(f"  [{label}] ...", end="", flush=True)
         try:
             result = _run_with_timeout(attack_fn, timeout=ATTACK_TIMEOUT + 5)

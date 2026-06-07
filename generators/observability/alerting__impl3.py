@@ -22,7 +22,6 @@ from generators.observability.alerting__impl1 import (
     _recording_rules_block,
 )
 
-
 # ---------------------------------------------------------------------------
 # Individual Prometheus alert definitions
 # ---------------------------------------------------------------------------
@@ -287,7 +286,9 @@ def _build_prometheus_rules(
         + _alert_error_budget_low(service_name)
     )
     return (
-        _prometheus_rules_header(service_name, namespace, slo_availability, slo_latency_p99_ms, error_budget)
+        _prometheus_rules_header(
+            service_name, namespace, slo_availability, slo_latency_p99_ms, error_budget
+        )
         + _recording_rules_block(service_name, error_budget)
         + "\n"
         + alerts_group

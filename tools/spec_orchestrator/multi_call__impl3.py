@@ -3,11 +3,12 @@
 Split out of multi_call.py to keep modules <=500 LOC. Not a public API; import
 from `spec_orchestrator.multi_call` instead.
 """
+
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from textwrap import dedent
-from typing import Callable
 
 from spec_orchestrator.client import CompletionResult, call_deepseek
 from spec_orchestrator.multi_call__impl1 import (
@@ -26,6 +27,7 @@ from spec_orchestrator.multi_call__impl2 import (
     build_prompt_e,
     build_prompt_f,
 )
+
 
 # ============================================================================
 # Orchestration
@@ -54,7 +56,7 @@ class MultiCallResult:
 def _strip_fences(text: str) -> str:
     text = text.strip()
     if text.startswith("```markdown\n"):
-        text = text[len("```markdown\n"):]
+        text = text[len("```markdown\n") :]
     elif text.startswith("```\n"):
         text = text[4:]
     if text.endswith("\n```"):
@@ -80,7 +82,10 @@ def generate_six_call(
 
     def _call(label: str, system: str, prompt: str, max_tokens: int) -> str:
         if progress_print:
-            print(f"[multi] call {label}: prompt={len(prompt)} chars, max_tokens={max_tokens}", flush=True)
+            print(
+                f"[multi] call {label}: prompt={len(prompt)} chars, max_tokens={max_tokens}",
+                flush=True,
+            )
         res = call_deepseek(
             prompt,
             model=model,

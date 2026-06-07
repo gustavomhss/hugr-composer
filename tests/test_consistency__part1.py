@@ -18,10 +18,10 @@ from tests.test_consistency__shared import (  # noqa: E402
     _parse_file,
 )
 
-
 # ---------------------------------------------------------------------------
 # Test 1 — Import cycle detection (Tarjan SCC)
 # ---------------------------------------------------------------------------
+
 
 def _build_import_graph(app_dir: Path) -> dict[str, set[str]]:
     """Build an intra-app import graph from AST.
@@ -125,8 +125,7 @@ def test_1_no_import_cycles(project_dir: Path) -> tuple[bool, str]:
 
     if cycles:
         cycle_details = "\n".join(
-            f"  Cycle {i + 1}: {' <-> '.join(sorted(c))}"
-            for i, c in enumerate(cycles)
+            f"  Cycle {i + 1}: {' <-> '.join(sorted(c))}" for i, c in enumerate(cycles)
         )
         return False, f"Found {len(cycles)} import cycle(s):\n{cycle_details}"
 
@@ -138,6 +137,7 @@ def test_1_no_import_cycles(project_dir: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 # Test 2 — SQLAlchemy model consistency
 # ---------------------------------------------------------------------------
+
 
 def _collect_sa_models(app_dir: Path) -> dict[str, dict]:
     """Collect all SQLAlchemy models (classes inheriting Base) via AST.
@@ -172,17 +172,23 @@ def _collect_sa_models(app_dir: Path) -> dict[str, dict]:
                 # __tablename__ = "..."
                 if isinstance(item, ast.Assign):
                     for tgt in item.targets:
-                        if isinstance(tgt, ast.Name) and tgt.id == "__tablename__":
-                            if isinstance(item.value, ast.Constant):
-                                tablename = item.value.value
+                        if (
+                            isinstance(tgt, ast.Name)
+                            and tgt.id == "__tablename__"
+                            and isinstance(item.value, ast.Constant)
+                        ):
+                            tablename = item.value.value
                         if isinstance(tgt, ast.Name) and tgt.id == "metadata":
                             has_metadata_field = True
 
                 # __tablename__: str = "..." (annotated)
                 if isinstance(item, ast.AnnAssign) and isinstance(item.target, ast.Name):
-                    if item.target.id == "__tablename__" and item.value:
-                        if isinstance(item.value, ast.Constant):
-                            tablename = item.value.value
+                    if (
+                        item.target.id == "__tablename__"
+                        and item.value
+                        and isinstance(item.value, ast.Constant)
+                    ):
+                        tablename = item.value.value
                     col_name = item.target.id
                     if col_name not in ("__tablename__",):
                         columns.append(col_name)
@@ -195,7 +201,9 @@ def _collect_sa_models(app_dir: Path) -> dict[str, dict]:
                                 fname = _call_name(subnode.func)
                                 if fname == "ForeignKey":
                                     for arg in subnode.args:
-                                        if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                                        if isinstance(arg, ast.Constant) and isinstance(
+                                            arg.value, str
+                                        ):
                                             ref_table = arg.value.split(".")[0]
                                             fk_refs.append((col_name, ref_table))
 
@@ -258,9 +266,7 @@ def test_2_model_consistency(project_dir: Path) -> tuple[bool, str]:
 
         # (a) No duplicate model names
         if name in seen_names:
-            failures.append(
-                f"Duplicate model name '{name}' in {rel} and {seen_names[name]}"
-            )
+            failures.append(f"Duplicate model name '{name}' in {rel} and {seen_names[name]}")
         seen_names[name] = info["file"]
 
         # (b) Every model must have __tablename__
@@ -287,6 +293,5 @@ def test_2_model_consistency(project_dir: Path) -> tuple[bool, str]:
         return False, f"Model consistency failures ({len(failures)}):\n  {detail}"
 
     return True, (
-        f"All {len(models)} models consistent "
-        f"(tablenames OK, FKs OK, no 'metadata' field)"
+        f"All {len(models)} models consistent (tablenames OK, FKs OK, no 'metadata' field)"
     )

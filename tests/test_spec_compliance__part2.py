@@ -37,12 +37,9 @@ class TestTool010ApiKeyAuth:
         assert "secret_hash" in model_text, "INV-AK-01: secret_hash column missing"
         # Check that no mapped_column named plaintext exists (comments are OK)
         import re
-        plaintext_columns = re.findall(
-            r'Mapped\[.*?\]\s*=\s*mapped_column.*plaintext', model_text
-        )
-        assert not plaintext_columns, (
-            "INV-AK-01: plaintext mapped_column found in APIKey model"
-        )
+
+        plaintext_columns = re.findall(r"Mapped\[.*?\]\s*=\s*mapped_column.*plaintext", model_text)
+        assert not plaintext_columns, "INV-AK-01: plaintext mapped_column found in APIKey model"
         # Also ensure the column name itself isn't 'plaintext_secret'
         assert "plaintext_secret" not in model_text, (
             "INV-AK-01: plaintext_secret column should not exist in APIKey model"
@@ -61,6 +58,7 @@ class TestTool010ApiKeyAuth:
         )
         # Find the APIKeyPublic class body up to the next class
         import re
+
         # Grab just field declarations (lines starting with 4 spaces + identifier: Type)
         public_class_src = re.search(
             r"class APIKeyPublic.*?(?=\nclass |\Z)", schema_text, re.DOTALL
@@ -69,7 +67,9 @@ class TestTool010ApiKeyAuth:
             public_body = public_class_src.group(0)
             # A field declaration would look like "    secret_hash: str"
             field_decl = re.findall(r"^\s{4}secret_hash\s*:", public_body, re.MULTILINE)
-            assert not field_decl, "INV-AK-02: secret_hash declared as a Pydantic field in APIKeyPublic"
+            assert not field_decl, (
+                "INV-AK-02: secret_hash declared as a Pydantic field in APIKeyPublic"
+            )
 
     def test_inv_ak_03_revoked_key_not_authenticated(self):
         """INV-AK-03: Dependency checks status == 'active' before authenticating."""
@@ -151,7 +151,9 @@ class TestTool013MFA:
         a login.py, so we verify the patch logic exists in the tool source instead.
         """
         import inspect
+
         from adapt.extend.auth_access import add_mfa as mfa_module
+
         src = inspect.getsource(mfa_module)
         # _patch_login is the function that implements INV-MFA-04
         assert "_patch_login" in src, "INV-MFA-04: _patch_login function missing from tool"
@@ -224,7 +226,11 @@ class TestTool021CacheLayer:
     def test_inv_cache_04_bypass_headers(self):
         """INV-CACHE-04: Cache-Control: no-cache / ?nocache=1 bypass implemented in decorator."""
         decorator_text = (self.project / "app" / "cache" / "decorator.py").read_text()
-        has_bypass = "no-cache" in decorator_text or "nocache" in decorator_text or "Cache-Control" in decorator_text
+        has_bypass = (
+            "no-cache" in decorator_text
+            or "nocache" in decorator_text
+            or "Cache-Control" in decorator_text
+        )
         assert has_bypass, (
             "INV-CACHE-04: Cache bypass via Cache-Control: no-cache header or ?nocache=1 param missing"
         )
@@ -272,9 +278,8 @@ class TestTool021CacheLayer:
         decorator_text = (self.project / "app" / "cache" / "decorator.py").read_text()
         assert "def cached(" in decorator_text, "INV-CACHE-08: cached() decorator not generated"
         # The decorator must check HTTP method and skip cache for non-GET
-        has_method_check = (
-            "method" in decorator_text.lower()
-            and ("GET" in decorator_text or "get" in decorator_text)
+        has_method_check = "method" in decorator_text.lower() and (
+            "GET" in decorator_text or "get" in decorator_text
         )
         assert has_method_check, (
             "INV-CACHE-08: @cached decorator must skip cache for non-GET HTTP methods"

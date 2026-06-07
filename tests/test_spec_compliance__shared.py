@@ -10,6 +10,7 @@ stay maintenance-light.  Every assertion documents which invariant it checks.
 
 from __future__ import annotations
 
+import contextlib
 import shutil
 import textwrap
 import uuid
@@ -126,8 +127,6 @@ def _read_tree(project: Path) -> str:
     """Return concatenated text of all .py files under *project*."""
     parts: list[str] = []
     for f in sorted(project.rglob("*.py")):
-        try:
+        with contextlib.suppress(OSError):
             parts.append(f.read_text(errors="ignore"))
-        except OSError:
-            pass
     return "\n".join(parts)

@@ -36,11 +36,10 @@ from __future__ import annotations
 import sys
 import time
 
-from tests.test_behavior_scenarios_gap_fill__shared import Scenario, _run_scenario
 from tests.test_behavior_scenarios_gap_fill__part1 import CQRS, CSRF_AND_SANITIZATION
 from tests.test_behavior_scenarios_gap_fill__part2 import DATA_PIPELINE, MIGRATIONS_CI
 from tests.test_behavior_scenarios_gap_fill__part3 import PUSH_AND_EMAIL, RATE_LIMITING
-
+from tests.test_behavior_scenarios_gap_fill__shared import Scenario, _run_scenario
 
 # ===========================================================================
 # Scenario registry (aggregate — all parts)
@@ -60,12 +59,13 @@ SCENARIOS: list[Scenario] = [
 # Standalone runner (no pytest required)
 # ===========================================================================
 
+
 def main() -> int:
     import asyncio
 
     print("=" * 74)
     print(f"  SKILL-001 GAP-FILL BEHAVIOR SCENARIOS — {len(SCENARIOS)} scenarios")
-    print(f"  Backend: SQLite in-memory (no PostgreSQL required)")
+    print("  Backend: SQLite in-memory (no PostgreSQL required)")
     print("=" * 74)
     print()
 
@@ -98,8 +98,10 @@ def main() -> int:
 
     elapsed = time.monotonic() - t_start
     print("=" * 74)
-    print(f"  OVERALL: {overall_passed}/{overall_total} assertions "
-          f"across {len(SCENARIOS)} scenarios  ({elapsed:.1f}s)")
+    print(
+        f"  OVERALL: {overall_passed}/{overall_total} assertions "
+        f"across {len(SCENARIOS)} scenarios  ({elapsed:.1f}s)"
+    )
     print("=" * 74)
 
     failed_scenarios = [r for r in scenario_results if r[1] < r[2]]

@@ -81,10 +81,10 @@ from generators.observability.alerting__impl1 import (
 from generators.observability.alerting__impl4 import generate_alerting
 
 MCP_TOOL = {
-    'name': 'fastapi_observability_generate_alerting',
-    'description': 'Generate PrometheusRule alerts (5 rules) and Grafana dashboard (4 panels).',
-    'tags': ['generator', 'observability'],
-    'entry': 'generate_alerting',
+    "name": "fastapi_observability_generate_alerting",
+    "description": "Generate PrometheusRule alerts (5 rules) and Grafana dashboard (4 panels).",
+    "tags": ["generator", "observability"],
+    "entry": "generate_alerting",
 }
 
 __all__ = [

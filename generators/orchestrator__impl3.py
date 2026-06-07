@@ -14,20 +14,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from generators.infra.dockerfile import generate_dockerfile
+from generators.infra.email import generate_email_utils
 from generators.infra.env_example import generate_env_example
 from generators.infra.gitignore import generate_gitignore
 from generators.infra.initial_data import generate_initial_data
 from generators.infra.precommit import generate_precommit
 from generators.infra.prestart import generate_prestart
 from generators.infra.readme import generate_readme
-from generators.infra.email import generate_email_utils
-from generators.testing.conftest import generate_test_infrastructure
-from generators.testing.test_suite import generate_test_suite
-
 from generators.orchestrator__impl2 import (
     _generate_requirements,
     _write_bola_shared_models_audit,
 )
+from generators.testing.conftest import generate_test_infrastructure
+from generators.testing.test_suite import generate_test_suite
 
 if TYPE_CHECKING:  # pragma: no cover
     from generators.orchestrator__impl1 import _Ctx

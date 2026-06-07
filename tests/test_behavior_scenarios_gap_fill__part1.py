@@ -21,10 +21,10 @@ from tests.test_behavior_scenarios_gap_fill__shared import (
     _assert_scenario,
 )
 
-
 # ===========================================================================
 # SCENARIO 33 — CQRS
 # ===========================================================================
+
 
 async def flow_cqrs(ctx: ScenarioContext) -> None:
     """CQRS layer: CommandBus + QueryBus present, read_replica module, routes, config."""
@@ -94,7 +94,9 @@ async def flow_cqrs(ctx: ScenarioContext) -> None:
     # For an unknown command name, the route returns 404 with a structured body explaining
     # "No handler registered for command". We distinguish this from a "route not found" 404
     # by inspecting the response body.
-    r_cmd = await client.post("/api/v1/cqrs/commands", json={"name": "UnknownCommand", "payload": {}})
+    r_cmd = await client.post(
+        "/api/v1/cqrs/commands", json={"name": "UnknownCommand", "payload": {}}
+    )
     # Route exists → returns 404 with "No handler" detail OR 405/422 for malformed input.
     # Route missing → returns plain FastAPI 404 without our custom detail message.
     try:
@@ -159,6 +161,7 @@ CQRS = Scenario(
 # SCENARIO 34 — CSRF Protection + Input Sanitization
 # ===========================================================================
 
+
 async def flow_csrf_and_sanitization(ctx: ScenarioContext) -> None:
     """CSRF tokens + input sanitizer: classes present, endpoint works, config patched."""
     client = ctx.client
@@ -216,8 +219,7 @@ async def flow_csrf_and_sanitization(ctx: ScenarioContext) -> None:
             "csrf_token key referenced in csrf.py response",
         )
     else:
-        ctx.record("csrf_token_endpoint_exists", False,
-                   "app/api/routes/csrf.py not found")
+        ctx.record("csrf_token_endpoint_exists", False, "app/api/routes/csrf.py not found")
         ctx.record("csrf_token_in_response", False, "file not found")
 
     # --- 4. InputSanitizer has sanitize_html ---
@@ -274,7 +276,7 @@ CSRF_AND_SANITIZATION = Scenario(
     archetype="CSRF double-submit cookie protection + HTML input sanitizer",
     models={"Article": {"title": "str", "content": "text"}},
     tools=[
-        ("add_csrf_protection",   "adapt.extend.infrastructure.add_csrf_protection"),
+        ("add_csrf_protection", "adapt.extend.infrastructure.add_csrf_protection"),
         ("add_input_sanitization", "adapt.extend.infrastructure.add_input_sanitization"),
     ],
     flow=flow_csrf_and_sanitization,

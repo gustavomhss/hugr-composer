@@ -12,22 +12,24 @@ from __future__ import annotations
 import ast
 import os
 import shutil
-import tempfile
-import threading
-from pathlib import Path
-from typing import Callable
 
 # ---------------------------------------------------------------------------
 # Bootstrap: make sure SKILL root is on sys.path
 # ---------------------------------------------------------------------------
 import sys
+import tempfile
+import threading
+from collections.abc import Callable
+from pathlib import Path
 
 SKILL_ROOT = Path(__file__).parent.parent
 if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
 from adapt.contracts import ToolInput, ToolResult  # noqa: E402
-from tests.common.fixture_factory import create_fixture_project  # noqa: E402,F401  (re-exported to impl2/impl3)
+from tests.common.fixture_factory import (
+    create_fixture_project,  # noqa: E402,F401  (re-exported to impl2/impl3)
+)
 
 # ---------------------------------------------------------------------------
 # Attack timeout (seconds per attack)
@@ -40,27 +42,27 @@ ATTACK_TIMEOUT = 30
 # ---------------------------------------------------------------------------
 def _import_all_extend_tools() -> list[Callable[[ToolInput], ToolResult]]:
     """Import and return all 27 extend tool callables."""
-    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
+    from adapt.extend.api_design.add_api_versioning import add_api_versioning
+    from adapt.extend.api_design.add_batch_endpoint import add_batch_endpoint
+    from adapt.extend.api_design.add_graphql import add_graphql
+    from adapt.extend.api_design.add_long_running_task import add_long_running_task
+    from adapt.extend.auth_access.add_api_key_auth import add_api_key_auth
+    from adapt.extend.auth_access.add_feature_flags import add_feature_flags
+    from adapt.extend.auth_access.add_mfa import add_mfa
+    from adapt.extend.auth_access.add_multi_tenancy import add_multi_tenancy
+    from adapt.extend.auth_access.add_oauth2_provider import add_oauth2_provider
+    from adapt.extend.auth_access.add_rbac import add_rbac
+    from adapt.extend.crud_data.add_audit_log import add_audit_log
     from adapt.extend.crud_data.add_bulk_operations import add_bulk_operations
     from adapt.extend.crud_data.add_cursor_pagination import add_cursor_pagination
     from adapt.extend.crud_data.add_data_export import add_data_export
     from adapt.extend.crud_data.add_file_upload import add_file_upload
     from adapt.extend.crud_data.add_search import add_search
-    from adapt.extend.crud_data.add_audit_log import add_audit_log
-    from adapt.extend.auth_access.add_mfa import add_mfa
-    from adapt.extend.auth_access.add_oauth2_provider import add_oauth2_provider
-    from adapt.extend.auth_access.add_multi_tenancy import add_multi_tenancy
-    from adapt.extend.auth_access.add_rbac import add_rbac
-    from adapt.extend.auth_access.add_api_key_auth import add_api_key_auth
-    from adapt.extend.auth_access.add_feature_flags import add_feature_flags
+    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
     from adapt.extend.infrastructure.add_cache_layer import add_cache_layer
     from adapt.extend.infrastructure.add_circuit_breaker import add_circuit_breaker
     from adapt.extend.infrastructure.add_outbox_pattern import add_outbox_pattern
     from adapt.extend.infrastructure.add_saga import add_saga
-    from adapt.extend.api_design.add_api_versioning import add_api_versioning
-    from adapt.extend.api_design.add_batch_endpoint import add_batch_endpoint
-    from adapt.extend.api_design.add_graphql import add_graphql
-    from adapt.extend.api_design.add_long_running_task import add_long_running_task
     from adapt.extend.realtime.add_sse import add_sse
     from adapt.extend.realtime.add_webhook_receiver import add_webhook_receiver
     from adapt.extend.realtime.add_webhook_sender import add_webhook_sender
@@ -69,14 +71,33 @@ def _import_all_extend_tools() -> list[Callable[[ToolInput], ToolResult]]:
     from adapt.extend.testing_tools.add_load_profile import add_load_profile
 
     return [
-        add_soft_delete, add_bulk_operations, add_cursor_pagination,
-        add_data_export, add_file_upload, add_search, add_audit_log,
-        add_mfa, add_oauth2_provider, add_multi_tenancy, add_rbac,
-        add_api_key_auth, add_feature_flags,
-        add_cache_layer, add_circuit_breaker, add_outbox_pattern, add_saga,
-        add_api_versioning, add_batch_endpoint, add_graphql, add_long_running_task,
-        add_sse, add_webhook_receiver, add_webhook_sender,
-        add_contract_tests, add_factory, add_load_profile,
+        add_soft_delete,
+        add_bulk_operations,
+        add_cursor_pagination,
+        add_data_export,
+        add_file_upload,
+        add_search,
+        add_audit_log,
+        add_mfa,
+        add_oauth2_provider,
+        add_multi_tenancy,
+        add_rbac,
+        add_api_key_auth,
+        add_feature_flags,
+        add_cache_layer,
+        add_circuit_breaker,
+        add_outbox_pattern,
+        add_saga,
+        add_api_versioning,
+        add_batch_endpoint,
+        add_graphql,
+        add_long_running_task,
+        add_sse,
+        add_webhook_receiver,
+        add_webhook_sender,
+        add_contract_tests,
+        add_factory,
+        add_load_profile,
     ]
 
 
@@ -84,16 +105,14 @@ def _import_all_extend_tools() -> list[Callable[[ToolInput], ToolResult]]:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_result(name: str, category: str, passed: bool, notes: str) -> dict:
     return {"name": name, "category": category, "passed": passed, "notes": notes}
 
 
 def _is_valid_tool_result(obj: object) -> bool:
     """Return True if obj is a well-formed ToolResult with status in {success, no_op, error}."""
-    return (
-        isinstance(obj, ToolResult)
-        and obj.status in ("success", "no_op", "error")
-    )
+    return isinstance(obj, ToolResult) and obj.status in ("success", "no_op", "error")
 
 
 class _TimeoutError(Exception):
@@ -139,6 +158,7 @@ def _count_disk_files(root: Path) -> int:
 # CATEGORY 1 — Input Fuzzing (10 attacks)
 # ===========================================================================
 
+
 def _attack_path_traversal() -> dict:
     """Path traversal: project_dir='../../etc/passwd' must not crash."""
     from adapt.extend.crud_data.add_soft_delete import add_soft_delete
@@ -153,13 +173,19 @@ def _attack_path_traversal() -> dict:
         # status='no_op' is also acceptable — the path exists but has no models
         if _is_valid_tool_result(result) and result.status == "no_op":
             return _make_result(name, "fuzzing", True, "returned no_op (no models found)")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except Exception as exc:  # noqa: BLE001
         # Pydantic validation error or any clean exception is acceptable —
         # the tool must not silently succeed or produce garbage output
         if "validation" in type(exc).__name__.lower() or "value" in type(exc).__name__.lower():
-            return _make_result(name, "fuzzing", True, f"raised clean validation error: {type(exc).__name__}")
-        return _make_result(name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}")
+            return _make_result(
+                name, "fuzzing", True, f"raised clean validation error: {type(exc).__name__}"
+            )
+        return _make_result(
+            name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"
+        )
 
 
 def _attack_nonexistent_dir() -> dict:
@@ -176,11 +202,17 @@ def _attack_nonexistent_dir() -> dict:
         # no_op is acceptable if discovery simply finds no models
         if _is_valid_tool_result(result) and result.status == "no_op":
             return _make_result(name, "fuzzing", True, "returned no_op (no models in missing dir)")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except Exception as exc:  # noqa: BLE001
         if isinstance(exc, (FileNotFoundError, OSError, PermissionError)):
-            return _make_result(name, "fuzzing", True, f"raised OS-level error cleanly: {type(exc).__name__}")
-        return _make_result(name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}")
+            return _make_result(
+                name, "fuzzing", True, f"raised OS-level error cleanly: {type(exc).__name__}"
+            )
+        return _make_result(
+            name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"
+        )
 
 
 def _attack_empty_string() -> dict:
@@ -189,16 +221,18 @@ def _attack_empty_string() -> dict:
 
     name = "empty_string"
     try:
-        result = _run_with_timeout(
-            lambda: add_soft_delete(ToolInput(project_dir=""))
-        )
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir="")))
         if _is_valid_tool_result(result) and result.status == "error":
             return _make_result(name, "fuzzing", True, f"returned error: {result.error}")
         if _is_valid_tool_result(result) and result.status == "no_op":
             return _make_result(name, "fuzzing", True, "returned no_op for empty path")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except Exception as exc:  # noqa: BLE001
-        return _make_result(name, "fuzzing", True, f"raised exception cleanly: {type(exc).__name__}")
+        return _make_result(
+            name, "fuzzing", True, f"raised exception cleanly: {type(exc).__name__}"
+        )
 
 
 def _attack_unicode_bomb() -> dict:
@@ -209,17 +243,19 @@ def _attack_unicode_bomb() -> dict:
     # NUL bytes are the critical case; other unicode is generally fine
     bad_path = "/tmp/\x00\x01\x02\x03\x04test"
     try:
-        result = _run_with_timeout(
-            lambda: add_soft_delete(ToolInput(project_dir=bad_path))
-        )
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir=bad_path)))
         if _is_valid_tool_result(result) and result.status in ("error", "no_op"):
             return _make_result(name, "fuzzing", True, f"returned status={result.status}")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except Exception as exc:  # noqa: BLE001
         # ValueError / OSError for NUL bytes is correct and expected
         if isinstance(exc, (ValueError, OSError, TypeError)):
             return _make_result(name, "fuzzing", True, f"raised clean error: {type(exc).__name__}")
-        return _make_result(name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}")
+        return _make_result(
+            name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"
+        )
 
 
 def _attack_very_long_path() -> dict:
@@ -229,18 +265,22 @@ def _attack_very_long_path() -> dict:
     name = "very_long_path"
     long_path = "/tmp/" + "a" * 9995
     try:
-        result = _run_with_timeout(
-            lambda: add_soft_delete(ToolInput(project_dir=long_path))
-        )
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir=long_path)))
         if _is_valid_tool_result(result) and result.status in ("error", "no_op"):
             return _make_result(name, "fuzzing", True, f"returned status={result.status}")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except _TimeoutError:
         return _make_result(name, "fuzzing", False, "timed out on long path")
     except Exception as exc:  # noqa: BLE001
         if isinstance(exc, (OSError, ValueError, FileNotFoundError)):
-            return _make_result(name, "fuzzing", True, f"raised OS error cleanly: {type(exc).__name__}")
-        return _make_result(name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}")
+            return _make_result(
+                name, "fuzzing", True, f"raised OS error cleanly: {type(exc).__name__}"
+            )
+        return _make_result(
+            name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"
+        )
 
 
 def _attack_permission_denied() -> dict:
@@ -255,16 +295,20 @@ def _attack_permission_denied() -> dict:
     restricted.mkdir()
     try:
         os.chmod(str(restricted), 0o000)
-        result = _run_with_timeout(
-            lambda: add_soft_delete(ToolInput(project_dir=str(restricted)))
-        )
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir=str(restricted))))
         if _is_valid_tool_result(result) and result.status in ("error", "no_op"):
             return _make_result(name, "fuzzing", True, f"returned status={result.status}")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except Exception as exc:  # noqa: BLE001
         if isinstance(exc, (PermissionError, OSError)):
-            return _make_result(name, "fuzzing", True, f"raised OS error cleanly: {type(exc).__name__}")
-        return _make_result(name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}")
+            return _make_result(
+                name, "fuzzing", True, f"raised OS error cleanly: {type(exc).__name__}"
+            )
+        return _make_result(
+            name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"
+        )
     finally:
         os.chmod(str(restricted), 0o755)
         shutil.rmtree(tmp, ignore_errors=True)
@@ -284,18 +328,22 @@ def _attack_symlink_loop() -> dict:
     link_a.symlink_to(link_b)
     link_b.symlink_to(link_a)
     try:
-        result = _run_with_timeout(
-            lambda: add_soft_delete(ToolInput(project_dir=str(loop_dir)))
-        )
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir=str(loop_dir))))
         if _is_valid_tool_result(result) and result.status in ("error", "no_op"):
             return _make_result(name, "fuzzing", True, f"returned status={result.status}")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except _TimeoutError:
         return _make_result(name, "fuzzing", False, "hung on symlink loop")
     except Exception as exc:  # noqa: BLE001
         if isinstance(exc, (OSError, RecursionError)):
-            return _make_result(name, "fuzzing", True, f"raised OS/recursion error cleanly: {type(exc).__name__}")
-        return _make_result(name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}")
+            return _make_result(
+                name, "fuzzing", True, f"raised OS/recursion error cleanly: {type(exc).__name__}"
+            )
+        return _make_result(
+            name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"
+        )
     finally:
         # Unlink to avoid cleanup issues
         try:
@@ -315,16 +363,18 @@ def _attack_file_instead_of_dir() -> dict:
     fake_file = Path(tmp) / "not_a_dir.py"
     fake_file.write_text("# not a project\n")
     try:
-        result = _run_with_timeout(
-            lambda: add_soft_delete(ToolInput(project_dir=str(fake_file)))
-        )
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir=str(fake_file))))
         if _is_valid_tool_result(result) and result.status in ("error", "no_op"):
             return _make_result(name, "fuzzing", True, f"returned status={result.status}")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except Exception as exc:  # noqa: BLE001
         if isinstance(exc, (OSError, NotADirectoryError, ValueError)):
             return _make_result(name, "fuzzing", True, f"raised clean error: {type(exc).__name__}")
-        return _make_result(name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}")
+        return _make_result(
+            name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"
+        )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -336,16 +386,18 @@ def _attack_null_bytes_in_path() -> dict:
     name = "null_bytes_in_path"
     path_with_null = "/tmp/valid\x00injected"
     try:
-        result = _run_with_timeout(
-            lambda: add_soft_delete(ToolInput(project_dir=path_with_null))
-        )
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir=path_with_null)))
         if _is_valid_tool_result(result) and result.status in ("error", "no_op"):
             return _make_result(name, "fuzzing", True, f"returned status={result.status}")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except Exception as exc:  # noqa: BLE001
         if isinstance(exc, (ValueError, OSError, TypeError)):
             return _make_result(name, "fuzzing", True, f"raised clean error: {type(exc).__name__}")
-        return _make_result(name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}")
+        return _make_result(
+            name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"
+        )
 
 
 def _attack_space_only_path() -> dict:
@@ -354,11 +406,13 @@ def _attack_space_only_path() -> dict:
 
     name = "space_only_path"
     try:
-        result = _run_with_timeout(
-            lambda: add_soft_delete(ToolInput(project_dir="   "))
-        )
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir="   ")))
         if _is_valid_tool_result(result) and result.status in ("error", "no_op"):
             return _make_result(name, "fuzzing", True, f"returned status={result.status}")
-        return _make_result(name, "fuzzing", False, f"unexpected status={getattr(result,'status','?')}")
+        return _make_result(
+            name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
+        )
     except Exception as exc:  # noqa: BLE001
-        return _make_result(name, "fuzzing", True, f"raised exception cleanly: {type(exc).__name__}")
+        return _make_result(
+            name, "fuzzing", True, f"raised exception cleanly: {type(exc).__name__}"
+        )

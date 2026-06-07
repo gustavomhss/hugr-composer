@@ -21,10 +21,10 @@ from tests.test_behavior_scenarios_gap_fill__shared import (
     _assert_scenario,
 )
 
-
 # ===========================================================================
 # SCENARIO 37 — Push Notifications (Native) + Transactional Email
 # ===========================================================================
+
 
 async def flow_push_and_email(ctx: ScenarioContext) -> None:
     """Push + email: service classes, lazy SDK imports, model exists, delivery tracker."""
@@ -71,8 +71,13 @@ async def flow_push_and_email(ctx: ScenarioContext) -> None:
         ctx.record(
             "firebase_admin_lazy_in_fcm",
             not any(
-                (isinstance(n, _ast.Import) and any(a.name.startswith("firebase_admin") for a in n.names))
-                or (isinstance(n, _ast.ImportFrom) and (n.module or "").startswith("firebase_admin"))
+                (
+                    isinstance(n, _ast.Import)
+                    and any(a.name.startswith("firebase_admin") for a in n.names)
+                )
+                or (
+                    isinstance(n, _ast.ImportFrom) and (n.module or "").startswith("firebase_admin")
+                )
                 for n in _ast.parse(src).body
             ),
             "firebase_admin not at module top-level in fcm.py (lazy import)",
@@ -152,8 +157,11 @@ PUSH_AND_EMAIL = Scenario(
     archetype="APNs+FCM push notifications + multi-provider transactional email",
     models={"User": {"email": "str", "device_token": "str"}},
     tools=[
-        ("add_push_notifications_native", "adapt.extend.infrastructure.add_push_notifications_native"),
-        ("add_transactional_email",       "adapt.extend.infrastructure.add_transactional_email"),
+        (
+            "add_push_notifications_native",
+            "adapt.extend.infrastructure.add_push_notifications_native",
+        ),
+        ("add_transactional_email", "adapt.extend.infrastructure.add_transactional_email"),
     ],
     flow=flow_push_and_email,
     needs_boot=False,  # APNs/FCM require real credentials; file-content checks are definitive
@@ -163,6 +171,7 @@ PUSH_AND_EMAIL = Scenario(
 # ===========================================================================
 # SCENARIO 38 — Rate Limiting
 # ===========================================================================
+
 
 async def flow_rate_limiting(ctx: ScenarioContext) -> None:
     """Rate limiting: RateLimitConfig dataclass, key functions, limiter symbol, 429 handler."""
@@ -228,8 +237,7 @@ async def flow_rate_limiting(ctx: ScenarioContext) -> None:
             "Retry-After header in 429 handler",
         )
     else:
-        ctx.record("rate_limit_middleware_exists", False,
-                   "app/middleware/rate_limit.py not found")
+        ctx.record("rate_limit_middleware_exists", False, "app/middleware/rate_limit.py not found")
         ctx.record("retry_after_header_in_handler", False, "file not found")
 
     # --- 3. Config has RATE_LIMIT_ENABLED / DEFAULT / STRATEGY ---

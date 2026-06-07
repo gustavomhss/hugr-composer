@@ -16,7 +16,6 @@ from tests.test_behavior_scenarios__shared import (
     _tool_deliverable,
 )
 
-
 # ===========================================================================
 # SCENARIO 7 — Content moderation / trust & safety
 # ===========================================================================

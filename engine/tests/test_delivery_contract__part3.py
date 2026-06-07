@@ -25,7 +25,6 @@ from engine.contracts import (
     Tier,
     TierReport,
 )
-
 from engine.tests.test_delivery_contract__shared import (
     _attack,
     _ensemble_report_clean,

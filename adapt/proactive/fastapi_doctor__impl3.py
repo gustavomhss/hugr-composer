@@ -11,7 +11,8 @@ from __future__ import annotations
 import json
 import textwrap
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import TimeoutError as FuturesTimeout
 from pathlib import Path
 from typing import Any
 
@@ -26,10 +27,10 @@ from adapt.proactive.fastapi_doctor__impl2 import (
     FixPlanBuilder,
 )
 
-
 # ---------------------------------------------------------------------------
 # Report renderer
 # ---------------------------------------------------------------------------
+
 
 class ReportRenderer:
     """Render a DoctorReport to Markdown, HTML, or JSON.
@@ -95,9 +96,7 @@ class ReportRenderer:
             cmd = item.get("run_command", "")
             total = item.get("total_fixes", 0)
             order = item.get("order", "?")
-            lines.append(
-                f"{order}. **[{sev}]** RUN: `{cmd}` ({ref}) → fixes: {total} issues"
-            )
+            lines.append(f"{order}. **[{sev}]** RUN: `{cmd}` ({ref}) → fixes: {total} issues")
 
         recs = r.get("extend_recommendations", [])
         if recs:
@@ -155,6 +154,7 @@ class ReportRenderer:
 # Doctor orchestrator
 # ---------------------------------------------------------------------------
 
+
 class DoctorOrchestrator:
     """Coordinate all VERIFY tool checkers and produce a unified report dict.
 
@@ -192,9 +192,7 @@ class DoctorOrchestrator:
             ``baseline_delta``, ``summary``, ``skipped_checkers``, and timing.
         """
         t0 = time.perf_counter()
-        checkers = self.registry.get_checkers(
-            mode=self.mode, only_category=self.only_category
-        )
+        checkers = self.registry.get_checkers(mode=self.mode, only_category=self.only_category)
 
         raw_findings: list[dict[str, Any]] = []
         skipped: list[dict[str, str]] = []
@@ -210,48 +208,64 @@ class DoctorOrchestrator:
                     else:
                         raw_findings.extend(result.findings)
                 except FuturesTimeout:
-                    raw_findings.append({
-                        "severity": Severity.HIGH,
-                        "title": f"Checker '{checker.name}' timed out after {self.checker_timeout}s",
-                        "detail": "Checker exceeded the timeout budget.",
-                        "location": "",
-                        "tool_ref": checker.tool_ref,
-                        "tool_name": checker.name,
-                        "category": checker.category,
-                        "fix_hint": "",
-                    })
+                    raw_findings.append(
+                        {
+                            "severity": Severity.HIGH,
+                            "title": f"Checker '{checker.name}' timed out after {self.checker_timeout}s",
+                            "detail": "Checker exceeded the timeout budget.",
+                            "location": "",
+                            "tool_ref": checker.tool_ref,
+                            "tool_name": checker.name,
+                            "category": checker.category,
+                            "fix_hint": "",
+                        }
+                    )
                 except Exception as exc:  # noqa: BLE001
-                    raw_findings.append({
-                        "severity": Severity.HIGH,
-                        "title": f"Checker '{checker.name}' failed",
-                        "detail": str(exc),
-                        "location": "",
-                        "tool_ref": checker.tool_ref,
-                        "tool_name": checker.name,
-                        "category": checker.category,
-                        "fix_hint": "",
-                    })
+                    raw_findings.append(
+                        {
+                            "severity": Severity.HIGH,
+                            "title": f"Checker '{checker.name}' failed",
+                            "detail": str(exc),
+                            "location": "",
+                            "tool_ref": checker.tool_ref,
+                            "tool_name": checker.name,
+                            "category": checker.category,
+                            "fix_hint": "",
+                        }
+                    )
 
         findings = self._deduplicate(raw_findings)
-        findings = sorted(findings, key=lambda f: f["severity"].value if isinstance(f["severity"], Severity) else 99)
+        findings = sorted(
+            findings,
+            key=lambda f: f["severity"].value if isinstance(f["severity"], Severity) else 99,
+        )
 
         if self.mode == "quick":
-            findings = findings[:self.MAX_QUICK_FINDINGS]
+            findings = findings[: self.MAX_QUICK_FINDINGS]
 
         fix_plan = FixPlanBuilder(findings).build() if self.emit_fix_plan else []
-        recommendations = ExtendRecommender(self.project_dir).analyze() if self.include_extend else []
+        recommendations = (
+            ExtendRecommender(self.project_dir).analyze() if self.include_extend else []
+        )
         baseline = BaselineComparator(self.project_dir).diff(findings)
         summary = self._summarize(findings)
         duration = round(time.perf_counter() - t0, 2)
 
         serialised_findings = [
-            {**f, "severity": f["severity"].name if isinstance(f["severity"], Severity) else f["severity"]}
+            {
+                **f,
+                "severity": f["severity"].name
+                if isinstance(f["severity"], Severity)
+                else f["severity"],
+            }
             for f in findings
         ]
 
         disabled = self.registry.disabled_names()
         if disabled:
-            skipped.extend({"name": n, "reason": "disabled by .fastapi_doctor.yaml"} for n in disabled)
+            skipped.extend(
+                {"name": n, "reason": "disabled by .fastapi_doctor.yaml"} for n in disabled
+            )
 
         return {
             "project_dir": self.project_dir,

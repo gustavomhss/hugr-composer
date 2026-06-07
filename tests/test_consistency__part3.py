@@ -24,17 +24,20 @@ from pathlib import Path
 # standalone ``run_all_tests`` runner below via ``_TESTS``.
 from tests.test_consistency__part1 import (  # noqa: E402
     test_1_no_import_cycles as _run_test_1,
+)
+from tests.test_consistency__part1 import (
     test_2_model_consistency as _run_test_2,
 )
 from tests.test_consistency__part2 import (  # noqa: E402
     test_3_schema_consistency as _run_test_3,
+)
+from tests.test_consistency__part2 import (
     test_4_route_consistency as _run_test_4,
 )
 from tests.test_consistency__shared import (  # noqa: E402
     _build_10_tool_project,
     _collect_py_files,
 )
-
 
 # ---------------------------------------------------------------------------
 # Test 5 — Alembic migration chain consistency
@@ -75,11 +78,10 @@ def _parse_migration(path: Path) -> dict | None:
 
     down_match = _DOWN_REVISION_RE.search(source)
     down_revision: str | None = None
-    if down_match:
-        # group(1) = string value, group(2) = "None"
-        if down_match.group(1) is not None:
-            down_revision = down_match.group(1)
-        # group(2) = literal None → keep down_revision as None
+    # group(1) = string value, group(2) = "None"
+    # group(2) = literal None → keep down_revision as None
+    if down_match and down_match.group(1) is not None:
+        down_revision = down_match.group(1)
 
     has_upgrade = bool(re.search(r"^def upgrade\(", source, re.MULTILINE))
     has_downgrade = bool(re.search(r"^def downgrade\(", source, re.MULTILINE))
@@ -108,8 +110,13 @@ def _is_downgrade_pass_only(source: str) -> bool:
             body = node.body
             # Filter out docstrings
             stmts = [
-                s for s in body
-                if not (isinstance(s, ast.Expr) and isinstance(s.value, ast.Constant) and isinstance(s.value.value, str))
+                s
+                for s in body
+                if not (
+                    isinstance(s, ast.Expr)
+                    and isinstance(s.value, ast.Constant)
+                    and isinstance(s.value.value, str)
+                )
             ]
             return len(stmts) == 1 and isinstance(stmts[0], ast.Pass)
     return False
@@ -161,8 +168,7 @@ def test_5_migration_chain(project_dir: Path) -> tuple[bool, str]:
             # Other migrations must still implement a real downgrade.
             # See R6-O4-A1.
             is_chain_root = (
-                info.get("down_revision") is None
-                and info.get("revision") == "0001_initial"
+                info.get("down_revision") is None and info.get("revision") == "0001_initial"
             )
             if not is_chain_root:
                 failures.append(
@@ -193,8 +199,7 @@ def test_5_migration_chain(project_dir: Path) -> tuple[bool, str]:
         return False, f"Migration chain failures ({len(failures)}):\n  {detail}"
 
     return True, (
-        f"All {len(migrations)} migrations valid "
-        "(upgrade+downgrade present, chain is linear)"
+        f"All {len(migrations)} migrations valid (upgrade+downgrade present, chain is linear)"
     )
 
 
@@ -203,10 +208,10 @@ def test_5_migration_chain(project_dir: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 _ENV_VAR_RE = re.compile(r'\bos\.getenv\(["\']([A-Z_][A-Z0-9_]*)["\']')
-_SETTINGS_CLASS_FIELD_RE = re.compile(r'^\s{4}([A-Z_][A-Z0-9_]*)\s*(?::\s|\s*=)', re.MULTILINE)
-_ENV_EXAMPLE_KEY_RE = re.compile(r'^([A-Z_][A-Z0-9_]*)=', re.MULTILINE)
+_SETTINGS_CLASS_FIELD_RE = re.compile(r"^\s{4}([A-Z_][A-Z0-9_]*)\s*(?::\s|\s*=)", re.MULTILINE)
+_ENV_EXAMPLE_KEY_RE = re.compile(r"^([A-Z_][A-Z0-9_]*)=", re.MULTILINE)
 # Module-level bare assignments like SECRET_KEY: int = 15 (added by tools outside Settings)
-_MODULE_LEVEL_VAR_RE = re.compile(r'^([A-Z_][A-Z0-9_]*)\s*(?::\s*\S+\s*)?=', re.MULTILINE)
+_MODULE_LEVEL_VAR_RE = re.compile(r"^([A-Z_][A-Z0-9_]*)\s*(?::\s*\S+\s*)?=", re.MULTILINE)
 
 
 def test_6_config_consistency(project_dir: Path) -> tuple[bool, str]:
@@ -271,18 +276,13 @@ def test_6_config_consistency(project_dir: Path) -> tuple[bool, str]:
             )
 
     # (e) SECRET_KEY must have default-value warning or validation
-    has_secret_key_guard = (
-        "SECRET_KEY" in config_source
-        and (
-            "changethis" in config_source
-            or "warnings.warn" in config_source
-            or "raise ValueError" in config_source
-        )
+    has_secret_key_guard = "SECRET_KEY" in config_source and (
+        "changethis" in config_source
+        or "warnings.warn" in config_source
+        or "raise ValueError" in config_source
     )
     if not has_secret_key_guard:
-        failures.append(
-            "app/core/config.py: SECRET_KEY has no default-value warning or validation"
-        )
+        failures.append("app/core/config.py: SECRET_KEY has no default-value warning or validation")
 
     if failures:
         detail = "\n  ".join(failures)
@@ -301,11 +301,11 @@ def test_6_config_consistency(project_dir: Path) -> tuple[bool, str]:
 
 _TESTS = [
     ("Import cycle detection", _run_test_1),
-    ("Model consistency",      _run_test_2),
-    ("Schema consistency",     _run_test_3),
-    ("Route consistency",      _run_test_4),
-    ("Migration chain",        test_5_migration_chain),
-    ("Config consistency",     test_6_config_consistency),
+    ("Model consistency", _run_test_2),
+    ("Schema consistency", _run_test_3),
+    ("Route consistency", _run_test_4),
+    ("Migration chain", test_5_migration_chain),
+    ("Config consistency", test_6_config_consistency),
 ]
 
 

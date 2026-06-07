@@ -108,10 +108,14 @@ class TestTool001SoftDelete:
             "INV-SD-08: is_deleted not in ItemDeletedPublic (admin-only schema)"
         )
         # The tool notes confirm ItemPublic deliberately excludes these fields.
-        note_found = any(
-            "does NOT expose" in n or "intentionally EXCLUDES" in n or "Excludes" in n
-            for n in self.result.notes
-        ) if hasattr(self, "result") else True
+        note_found = (
+            any(
+                "does NOT expose" in n or "intentionally EXCLUDES" in n or "Excludes" in n
+                for n in self.result.notes
+            )
+            if hasattr(self, "result")
+            else True
+        )
         # Partial compliance: tool generates correct separate schema; original ItemPublic
         # content is scaffold-controlled and not modified by the tool to add these fields.
 
@@ -186,7 +190,9 @@ class TestTool005AuditLog:
         crud_text = (self.project / "app" / "crud" / "audit_log.py").read_text()
         assert "retain_days" in crud_text, "INV-AL-06: retain_days parameter missing"
         assert "DELETE FROM audit_logs" in crud_text, "INV-AL-06: DELETE statement missing"
-        assert "cutoff" in crud_text, "INV-AL-06: cutoff variable missing (must never delete newer rows)"
+        assert "cutoff" in crud_text, (
+            "INV-AL-06: cutoff variable missing (must never delete newer rows)"
+        )
 
     def test_inv_al_07_current_auditor_dependency(self):
         """INV-AL-07: Audit endpoints require CurrentAuditor (role=auditor or superuser)."""
@@ -254,25 +260,26 @@ class TestTool008MultiTenancy:
         assert "status_code=403" in mw_text or "403" in mw_text, (
             "INV-MT-05: 403 response for suspended tenant missing"
         )
-        assert "status != \"active\"" in mw_text or "status != 'active'" in mw_text, (
+        assert 'status != "active"' in mw_text or "status != 'active'" in mw_text, (
             "INV-MT-05: tenant status check missing"
         )
 
     def test_inv_mt_06_on_delete_restrict(self):
         """INV-MT-06: FK uses ON DELETE RESTRICT — cannot delete tenant with live rows."""
         mixin_text = (self.project / "app" / "models" / "mixins.py").read_text()
-        assert "ondelete=\"RESTRICT\"" in mixin_text or "RESTRICT" in mixin_text, (
+        assert 'ondelete="RESTRICT"' in mixin_text or "RESTRICT" in mixin_text, (
             "INV-MT-06: ON DELETE RESTRICT missing from tenant FK"
         )
 
     def test_inv_mt_07_user_model_skipped(self):
         """INV-MT-07: User model is never silently made tenant-scoped."""
         # The skip set in _discover_models must include 'user'
-        from adapt.extend.auth_access.add_multi_tenancy import _discover_models
-
         # Ensure _discover_models would skip user if it existed
         # (we check the source code skips 'user')
         import inspect
+
+        from adapt.extend.auth_access.add_multi_tenancy import _discover_models
+
         src = inspect.getsource(_discover_models)
         assert '"user"' in src or "'user'" in src, (
             "INV-MT-07: 'user' not in skip set of _discover_models"

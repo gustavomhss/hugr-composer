@@ -9,7 +9,6 @@ import copy
 import hashlib
 
 from engine.contracts import Maturity, PrimitiveDelivery, compute_sha256
-
 from engine.tests.test_delivery_contract__shared import (
     _expect_fail,
     _expect_ok,

@@ -41,7 +41,6 @@ from generators.observability.alerting__impl2 import (
 )
 from generators.observability.alerting__impl3 import _build_prometheus_rules
 
-
 # ---------------------------------------------------------------------------
 # Grafana dashboard assembler
 # ---------------------------------------------------------------------------
@@ -61,8 +60,7 @@ def _dashboard_metadata(service_name: str) -> dict:
     return {
         "annotations": {"list": []},
         "description": (
-            f"Production monitoring for {service_name} — "
-            "Four Golden Signals + SLO error budget"
+            f"Production monitoring for {service_name} — Four Golden Signals + SLO error budget"
         ),
         "editable": True,
         "fiscalYearStartMonth": 0,
@@ -74,17 +72,19 @@ def _dashboard_metadata(service_name: str) -> dict:
         "schemaVersion": 39,
         "tags": ["api", "slo", "red", service_name],
         "templating": {
-            "list": [{
-                "current": {"selected": False, "text": "default", "value": "default"},
-                "hide": 0,
-                "includeAll": False,
-                "multi": False,
-                "name": "datasource",
-                "options": [],
-                "query": "prometheus",
-                "refresh": 1,
-                "type": "datasource",
-            }],
+            "list": [
+                {
+                    "current": {"selected": False, "text": "default", "value": "default"},
+                    "hide": 0,
+                    "includeAll": False,
+                    "multi": False,
+                    "name": "datasource",
+                    "options": [],
+                    "query": "prometheus",
+                    "refresh": 1,
+                    "type": "datasource",
+                }
+            ],
         },
         "time": {"from": "now-6h", "to": "now"},
         "timepicker": {},
@@ -115,17 +115,26 @@ def _assemble_dashboard_panels(
     pid = 1
     y = 0
     panels: list[dict] = [_row_panel("Traffic & Errors", pid, y)]
-    pid += 1; y += 1  # noqa: E702
-    panels += [_panel_request_rate(service_name, pid, y),
-               _panel_error_rate(service_name, error_budget, pid + 1, y)]
-    pid += 2; y += 8  # noqa: E702
+    pid += 1
+    y += 1  # noqa: E702
+    panels += [
+        _panel_request_rate(service_name, pid, y),
+        _panel_error_rate(service_name, error_budget, pid + 1, y),
+    ]
+    pid += 2
+    y += 8  # noqa: E702
     panels += [_row_panel("Latency", pid, y)]
-    pid += 1; y += 1  # noqa: E702
-    panels += [_panel_latency_percentiles(service_name, slo_latency_p99_ms, pid, y),
-               _panel_latency_heatmap(service_name, pid + 1, y)]
-    pid += 2; y += 8  # noqa: E702
+    pid += 1
+    y += 1  # noqa: E702
+    panels += [
+        _panel_latency_percentiles(service_name, slo_latency_p99_ms, pid, y),
+        _panel_latency_heatmap(service_name, pid + 1, y),
+    ]
+    pid += 2
+    y += 8  # noqa: E702
     panels += [_row_panel("Saturation & SLO", pid, y)]
-    pid += 1; y += 1  # noqa: E702
+    pid += 1
+    y += 1  # noqa: E702
     panels += [
         _panel_active_requests(service_name, pid, y),
         _panel_error_budget_gauge(service_name, slo_availability, error_budget, pid + 1, y),
@@ -163,7 +172,7 @@ def _build_grafana_dashboard(
 
 
 def _write_alerting_files(
-    out: "Path",
+    out: Path,
     service_name: str,
     namespace: str,
     slo_availability: float,
@@ -192,7 +201,8 @@ def _write_alerting_files(
             _build_grafana_dashboard(service_name, slo_availability, slo_latency_p99_ms),
             indent=2,
             ensure_ascii=False,
-        ) + "\n",
+        )
+        + "\n",
         encoding="utf-8",
     )
     return [str(prom_path), str(grafana_path)]

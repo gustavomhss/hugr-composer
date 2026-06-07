@@ -12,23 +12,18 @@ from __future__ import annotations
 import ast
 import json
 import re
-import textwrap
-import time
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout
 from pathlib import Path
 from typing import Any
 
 from adapt.proactive.fastapi_doctor__impl1 import (
-    CheckerRegistry,
-    CheckerResult,
     Severity,
 )
-
 
 # ---------------------------------------------------------------------------
 # Fix plan builder
 # ---------------------------------------------------------------------------
+
 
 class FixPlanBuilder:
     """Build a deterministic, severity-ordered fix plan from a finding list.
@@ -68,18 +63,20 @@ class FixPlanBuilder:
                 severity_counts[sev_name] = severity_counts.get(sev_name, 0) + 1
 
             worst = self._worst_severity(group)
-            items.append({
-                "severity": worst.name,
-                "tool_ref": tool_ref,
-                "tool_name": tool_name,
-                "fixes_critical": severity_counts.get("CRITICAL", 0),
-                "fixes_high": severity_counts.get("HIGH", 0),
-                "fixes_medium": severity_counts.get("MEDIUM", 0),
-                "fixes_low": severity_counts.get("LOW", 0),
-                "total_fixes": len(group),
-                "run_command": f"fastapi_skill {tool_name} .",
-                "findings": [f["title"] for f in group],
-            })
+            items.append(
+                {
+                    "severity": worst.name,
+                    "tool_ref": tool_ref,
+                    "tool_name": tool_name,
+                    "fixes_critical": severity_counts.get("CRITICAL", 0),
+                    "fixes_high": severity_counts.get("HIGH", 0),
+                    "fixes_medium": severity_counts.get("MEDIUM", 0),
+                    "fixes_low": severity_counts.get("LOW", 0),
+                    "total_fixes": len(group),
+                    "run_command": f"fastapi_skill {tool_name} .",
+                    "findings": [f["title"] for f in group],
+                }
+            )
 
         items = self._sort_by_severity_and_deps(items)
         for i, item in enumerate(items, start=1):
@@ -121,6 +118,7 @@ class FixPlanBuilder:
 # ---------------------------------------------------------------------------
 # Recommendation engine
 # ---------------------------------------------------------------------------
+
 
 def _has_auth(project_dir: Path) -> bool:
     return any(project_dir.rglob("*auth*")) or any(project_dir.rglob("*jwt*"))
@@ -248,13 +246,15 @@ class ExtendRecommender:
         for spec in _FEATURE_PATTERNS:
             try:
                 if spec["trigger"](self.project_dir):
-                    recommendations.append({
-                        "tool": spec["tool"],
-                        "tool_ref": spec["tool_ref"],
-                        "reason": spec["reason"],
-                        "run_command": f"fastapi_skill {spec['tool']} .",
-                        "priority": "HIGH" if "auth" in spec["reason"] else "MEDIUM",
-                    })
+                    recommendations.append(
+                        {
+                            "tool": spec["tool"],
+                            "tool_ref": spec["tool_ref"],
+                            "reason": spec["reason"],
+                            "run_command": f"fastapi_skill {spec['tool']} .",
+                            "priority": "HIGH" if "auth" in spec["reason"] else "MEDIUM",
+                        }
+                    )
             except Exception:  # noqa: BLE001
                 pass
         return recommendations
@@ -263,6 +263,7 @@ class ExtendRecommender:
 # ---------------------------------------------------------------------------
 # Baseline comparator
 # ---------------------------------------------------------------------------
+
 
 class BaselineComparator:
     """Persist and compare finding fingerprints for CI delta gating.
@@ -339,4 +340,3 @@ class BaselineComparator:
             "total": len(findings),
         }
         self.baseline_path.write_text(json.dumps(payload, indent=2))
-

@@ -3,14 +3,21 @@
 Split out of multi_call.py to keep modules <=500 LOC. Not a public API; import
 from `spec_orchestrator.multi_call` instead.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
 from textwrap import dedent
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-GOLD_TOOL_001 = REPO_ROOT / "docs/skills_library/skills/SKILL-001-fastapi-production/specs/TOOL-001-add_soft_delete.md"
-GOLD_TOOL_008 = REPO_ROOT / "docs/skills_library/skills/SKILL-001-fastapi-production/specs/TOOL-008-add_multi_tenancy.md"
+GOLD_TOOL_001 = (
+    REPO_ROOT
+    / "docs/skills_library/skills/SKILL-001-fastapi-production/specs/TOOL-001-add_soft_delete.md"
+)
+GOLD_TOOL_008 = (
+    REPO_ROOT
+    / "docs/skills_library/skills/SKILL-001-fastapi-production/specs/TOOL-008-add_multi_tenancy.md"
+)
 
 
 # ============================================================================
@@ -91,12 +98,16 @@ SHARED_RULES = dedent(
 # ============================================================================
 # CALL A — Sections 1-3 (Overview, Purpose, SLOs)
 # ============================================================================
-SYSTEM_A = dedent(
-    """
+SYSTEM_A = (
+    dedent(
+        """
     You are a senior software architect writing the HEADER block (sections 1-3) of a
     rigorous engineering specification for HuGR SKILL-001 FastAPI Production.
     """
-).strip() + "\n\n" + SHARED_RULES
+    ).strip()
+    + "\n\n"
+    + SHARED_RULES
+)
 
 
 def build_prompt_a(*, tool_num: str, tool_name: str, brief: str, date: str) -> str:
@@ -163,15 +174,20 @@ def build_prompt_a(*, tool_num: str, tool_name: str, brief: str, date: str) -> s
 # ============================================================================
 # CALL B — Section 4 ALONE (Code Examples)  ★ THE MOST CRITICAL CALL
 # ============================================================================
-SYSTEM_B = dedent(
-    """
+SYSTEM_B = (
+    dedent(
+        """
     You are a senior FastAPI engineer writing the CODE EXAMPLES section (section 4)
     of a rigorous engineering specification. Your output is consumed by a code-generation
     tool that will implement the spec, so every code block MUST be real, copy-pastable
     Python that demonstrates a CONCRETE change.
     """
-).strip() + "\n\n" + SHARED_RULES + "\n\n" + dedent(
-    """
+    ).strip()
+    + "\n\n"
+    + SHARED_RULES
+    + "\n\n"
+    + dedent(
+        """
     SECTION 4 SPECIFIC RULES (extra-strict — AUTOMATIC REJECTION if violated):
     - Produce AT LEAST 9 ```python fenced blocks. The reviewer gate requires ≥ 8
       "meaningful" blocks (10+ lines, parses, not a stub). Aim for 9-12 to have margin.
@@ -197,7 +213,8 @@ SYSTEM_B = dedent(
     - Migration file: real Alembic upgrade() and downgrade() with concrete op.* calls.
     - Total section length: 250-450 lines.
     """
-).strip()
+    ).strip()
+)
 
 
 def build_prompt_b(*, tool_num: str, tool_name: str, brief: str, header: str) -> str:
@@ -261,14 +278,18 @@ def build_prompt_b(*, tool_num: str, tool_name: str, brief: str, header: str) ->
 # ============================================================================
 # CALL C — Sections 5-8 (QS, CC, DoD, Invariants)
 # ============================================================================
-SYSTEM_C = dedent(
-    """
+SYSTEM_C = (
+    dedent(
+        """
     You are continuing a rigorous engineering specification. You will produce sections
     5 (Quality Standards), 6 (Completeness Criteria), 7 (Definition of Done),
     and 8 (Invariants). These sections cross-reference each other and reference tests
     T-01..T-30 that will be written in a later call.
     """
-).strip() + "\n\n" + SHARED_RULES
+    ).strip()
+    + "\n\n"
+    + SHARED_RULES
+)
 
 
 def build_prompt_c(*, tool_num: str, tool_name: str, brief: str, header_and_code: str) -> str:

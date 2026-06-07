@@ -37,16 +37,6 @@ import time
 import traceback
 from pathlib import Path
 
-# Importing the shared module FIRST runs the os.environ.setdefault(...) calls
-# before any application module is imported.
-from tests.test_behavior_scenarios__shared import (
-    POSTGRES_URL,
-    Scenario,
-    ScenarioContext,
-    _make_client,
-    _precheck_postgres,
-    _teardown,
-)
 from tests.test_behavior_scenarios__part1 import (
     ANALYTICS,
     BLOG,
@@ -64,6 +54,17 @@ from tests.test_behavior_scenarios__part2 import (
 from tests.test_behavior_scenarios__part3 import (
     EMAIL_TEMPLATES,
     SQLADMIN,
+)
+
+# Importing the shared module FIRST runs the os.environ.setdefault(...) calls
+# before any application module is imported.
+from tests.test_behavior_scenarios__shared import (
+    POSTGRES_URL,
+    Scenario,
+    ScenarioContext,
+    _make_client,
+    _precheck_postgres,
+    _teardown,
 )
 
 # ---------------------------------------------------------------------------

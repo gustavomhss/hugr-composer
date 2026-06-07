@@ -6,7 +6,6 @@ sub-report linkage, and the LLM cost cap. Split from test_delivery_contract.py.
 from __future__ import annotations
 
 from engine.contracts import GateStatus, Maturity, Tier, TierReport
-
 from engine.tests.test_delivery_contract__shared import (
     _expect_fail,
     _expect_ok,

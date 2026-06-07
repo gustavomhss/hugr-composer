@@ -15,10 +15,10 @@ from typing import Any
 
 from adapt.contracts import ToolInput, ToolResult
 
-
 # ---------------------------------------------------------------------------
 # Severity taxonomy
 # ---------------------------------------------------------------------------
+
 
 class Severity(IntEnum):
     """Finding severity level. Lower value = higher priority (CRITICAL sorts first)."""
@@ -29,7 +29,7 @@ class Severity(IntEnum):
     LOW = 3
 
     @classmethod
-    def from_string(cls, s: str) -> "Severity":
+    def from_string(cls, s: str) -> Severity:
         """Parse severity from any casing; defaults to MEDIUM on unknown input.
 
         Args:
@@ -38,7 +38,7 @@ class Severity(IntEnum):
         Returns:
             Matching ``Severity`` member, defaulting to ``MEDIUM``.
         """
-        mapping: dict[str, "Severity"] = {
+        mapping: dict[str, Severity] = {
             "critical": cls.CRITICAL,
             "high": cls.HIGH,
             "medium": cls.MEDIUM,
@@ -86,6 +86,7 @@ def classify_finding(title: str, category: str) -> Severity:
 # Checker registry
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class CheckerResult:
     """Result produced by a single checker invocation."""
@@ -130,16 +131,18 @@ class Checker:
         except Exception as exc:  # noqa: BLE001
             return CheckerResult(
                 name=self.name,
-                findings=[{
-                    "severity": Severity.HIGH,
-                    "title": f"Checker '{self.name}' raised an unexpected error",
-                    "detail": str(exc),
-                    "location": "",
-                    "tool_ref": self.tool_ref,
-                    "tool_name": self.name,
-                    "category": self.category,
-                    "fix_hint": "",
-                }],
+                findings=[
+                    {
+                        "severity": Severity.HIGH,
+                        "title": f"Checker '{self.name}' raised an unexpected error",
+                        "detail": str(exc),
+                        "location": "",
+                        "tool_ref": self.tool_ref,
+                        "tool_name": self.name,
+                        "category": self.category,
+                        "fix_hint": "",
+                    }
+                ],
             )
 
     def _resolve_fn(self):  # type: ignore[return]
@@ -164,6 +167,7 @@ class Checker:
             raise ImportError(f"No import mapping for checker: {self.name}")
         mod_path, fn_name = module_map[self.name]
         import importlib
+
         mod = importlib.import_module(mod_path)
         return getattr(mod, fn_name)
 
@@ -222,13 +226,13 @@ class CheckerRegistry:
     """
 
     VERIFY_TOOLS: list[tuple[str, str, str]] = [
-        ("security_scan",      "TOOL-028", "security"),
-        ("dependency_audit",   "TOOL-029", "security"),
-        ("detect_n_plus_one",  "TOOL-030", "performance"),
-        ("schema_coverage",    "TOOL-031", "quality"),
+        ("security_scan", "TOOL-028", "security"),
+        ("dependency_audit", "TOOL-029", "security"),
+        ("detect_n_plus_one", "TOOL-030", "performance"),
+        ("schema_coverage", "TOOL-031", "quality"),
         ("test_coverage_gaps", "TOOL-032", "quality"),
-        ("api_spec_compliance","TOOL-033", "compliance"),
-        ("performance_baseline","TOOL-034", "performance"),
+        ("api_spec_compliance", "TOOL-033", "compliance"),
+        ("performance_baseline", "TOOL-034", "performance"),
     ]
 
     # Quick mode always includes these high-priority checkers
@@ -249,6 +253,7 @@ class CheckerRegistry:
         if config_file.exists():
             try:
                 import yaml  # type: ignore[import-untyped]
+
                 return yaml.safe_load(config_file.read_text()) or {}
             except Exception:  # noqa: BLE001
                 return {}

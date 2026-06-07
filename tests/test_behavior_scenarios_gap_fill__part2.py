@@ -21,10 +21,10 @@ from tests.test_behavior_scenarios_gap_fill__shared import (
     _assert_scenario,
 )
 
-
 # ===========================================================================
 # SCENARIO 35 — Data Import + Versioning + Event Sourcing
 # ===========================================================================
+
 
 async def flow_data_pipeline(ctx: ScenarioContext) -> None:
     """Data import, versioning, and event sourcing: classes, methods, lazy imports."""
@@ -162,9 +162,9 @@ DATA_PIPELINE = Scenario(
     archetype="CSV/Excel import + draft/publish lifecycle + append-only event store",
     models={"Document": {"title": "str", "body": "text", "author": "str"}},
     tools=[
-        ("add_data_import",     "adapt.extend.crud_data.add_data_import"),
+        ("add_data_import", "adapt.extend.crud_data.add_data_import"),
         ("add_data_versioning", "adapt.extend.crud_data.add_data_versioning"),
-        ("add_event_sourcing",  "adapt.extend.crud_data.add_event_sourcing"),
+        ("add_event_sourcing", "adapt.extend.crud_data.add_event_sourcing"),
     ],
     flow=flow_data_pipeline,
     needs_boot=False,  # Migration-heavy tools with Alembic deps; file-content checks are sufficient
@@ -174,6 +174,7 @@ DATA_PIPELINE = Scenario(
 # ===========================================================================
 # SCENARIO 36 — Database Migrations CI
 # ===========================================================================
+
 
 async def flow_migrations_ci(ctx: ScenarioContext) -> None:
     """Migration CI runner: MigrationCIRunner, SafetyChecker, CLI script, config."""
@@ -194,8 +195,9 @@ async def flow_migrations_ci(ctx: ScenarioContext) -> None:
             "ci_runner.py file present and readable",
         )
     else:
-        ctx.record("migration_ci_runner_class_present", False,
-                   "app/migrations/ci_runner.py not found")
+        ctx.record(
+            "migration_ci_runner_class_present", False, "app/migrations/ci_runner.py not found"
+        )
         ctx.record("ci_runner_imports_cleanly", False, "file not found")
 
     # --- 2. SafetyChecker detects DROP TABLE / DROP COLUMN ---
@@ -271,8 +273,7 @@ MIGRATIONS_CI = Scenario(
     archetype="Alembic CI runner + destructive-op safety checker + CLI script",
     models={"Migration": {"version": "str", "applied": "bool"}},
     tools=[
-        ("add_database_migrations_ci",
-         "adapt.extend.testing_tools.add_database_migrations_ci"),
+        ("add_database_migrations_ci", "adapt.extend.testing_tools.add_database_migrations_ci"),
     ],
     flow=flow_migrations_ci,
     needs_boot=False,  # migration CI infra has no HTTP surface; file checks are definitive

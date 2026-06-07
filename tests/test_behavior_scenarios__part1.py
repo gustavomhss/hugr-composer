@@ -18,7 +18,6 @@ from tests.test_behavior_scenarios__shared import (
     _tool_deliverable,
 )
 
-
 # ===========================================================================
 # SCENARIO 1 — E-commerce storefront
 # ===========================================================================

@@ -19,6 +19,7 @@ Cross-reference consistency:
 Implementation is split across multi_call__impl1/2/3 to keep each module under
 the 500-LOC cap. This module re-exports the public API unchanged.
 """
+
 from __future__ import annotations
 
 from spec_orchestrator.client import CompletionResult

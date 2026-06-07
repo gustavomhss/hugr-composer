@@ -36,7 +36,9 @@ class TestTool046EventDriven:
         producer_text = (self.project / "events" / "producer.py").read_text()
         assert "OutboxEvent" in producer_text, "INV-ED-01: producer doesn't write to OutboxEvent"
         assert "session.add" in producer_text, "INV-ED-01: session.add(outbox_row) missing"
-        assert "xadd" not in producer_text, "INV-ED-01: direct redis.xadd in producer violates outbox"
+        assert "xadd" not in producer_text, (
+            "INV-ED-01: direct redis.xadd in producer violates outbox"
+        )
 
     def test_inv_ed_02_outbox_same_transaction(self):
         """INV-ED-02: Outbox write uses session.add (no separate commit)."""
@@ -80,7 +82,9 @@ class TestTool046EventDriven:
     def test_inv_ed_07_schema_version_check_in_consumer(self):
         """INV-ED-07: Consumer raises ValueError for unknown schema_version."""
         base_text = (self.project / "events" / "base.py").read_text()
-        assert "schema_version" in base_text, "INV-ED-07: schema_version field missing from BaseEvent"
+        assert "schema_version" in base_text, (
+            "INV-ED-07: schema_version field missing from BaseEvent"
+        )
         consumer_text = (self.project / "events" / "consumer.py").read_text()
         assert "schema_version" in consumer_text, (
             "INV-ED-07: schema_version check missing from consumer.py"
@@ -118,7 +122,9 @@ class TestTool051FastapiDoctor:
         assert result.status == "success", f"Tool failed: {result.error}"
         self.result = result
         import inspect
+
         from adapt.proactive import fastapi_doctor as fd_module
+
         self.src = inspect.getsource(fd_module)
 
     def test_inv_doctor_001_every_finding_has_severity(self):
@@ -138,7 +144,7 @@ class TestTool051FastapiDoctor:
     def test_inv_doctor_003_fix_plan_deterministic(self):
         """INV-DOCTOR-003: FixPlanBuilder uses stable sort (no timestamp/hash in comparator)."""
         assert "sorted(" in self.src, "INV-DOCTOR-003: sorted() not used in FixPlanBuilder"
-        assert "-x[\"total_fixes\"]" in self.src or "-x['total_fixes']" in self.src, (
+        assert '-x["total_fixes"]' in self.src or "-x['total_fixes']" in self.src, (
             "INV-DOCTOR-003: stable secondary sort by total_fixes desc missing"
         )
 

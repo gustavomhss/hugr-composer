@@ -15,7 +15,7 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult
 from tests.common.fixture_factory import create_fixture_project
-from tests.property_tests__helpers import _Results, _call_tool, _load_tool
+from tests.property_tests__helpers import _call_tool, _load_tool, _Results
 
 # ---------------------------------------------------------------------------
 # Property 5 — ToolResult contract

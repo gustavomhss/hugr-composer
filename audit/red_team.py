@@ -38,14 +38,16 @@ if str(SKILL_ROOT) not in sys.path:
 # ---------------------------------------------------------------------------
 from audit.red_team__impl1 import (  # noqa: E402,F401
     ATTACK_TIMEOUT,
-    SKILL_ROOT as _IMPL_SKILL_ROOT,  # noqa: F401  (kept for parity)
-    _TimeoutError,
     _all_py_parse_ok,
     _count_disk_files,
     _import_all_extend_tools,
     _is_valid_tool_result,
     _make_result,
     _run_with_timeout,
+    _TimeoutError,
+)
+from audit.red_team__impl1 import (
+    SKILL_ROOT as _IMPL_SKILL_ROOT,  # noqa: F401  (kept for parity)
 )
 from audit.red_team__impl3 import ALL_ATTACKS, run_red_team  # noqa: E402,F401
 
@@ -85,10 +87,7 @@ if __name__ == "__main__":
         print()
 
     pct = report["passed"] / report["total_attacks"] * 100
-    if report["failed"] == 0:
-        verdict = "Red team: PASS"
-    else:
-        verdict = "Red team: FAIL"
+    verdict = "Red team: PASS" if report["failed"] == 0 else "Red team: FAIL"
     print(f"{verdict} — {report['passed']}/{report['total_attacks']} attacks passed ({pct:.0f}%)")
 
     sys.exit(0 if report["failed"] == 0 else 1)

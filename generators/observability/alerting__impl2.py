@@ -13,7 +13,6 @@ from __future__ import annotations
 
 from generators.observability.alerting__impl1 import BURN_RATE_FAST
 
-
 # ---------------------------------------------------------------------------
 # Grafana panel builders (one function per panel)
 # ---------------------------------------------------------------------------
@@ -51,11 +50,13 @@ def _panel_request_rate(service_name: str, panel_id: int, y_pos: int) -> dict:
         "options": {
             "legend": {"calcs": ["mean", "max"], "displayMode": "table", "placement": "bottom"},
         },
-        "targets": [{
-            "expr": f'sum(rate(http_requests_total{{service="{service_name}"}}[5m])) by (endpoint)',
-            "legendFormat": "{{endpoint}}",
-            "refId": "A",
-        }],
+        "targets": [
+            {
+                "expr": f'sum(rate(http_requests_total{{service="{service_name}"}}[5m])) by (endpoint)',
+                "legendFormat": "{{endpoint}}",
+                "refId": "A",
+            }
+        ],
         "title": "Request Rate (by endpoint)",
         "type": "timeseries",
     }
@@ -116,14 +117,16 @@ def _panel_error_rate(service_name: str, error_budget: float, panel_id: int, y_p
         "fieldConfig": _error_rate_field_config(budget_pct),
         "gridPos": {"h": 8, "w": 12, "x": 12, "y": y_pos},
         "id": panel_id,
-        "targets": [{
-            "expr": (
-                f'sum(rate(http_requests_total{{service="{service_name}", status=~"5.."}}[5m]))'
-                f' / sum(rate(http_requests_total{{service="{service_name}"}}[5m])) * 100'
-            ),
-            "legendFormat": "Error Rate %",
-            "refId": "A",
-        }],
+        "targets": [
+            {
+                "expr": (
+                    f'sum(rate(http_requests_total{{service="{service_name}", status=~"5.."}}[5m]))'
+                    f' / sum(rate(http_requests_total{{service="{service_name}"}}[5m])) * 100'
+                ),
+                "legendFormat": "Error Rate %",
+                "refId": "A",
+            }
+        ],
         "title": f"Error Rate % (SLO budget: <{budget_pct}%)",
         "type": "timeseries",
     }
@@ -192,7 +195,10 @@ def _panel_latency_percentiles(
                 },
                 "thresholds": {
                     "mode": "absolute",
-                    "steps": [{"color": "green", "value": None}, {"color": "red", "value": latency_s}],
+                    "steps": [
+                        {"color": "green", "value": None},
+                        {"color": "red", "value": latency_s},
+                    ],
                 },
                 "unit": "s",
             },
@@ -234,14 +240,16 @@ def _panel_latency_heatmap(service_name: str, panel_id: int, y_pos: int) -> dict
             "color": {"mode": "scheme", "scheme": "Oranges", "steps": 64},
             "yAxis": {"unit": "s"},
         },
-        "targets": [{
-            "expr": (
-                f'sum(increase(http_request_duration_seconds_bucket{{service="{service_name}"}}[5m])) by (le)'
-            ),
-            "format": "heatmap",
-            "legendFormat": "{{le}}",
-            "refId": "A",
-        }],
+        "targets": [
+            {
+                "expr": (
+                    f'sum(increase(http_request_duration_seconds_bucket{{service="{service_name}"}}[5m])) by (le)'
+                ),
+                "format": "heatmap",
+                "legendFormat": "{{le}}",
+                "refId": "A",
+            }
+        ],
         "title": "Latency Distribution (Heatmap)",
         "type": "heatmap",
     }
@@ -275,11 +283,13 @@ def _panel_active_requests(service_name: str, panel_id: int, y_pos: int) -> dict
         },
         "gridPos": {"h": 8, "w": 8, "x": 0, "y": y_pos},
         "id": panel_id,
-        "targets": [{
-            "expr": f'sum(http_requests_in_progress{{service="{service_name}"}})',
-            "legendFormat": "Active Requests",
-            "refId": "A",
-        }],
+        "targets": [
+            {
+                "expr": f'sum(http_requests_in_progress{{service="{service_name}"}})',
+                "legendFormat": "Active Requests",
+                "refId": "A",
+            }
+        ],
         "title": "Active Requests (Saturation)",
         "type": "timeseries",
     }
@@ -342,16 +352,18 @@ def _panel_error_budget_gauge(
             "showThresholdLabels": False,
             "showThresholdMarkers": True,
         },
-        "targets": [{
-            "expr": (
-                f"1 - ("
-                f'sum(increase(http_requests_total{{service="{service_name}", status=~"5.."}}[30d]))'
-                f' / sum(increase(http_requests_total{{service="{service_name}"}}[30d]))'
-                f") / {error_budget}"
-            ),
-            "legendFormat": "Budget Remaining",
-            "refId": "A",
-        }],
+        "targets": [
+            {
+                "expr": (
+                    f"1 - ("
+                    f'sum(increase(http_requests_total{{service="{service_name}", status=~"5.."}}[30d]))'
+                    f' / sum(increase(http_requests_total{{service="{service_name}"}}[30d]))'
+                    f") / {error_budget}"
+                ),
+                "legendFormat": "Budget Remaining",
+                "refId": "A",
+            }
+        ],
         "title": f"Error Budget Remaining ({slo_availability * 100:.1f}% SLO)",
         "type": "gauge",
     }
@@ -406,8 +418,16 @@ def _panel_burn_rate(service_name: str, panel_id: int, y_pos: int) -> dict:
         "gridPos": {"h": 8, "w": 8, "x": 16, "y": y_pos},
         "id": panel_id,
         "targets": [
-            {"expr": f"{service_name}:burn_rate:1h", "legendFormat": "Burn Rate (1h)", "refId": "A"},
-            {"expr": f"{service_name}:burn_rate:6h", "legendFormat": "Burn Rate (6h)", "refId": "B"},
+            {
+                "expr": f"{service_name}:burn_rate:1h",
+                "legendFormat": "Burn Rate (1h)",
+                "refId": "A",
+            },
+            {
+                "expr": f"{service_name}:burn_rate:6h",
+                "legendFormat": "Burn Rate (6h)",
+                "refId": "B",
+            },
         ],
         "title": f"Error Budget Burn Rate (page threshold: {BURN_RATE_FAST}x)",
         "type": "timeseries",

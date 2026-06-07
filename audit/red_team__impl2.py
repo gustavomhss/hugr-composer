@@ -14,20 +14,20 @@ from pathlib import Path
 from audit.red_team__impl1 import (
     ATTACK_TIMEOUT,
     ToolInput,
-    _TimeoutError,
     _all_py_parse_ok,
     _count_disk_files,
     _import_all_extend_tools,
     _is_valid_tool_result,
     _make_result,
     _run_with_timeout,
+    _TimeoutError,
     create_fixture_project,
 )
-
 
 # ===========================================================================
 # CATEGORY 2 — Idempotency Stress (5 attacks)
 # ===========================================================================
+
 
 def _attack_idempotency_100x() -> dict:
     """Run add_soft_delete 100x on same project — all after the first must be no_op."""
@@ -48,9 +48,9 @@ def _attack_idempotency_100x() -> dict:
             for i in range(99):
                 r = add_soft_delete(inp)
                 if r.status != "no_op":
-                    return False, f"run {i+2} returned {r.status} (expected no_op)"
+                    return False, f"run {i + 2} returned {r.status} (expected no_op)"
                 if _count_disk_files(project_dir) != file_count_after_first:
-                    return False, f"run {i+2} changed file count"
+                    return False, f"run {i + 2} changed file count"
             return True, "100 runs: first=success, remaining 99=no_op, file count stable"
 
         ok, msg = _run_with_timeout(_run, timeout=60)
@@ -99,8 +99,8 @@ def _attack_delete_and_rerun() -> dict:
 
 def _attack_concurrent_tools_same_project() -> dict:
     """Run add_soft_delete + add_bulk_operations concurrently on the same project."""
-    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
     from adapt.extend.crud_data.add_bulk_operations import add_bulk_operations
+    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
 
     name = "concurrent_tools_same_project"
     tmp = tempfile.mkdtemp(prefix="rt_concurrent_")
@@ -162,9 +162,9 @@ def _attack_dry_run_50x_no_writes() -> dict:
             for i in range(50):
                 r = add_soft_delete(inp)
                 if not _is_valid_tool_result(r):
-                    return False, f"run {i+1} returned invalid ToolResult"
+                    return False, f"run {i + 1} returned invalid ToolResult"
                 if r.files_created or r.files_modified:
-                    return False, f"run {i+1} reported file changes during dry_run"
+                    return False, f"run {i + 1} reported file changes during dry_run"
             after = _count_disk_files(project_dir)
             if after != baseline:
                 return False, f"file count changed: {baseline} → {after}"
@@ -214,10 +214,11 @@ def _attack_corrupt_then_rerun() -> dict:
 # CATEGORY 3 — Tool Interaction Conflicts (5 attacks)
 # ===========================================================================
 
+
 def _attack_soft_delete_plus_bulk_operations() -> dict:
     """add_soft_delete + add_bulk_operations on same project — no file corruption."""
-    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
     from adapt.extend.crud_data.add_bulk_operations import add_bulk_operations
+    from adapt.extend.crud_data.add_soft_delete import add_soft_delete
 
     name = "soft_delete_plus_bulk_ops"
     tmp = tempfile.mkdtemp(prefix="rt_sd_bulk_")
@@ -278,8 +279,8 @@ def _attack_mfa_plus_oauth2() -> dict:
 
 def _attack_search_plus_cursor_pagination() -> dict:
     """add_search + add_cursor_pagination — both modify routes, no corruption."""
-    from adapt.extend.crud_data.add_search import add_search
     from adapt.extend.crud_data.add_cursor_pagination import add_cursor_pagination
+    from adapt.extend.crud_data.add_search import add_search
 
     name = "search_plus_cursor_pagination"
     tmp = tempfile.mkdtemp(prefix="rt_srch_cursor_")
@@ -309,8 +310,8 @@ def _attack_search_plus_cursor_pagination() -> dict:
 
 def _attack_multi_tenancy_after_audit_log() -> dict:
     """add_audit_log then add_multi_tenancy — tenant_id context should not break audit."""
-    from adapt.extend.crud_data.add_audit_log import add_audit_log
     from adapt.extend.auth_access.add_multi_tenancy import add_multi_tenancy
+    from adapt.extend.crud_data.add_audit_log import add_audit_log
 
     name = "multi_tenancy_after_audit_log"
     tmp = tempfile.mkdtemp(prefix="rt_mt_audit_")

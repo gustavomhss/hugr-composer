@@ -40,17 +40,10 @@ MCP_TOOL = {
 # --- Public API (preserved import path) -----------------------------------
 from generators.orchestrator__impl1 import (  # noqa: E402
     PROFILES,
-    _UNSET,
-    _Ctx,
     generate_project,
 )
 
 # --- Internal helpers (kept importable for backwards compatibility) -------
-from generators.orchestrator__impl2 import (  # noqa: E402
-    _generate_package_inits,
-    _generate_requirements,
-    _write_bola_shared_models_audit,
-)
 
 __all__ = [
     "MCP_TOOL",
