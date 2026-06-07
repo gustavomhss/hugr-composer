@@ -1,7 +1,7 @@
 """Helper module for TOOL-051 fastapi_doctor (split per 500-LOC cap).
 
 Contains the report renderer and the doctor orchestrator. These are imported
-back into ``fastapi_doctor.py`` so that the public surface (``MCP_TOOL`` dict +
+back into ``fastapi_doctor.py`` so that the public surface (tool-metadata dict +
 ``fastapi_doctor`` entry) remains in the registered module path. Behaviour is
 identical to the pre-split version.
 """

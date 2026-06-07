@@ -2,7 +2,7 @@
 
 Contains the severity taxonomy, checker registry, and individual VERIFY-tool
 checker wrappers. These are imported back into ``fastapi_doctor.py`` so that
-the public surface (``MCP_TOOL`` dict + ``fastapi_doctor`` entry) remains in the
+the public surface (tool-metadata dict + ``fastapi_doctor`` entry) remains in the
 registered module path. Behaviour is identical to the pre-split version.
 """
 

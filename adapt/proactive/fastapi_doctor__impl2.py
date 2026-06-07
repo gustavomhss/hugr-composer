@@ -2,7 +2,7 @@
 
 Contains the fix-plan builder, EXTEND recommendation engine, baseline
 comparator, report renderer, and the doctor orchestrator. These are imported
-back into ``fastapi_doctor.py`` so that the public surface (``MCP_TOOL`` dict +
+back into ``fastapi_doctor.py`` so that the public surface (tool-metadata dict +
 ``fastapi_doctor`` entry) remains in the registered module path. Behaviour is
 identical to the pre-split version.
 """
