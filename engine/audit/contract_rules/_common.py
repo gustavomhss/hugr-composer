@@ -22,17 +22,17 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
-# SKILL_ROOT is the dir that holds engine/ — always parents[3] of this file
-# (engine/audit/contract_rules/_common.py), in both repo layouts.
-SKILL_ROOT = Path(__file__).resolve().parents[3]
-# Layout detection: in the Arsenal monorepo the skill lives under
-# <repo>/skills/SKILL-001-fastapi-production/, so REPO_ROOT is one level above
-# skills/. In a standalone skill repo (v1.0 extraction) the skill IS the repo
-# root, so REPO_ROOT == SKILL_ROOT. Detect by whether the parent dir is skills/.
-if SKILL_ROOT.parent.name == "skills":
-    REPO_ROOT = SKILL_ROOT.parent.parent  # monorepo root (one level above skills/)
-else:
-    REPO_ROOT = SKILL_ROOT  # standalone skill repo
+from hugr_core.layout import resolve_roots
+
+# The two filesystem anchors every rule resolves against — SKILL_ROOT (the dir
+# holding engine/) and REPO_ROOT (the git repo root) — now provided by the
+# shared platform framework, hugr-core. ``resolve_roots`` walks up from this
+# file to the skill root and derives the repo root, handling both the standalone
+# skill repo and the Arsenal monorepo layouts. This monorepo-vs-standalone
+# detection originated here in _common.py during the v1.0 extraction and was
+# promoted into hugr_core.layout in the Phase 2 beachhead (core-v0.1.0); this
+# module is now the first consumer of the framework core, proving the plug.
+SKILL_ROOT, REPO_ROOT = resolve_roots(__file__)
 
 # Official semver 2.0.0 regex body (no anchors).
 # Source: https://semver.org/#is-there-a-suggested-regular-expression-regex-to-check-a-semver-string

@@ -1,0 +1,24 @@
+# Skill manifest — the plug API between this skill and hugr-core.
+#
+# Consumed by hugr_core.manifest.load_manifest(). Declares how the generic
+# platform machinery is parameterised for this skill. As Phase 2 promotes the
+# engine / MCP serving / contract runner into hugr-core, those subsystems read
+# this manifest instead of hard-coding skill-001 specifics. Today the framework
+# core's first consumer is layout resolution (engine/audit/contract_rules/
+# _common.py); the remaining keys are declared ahead of their consumers so the
+# bulk migration plugs in without a manifest change.
+
+[skill]
+name = "skill-001-fastapi-production"
+tool_prefix = "fastapi"
+hugr_core_version = "0.1.0"
+tool_scan_roots = [
+    "adapt",
+    "generators",
+    "modules",
+    "benchmark",
+    "meta",
+    "core/tools",
+    "engine/discovery",
+]
+primitive_namespaces = ["fastapi"]

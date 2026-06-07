@@ -28,3 +28,10 @@ alembic>=1.14.0
 
 # YAML parser (primitives_by_concern.yaml + promotion pipeline + audit rules)
 PyYAML>=6.0.0
+
+# HuGR platform framework core (the IMPORTED core — distinct from the auth
+# authority service this skill talks to over HTTP). Pinned by git-ref to a
+# core-v* tag; pip installs ONLY the hugr-core subpackage of the Arsenal repo,
+# so auth/deploy/docs never enter this skill's dependency closure. First
+# consumer: engine/audit/contract_rules/_common.py (layout resolution).
+hugr-core @ git+https://github.com/humangr-labs/HuGR-Arsenal@core-v0.1.0#subdirectory=hugr-core
