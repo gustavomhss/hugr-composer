@@ -23,6 +23,7 @@ from generators.database.alembic import generate_alembic
 from generators.database.alembic_migration import generate_baseline_migration
 from generators.database.crud import generate_crud
 from generators.database.crud_base import generate_crud_base
+from generators.database.encryption import generate_encryption
 from generators.database.engine import generate_engine
 from generators.database.model import generate_model
 from generators.database.session import generate_session
@@ -104,6 +105,14 @@ def _phase_database(ctx: _Ctx) -> None:
                     known_models=models,
                 ),
             )
+
+    # At-rest encryption helper: when any model declares a ``*_encrypted``
+    # field (e.g. ssn_encrypted), the scaffold must ship Fernet
+    # encrypt/decrypt helpers so that value is never persisted in plaintext.
+    if models and any(
+        field_name.endswith("_encrypted") for fields in models.values() for field_name in fields
+    ):
+        _run("encryption", generate_encryption(output_dir=str(app_dir)))
 
     # User model (always generated when auth is enabled)
     if with_auth and (not models or "User" not in models):
