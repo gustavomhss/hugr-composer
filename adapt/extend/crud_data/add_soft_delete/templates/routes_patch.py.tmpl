@@ -1,0 +1,96 @@
+
+
+# ---------------------------------------------------------------------------
+# SOFT_DELETE_ROUTES_APPLIED — added by add_soft_delete tool.
+# ---------------------------------------------------------------------------
+# Soft-delete management endpoints for $MODEL. The shared CRUDBase.get /
+# get_multi were patched to EXCLUDE soft-deleted rows, so these handlers query
+# the model directly (via ``select``) to reach the soft-deleted set.
+#   GET    /deleted/        — list soft-deleted rows the caller may see.
+#   POST   /{id}/restore    — clear is_deleted / deleted_at (un-delete).
+#   DELETE /{id}/permanent  — hard-delete a (soft-deleted) row for good.
+from sqlalchemy import select as _sd_route_select
+
+from app.models.$STEM import $MODEL as _SDModel
+
+
+@router.get("/deleted/", response_model=${MODEL}sPublic)
+async def list_deleted_${STEM}(
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1, le=1000),
+) -> ${MODEL}sPublic:
+    """List soft-deleted $MODEL rows.
+
+    Regular users see only their own soft-deleted rows; superusers see all.
+    """
+    stmt = _sd_route_select(_SDModel).where(_SDModel.is_deleted == True)  # noqa: E712
+    if not current_user.is_superuser and hasattr(_SDModel, "owner_id"):
+        stmt = stmt.where(_SDModel.owner_id == current_user.id)
+    stmt = stmt.offset(skip).limit(limit)
+    result = await session.execute(stmt)
+    rows = list(result.scalars().all())
+    return ${MODEL}sPublic(data=rows, count=len(rows))
+
+
+@router.post("/{id}/restore", response_model=${MODEL}Public)
+async def restore_${STEM}(
+    session: SessionDep,
+    id: uuid.UUID,
+    current_user: CurrentUser,
+) -> ${MODEL}Public:
+    """Restore a soft-deleted $MODEL by clearing is_deleted / deleted_at.
+
+    Raises:
+        HTTPException 404: row not found or not currently soft-deleted.
+        HTTPException 403: caller does not own this record.
+    """
+    stmt = _sd_route_select(_SDModel).where(
+        _SDModel.id == id, _SDModel.is_deleted == True  # noqa: E712
+    )
+    obj = (await session.execute(stmt)).scalar_one_or_none()
+    if obj is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="$MODEL not found",
+        )
+    if not current_user.is_superuser and getattr(obj, "owner_id", None) != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        )
+    obj.is_deleted = False
+    if hasattr(obj, "deleted_at"):
+        obj.deleted_at = None
+    await session.flush()
+    return obj
+
+
+@router.delete("/{id}/permanent", response_model=Message)
+async def permanent_delete_${STEM}(
+    session: SessionDep,
+    id: uuid.UUID,
+    current_user: CurrentUser,
+) -> Message:
+    """Hard-delete a $MODEL row, bypassing soft-delete (irreversible).
+
+    Raises:
+        HTTPException 404: row not found.
+        HTTPException 403: caller does not own this record.
+    """
+    stmt = _sd_route_select(_SDModel).where(_SDModel.id == id)
+    obj = (await session.execute(stmt)).scalar_one_or_none()
+    if obj is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="$MODEL not found",
+        )
+    if not current_user.is_superuser and getattr(obj, "owner_id", None) != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not enough permissions",
+        )
+    await session.delete(obj)
+    await session.flush()
+    return Message(message="$MODEL permanently deleted")

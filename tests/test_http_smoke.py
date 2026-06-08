@@ -41,6 +41,26 @@ class _RouteHit(NamedTuple):
     status: int
 
 
+# Top-level packages a *generated project* ships and imports at runtime. Each
+# fixture project carries its own copy under its own dir, so a cached copy from
+# a prior fixture must be purged or it shadows the next project's (e.g. add_rbac
+# caches ``core.venous._adapters.fastapi`` with only RequestGuardAdapter, which
+# then hides add_mfa's TotpVerifierAdapter → ModuleNotFoundError).
+_PROJECT_TOP_LEVEL = ("app", "core")
+
+
+def _is_project_module(mod: str) -> bool:
+    """True if *mod* belongs to a generated project's top-level package."""
+    return any(mod == pkg or mod.startswith(pkg + ".") for pkg in _PROJECT_TOP_LEVEL)
+
+
+def _purge_project_modules() -> None:
+    """Drop every cached generated-project module from ``sys.modules``."""
+    for mod in list(sys.modules):
+        if _is_project_module(mod):
+            del sys.modules[mod]
+
+
 def _make_client(project_dir: Path):
     """Import the generated app and return a TestClient bound to it.
 
@@ -55,10 +75,8 @@ def _make_client(project_dir: Path):
     if key not in sys.path:
         sys.path.insert(0, key)
 
-    # Force fresh import of the generated ``app`` package.
-    for mod in list(sys.modules):
-        if mod == "app" or mod.startswith("app."):
-            del sys.modules[mod]
+    # Force fresh import of the generated project's packages.
+    _purge_project_modules()
 
     app_module = importlib.import_module("app.main")
     app = app_module.app
@@ -66,15 +84,13 @@ def _make_client(project_dir: Path):
 
 
 def _cleanup_sys_path(project_dir: Path) -> None:
-    """Remove *project_dir* from sys.path and purge app modules."""
+    """Remove *project_dir* from sys.path and purge generated-project modules."""
     key = str(project_dir)
-    try:
+    try:  # noqa: SIM105
         sys.path.remove(key)
     except ValueError:
         pass
-    for mod in list(sys.modules):
-        if mod == "app" or mod.startswith("app."):
-            del sys.modules[mod]
+    _purge_project_modules()
 
 
 def _collect_routes(router, prefix: str = ""):
@@ -117,6 +133,7 @@ def _apply_tool(module_path: str, fn_name: str, project_dir: Path) -> None:
 # Test 1 — base project: core endpoints respond with correct HTTP codes
 # ---------------------------------------------------------------------------
 
+
 def test_base_project_core_endpoints() -> tuple[bool, str]:
     """Generate a base project and verify 7 core endpoints respond correctly.
 
@@ -133,13 +150,13 @@ def test_base_project_core_endpoints() -> tuple[bool, str]:
         (passed, detail) tuple.
     """
     cases: list[tuple[str, str, set[int]]] = [
-        ("GET",  "/healthz",                     {200}),
-        ("GET",  "/readyz",                      {200, 503}),
-        ("GET",  "/startupz",                    {200, 503}),
-        ("POST", "/api/v1/login/access-token",   {422}),
-        ("POST", "/api/v1/users/signup",         {422}),
-        ("GET",  "/api/v1/items/",               {401}),
-        ("GET",  "/api/v1/users/me",             {401}),
+        ("GET", "/healthz", {200}),
+        ("GET", "/readyz", {200, 503}),
+        ("GET", "/startupz", {200, 503}),
+        ("POST", "/api/v1/login/access-token", {422}),
+        ("POST", "/api/v1/users/signup", {422}),
+        ("GET", "/api/v1/items/", {401}),
+        ("GET", "/api/v1/users/me", {401}),
     ]
 
     failures: list[str] = []
@@ -151,9 +168,7 @@ def test_base_project_core_endpoints() -> tuple[bool, str]:
         for method, path, expected in cases:
             hit = _probe_route(client, method, path)
             if hit.status not in expected:
-                failures.append(
-                    f"{method} {path}: expected one of {expected}, got {hit.status}"
-                )
+                failures.append(f"{method} {path}: expected one of {expected}, got {hit.status}")
 
         _cleanup_sys_path(project_dir)
 
@@ -165,6 +180,7 @@ def test_base_project_core_endpoints() -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 # Test 2 — after add_soft_delete: new endpoints exist and require auth
 # ---------------------------------------------------------------------------
+
 
 def test_soft_delete_endpoints() -> tuple[bool, str]:
     """Apply add_soft_delete and verify the new endpoints are mounted.
@@ -182,10 +198,10 @@ def test_soft_delete_endpoints() -> tuple[bool, str]:
         (passed, detail) tuple.
     """
     cases: list[tuple[str, str, set[int]]] = [
-        ("GET",    "/api/v1/items/deleted/",          {401}),
-        ("DELETE", "/api/v1/items/999",               {401}),
-        ("POST",   "/api/v1/items/999/restore",       {401}),
-        ("DELETE", "/api/v1/items/999/permanent",     {401}),
+        ("GET", "/api/v1/items/deleted/", {401}),
+        ("DELETE", "/api/v1/items/999", {401}),
+        ("POST", "/api/v1/items/999/restore", {401}),
+        ("DELETE", "/api/v1/items/999/permanent", {401}),
     ]
 
     failures: list[str] = []
@@ -202,9 +218,7 @@ def test_soft_delete_endpoints() -> tuple[bool, str]:
         for method, path, expected in cases:
             hit = _probe_route(client, method, path)
             if hit.status not in expected:
-                failures.append(
-                    f"{method} {path}: expected one of {expected}, got {hit.status}"
-                )
+                failures.append(f"{method} {path}: expected one of {expected}, got {hit.status}")
 
         _cleanup_sys_path(project_dir)
 
@@ -216,6 +230,7 @@ def test_soft_delete_endpoints() -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 # Test 3 — after add_rbac: route file created, router importable, no 500
 # ---------------------------------------------------------------------------
+
 
 def test_rbac_router_importable() -> tuple[bool, str]:
     """Apply add_rbac and verify the RBAC router file is valid and importable.
@@ -250,17 +265,13 @@ def test_rbac_router_importable() -> tuple[bool, str]:
         else:
             # 2. Module must import cleanly.
             sys.path.insert(0, str(project_dir))
-            for mod in list(sys.modules):
-                if mod == "app" or mod.startswith("app."):
-                    del sys.modules[mod]
+            _purge_project_modules()
             try:
                 rbac_mod = importlib.import_module("app.api.routes.rbac")
                 router = rbac_mod.router
                 # 3. Router prefix must be /rbac.
                 if router.prefix != "/rbac":
-                    failures.append(
-                        f"RBAC router prefix expected '/rbac', got '{router.prefix}'"
-                    )
+                    failures.append(f"RBAC router prefix expected '/rbac', got '{router.prefix}'")
                 # 4. Router must have at least one route.
                 if not router.routes:
                     failures.append("RBAC router has no routes")
@@ -272,8 +283,8 @@ def test_rbac_router_importable() -> tuple[bool, str]:
         # 5. If the router ends up mounted, no route should return 500.
         client = _make_client(project_dir)
         for method, path, _ in [
-            ("GET",  "/api/v1/rbac/permissions", None),
-            ("GET",  "/api/v1/rbac/roles",       None),
+            ("GET", "/api/v1/rbac/permissions", None),
+            ("GET", "/api/v1/rbac/roles", None),
         ]:
             hit = _probe_route(client, method, path)
             if hit.status == 500:
@@ -288,6 +299,7 @@ def test_rbac_router_importable() -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 # Test 4 — after add_mfa: route file created, router importable, no 500
 # ---------------------------------------------------------------------------
+
 
 def test_mfa_router_importable() -> tuple[bool, str]:
     """Apply add_mfa and verify the MFA router file is valid and importable.
@@ -322,9 +334,7 @@ def test_mfa_router_importable() -> tuple[bool, str]:
         else:
             # 2. Module must import cleanly.
             sys.path.insert(0, str(project_dir))
-            for mod in list(sys.modules):
-                if mod == "app" or mod.startswith("app."):
-                    del sys.modules[mod]
+            _purge_project_modules()
             try:
                 mfa_mod = importlib.import_module("app.api.routes.mfa")
                 router = mfa_mod.router
@@ -336,11 +346,11 @@ def test_mfa_router_importable() -> tuple[bool, str]:
                 # 4. Router must expose the four expected endpoints.
                 # Route paths may be absolute (prefix + relative) or relative-only
                 # depending on the FastAPI version; normalise to suffix matching.
-                route_paths = {
-                    getattr(r, "path", "") for r in router.routes
-                }
+                route_paths = {getattr(r, "path", "") for r in router.routes}
                 for expected_suffix in ("/enroll", "/verify-enrollment", "/challenge", "/disable"):
-                    if not any(p == expected_suffix or p.endswith(expected_suffix) for p in route_paths):
+                    if not any(
+                        p == expected_suffix or p.endswith(expected_suffix) for p in route_paths
+                    ):
                         failures.append(f"MFA router missing route ending in '{expected_suffix}'")
             except Exception as exc:
                 failures.append(f"app.api.routes.mfa import failed: {exc}")
@@ -350,7 +360,7 @@ def test_mfa_router_importable() -> tuple[bool, str]:
         # 5. If the router ends up mounted, no route should return 500.
         client = _make_client(project_dir)
         for method, path, _ in [
-            ("POST", "/api/v1/auth/mfa/enroll",   None),
+            ("POST", "/api/v1/auth/mfa/enroll", None),
             ("POST", "/api/v1/auth/mfa/challenge", None),
         ]:
             hit = _probe_route(client, method, path)
@@ -366,6 +376,7 @@ def test_mfa_router_importable() -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 # Test 5 — scan ALL routes for 500s (base project)
 # ---------------------------------------------------------------------------
+
 
 def test_scan_all_routes_no_500() -> tuple[bool, str]:
     """Iterate every route in the base app and assert none returns 500.
@@ -384,7 +395,7 @@ def test_scan_all_routes_no_500() -> tuple[bool, str]:
 
     # Endpoints that need a live DB before they can respond with a non-500.
     # These are expected failures in the no-DB test environment.
-    DB_REQUIRED_PATTERNS: list[str] = [
+    DB_REQUIRED_PATTERNS: list[str] = [  # noqa: N806
         r"^POST /api/v1/password-recovery/",
     ]
 
@@ -435,11 +446,11 @@ def test_scan_all_routes_no_500() -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 TESTS = [
-    ("base_endpoints",      test_base_project_core_endpoints),
-    ("soft_delete",         test_soft_delete_endpoints),
-    ("rbac_router",         test_rbac_router_importable),
-    ("mfa_router",          test_mfa_router_importable),
-    ("scan_all_no_500",     test_scan_all_routes_no_500),
+    ("base_endpoints", test_base_project_core_endpoints),
+    ("soft_delete", test_soft_delete_endpoints),
+    ("rbac_router", test_rbac_router_importable),
+    ("mfa_router", test_mfa_router_importable),
+    ("scan_all_no_500", test_scan_all_routes_no_500),
 ]
 
 
@@ -464,7 +475,7 @@ def main() -> int:
             failed.append((test_id, detail))
             print(f"  FAIL  [{test_id}]\n{detail}")
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"HTTP smoke: {passed}/{total} endpoints respond correctly")
     if failed:
         print(f"\nFailed ({len(failed)}):")
@@ -477,6 +488,7 @@ def main() -> int:
 # ---------------------------------------------------------------------------
 # pytest integration
 # ---------------------------------------------------------------------------
+
 
 def test_http_smoke_base() -> None:
     """pytest wrapper for test 1."""

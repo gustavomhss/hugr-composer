@@ -69,6 +69,47 @@ def _rbac_example_body() -> str:
     return load_template(_HERE, "rbac_example.py.tmpl").template
 
 
+def _rbac_router_body() -> str:
+    # Externalized to templates/rbac_router.py.tmpl; no substitutions required.
+    return load_template(_HERE, "rbac_router.py.tmpl").template
+
+
+def _patch_routes_init(routes_init: Path) -> bool:
+    """Register the rbac router in ``app/routes/__init__.py`` idempotently.
+
+    Returns ``True`` when the registry is modified, ``False`` when the
+    import line is already present.
+    """
+    src = routes_init.read_text()
+    import_line = "from app.api.routes.rbac import router as rbac_router"
+    include_line = "api_router.include_router(rbac_router)"
+    if import_line in src:
+        return False
+    lines = src.splitlines()
+    last_app_import_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("from app."):
+            last_app_import_idx = idx
+    if last_app_import_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_app_import_idx = idx - 1
+                break
+    lines.insert(last_app_import_idx + 1, import_line)
+    last_include_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("api_router.include_router"):
+            last_include_idx = idx
+    if last_include_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_include_idx = idx
+                break
+    lines.insert(last_include_idx + 1, include_line)
+    routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
+    return True
+
+
 # Warning text emitted in every successful ToolResult so callers cannot miss it.
 # All-caps prefix guarantees LLM drivers and log scanners cannot mistake this
 # for a success: the tool ships the MECHANISM, not the POLICY.
@@ -103,6 +144,7 @@ def add_rbac(inp: ToolInput) -> ToolResult:
         inp.project_dir,
         Prereq.CONFIG_SETTINGS,
         Prereq.REQUIREMENTS_TXT,
+        Prereq.ROUTES_INIT,
         auto_scaffold=not inp.dry_run,
     )
     if prereq_errors:
@@ -164,6 +206,19 @@ def add_rbac(inp: ToolInput) -> ToolResult:
         example_file.write_text(_rbac_example_body())
         files_created.append(str(example_file))
 
+    # Emit a real, mounted RBAC router (prefix /rbac) so role enforcement is
+    # exercised end-to-end out of the box, and register it in the project's
+    # route registry.
+    files_modified: list[str] = []
+    rbac_router_file = routes_dir / "rbac.py"
+    if not rbac_router_file.exists():
+        rbac_router_file.write_text(_rbac_router_body())
+        files_created.append(str(rbac_router_file))
+
+    routes_init = app_dir / "routes" / "__init__.py"
+    if routes_init.exists() and _patch_routes_init(routes_init):
+        files_modified.append(str(routes_init))
+
     for path_str in files_created:
         p = Path(path_str)
         if p.suffix == ".py" and p.is_file():
@@ -179,12 +234,14 @@ def add_rbac(inp: ToolInput) -> ToolResult:
     return ToolResult(
         status="success",
         files_created=files_created,
-        files_modified=[],
+        files_modified=files_modified,
         warnings=[_WARN_NOT_AUTO_ENFORCED],
         notes=[
             "Shipped primitives: RequestGuard (composable AND-guard), CurrentPrincipal (read-only identity).",
             "Shipped adapter: RequestGuardAdapter (maps GuardOutcome → 401/403/500).",
             "Wrote app/rbac.py — require_roles() is backed by get_current_user.",
+            "Wrote app/api/routes/rbac.py — a mounted /rbac router (admin-only + me) "
+            "registered in app/routes/__init__.py.",
             "Wrote app/api/routes/_rbac_example.py — a REAL wired endpoint you can copy-paste.",
             "Role mapping: is_superuser=True → {'admin'}, else → {'user'}.",
             "Edit _user_to_principal in app/rbac.py to customise the role mapping.",
