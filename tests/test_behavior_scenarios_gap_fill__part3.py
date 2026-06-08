@@ -12,6 +12,9 @@ Covers:
 from __future__ import annotations
 
 import ast as _ast
+import importlib
+import sys
+from pathlib import Path
 
 import pytest
 
@@ -20,6 +23,23 @@ from tests.test_behavior_scenarios_gap_fill__shared import (
     ScenarioContext,
     _assert_scenario,
 )
+
+
+def _import_project_module(project_dir: Path, dotted: str):
+    """Import a ``core.venous...`` module from the *generated project* copy.
+
+    The behavior scenarios assert against what each tool ACTUALLY ships into a
+    project, so we load the project's own copied primitive/adapter (not the
+    Arsenal source) by putting the project dir first on ``sys.path`` and
+    flushing any stale ``core``/``app`` modules.
+    """
+    key = str(project_dir)
+    if key not in sys.path:
+        sys.path.insert(0, key)
+    for m in list(sys.modules):
+        if m == "core" or m.startswith("core."):
+            del sys.modules[m]
+    return importlib.import_module(dotted)
 
 # ===========================================================================
 # SCENARIO 37 — Push Notifications (Native) + Transactional Email
@@ -174,120 +194,110 @@ PUSH_AND_EMAIL = Scenario(
 
 
 async def flow_rate_limiting(ctx: ScenarioContext) -> None:
-    """Rate limiting: RateLimitConfig dataclass, key functions, limiter symbol, 429 handler."""
+    """Rate limiting (CANONICAL venous shape).
+
+    ``add_rate_limiting`` copies the framework-agnostic ``RateLimiter`` token-bucket
+    primitive + the FastAPI ``RateLimiterAdapter`` into the project and emits a thin
+    ``app/rate_limit.py`` caller (RATE_LIMIT_PER_SECOND / _BURST / _KEY config). This
+    flow proves the SHIPPED code actually rate-limits — not that pre-refactor
+    slowapi-style files exist.
+    """
     project_dir = ctx.project_dir
 
-    # --- 1. RateLimitConfig dataclass ---
-    rl_core = project_dir / "app" / "core" / "rate_limit.py"
-    if rl_core.exists():
-        src = rl_core.read_text()
-        ctx.record(
-            "rate_limit_core_exists",
-            True,
-            "app/core/rate_limit.py present",
-        )
-        ctx.record(
-            "rate_limit_config_dataclass",
-            "RateLimitConfig" in src,
-            "RateLimitConfig present in app/core/rate_limit.py",
-        )
-        ctx.record(
-            "key_ip_function",
-            "def key_ip" in src,
-            "key_ip function present in app/core/rate_limit.py",
-        )
-        ctx.record(
-            "key_user_function",
-            "def key_user" in src,
-            "key_user function present in app/core/rate_limit.py",
-        )
-        ctx.record(
-            "key_user_endpoint_function",
-            "def key_user_endpoint" in src,
-            "key_user_endpoint function present in app/core/rate_limit.py",
-        )
-        ctx.record(
-            "limiter_module_level_symbol",
-            "limiter" in src and ("= Limiter" in src or "= _build_limiter" in src),
-            "module-level `limiter` symbol in app/core/rate_limit.py",
-        )
-    else:
-        for label in [
-            "rate_limit_core_exists",
-            "rate_limit_config_dataclass",
-            "key_ip_function",
-            "key_user_function",
-            "key_user_endpoint_function",
-            "limiter_module_level_symbol",
-        ]:
-            ctx.record(label, False, "app/core/rate_limit.py not found")
-
-    # --- 2. 429 handler with Retry-After header ---
-    middleware_file = project_dir / "app" / "middleware" / "rate_limit.py"
-    if middleware_file.exists():
-        src = middleware_file.read_text()
-        ctx.record(
-            "rate_limit_middleware_exists",
-            True,
-            "app/middleware/rate_limit.py present",
-        )
-        ctx.record(
-            "retry_after_header_in_handler",
-            "Retry-After" in src,
-            "Retry-After header in 429 handler",
-        )
-    else:
-        ctx.record("rate_limit_middleware_exists", False, "app/middleware/rate_limit.py not found")
-        ctx.record("retry_after_header_in_handler", False, "file not found")
-
-    # --- 3. Config has RATE_LIMIT_ENABLED / DEFAULT / STRATEGY ---
-    cfg_path = project_dir / "app" / "core" / "config.py"
-    cfg_src = cfg_path.read_text() if cfg_path.exists() else ""
+    # --- 1. Venous shape: primitive + adapter + glue + config -------------------
+    primitive = project_dir / "core" / "venous" / "resiliency" / "RateLimiter" / "RateLimiter.py"
+    adapter = project_dir / "core" / "venous" / "_adapters" / "fastapi" / "RateLimiterAdapter.py"
+    glue = project_dir / "app" / "rate_limit.py"
+    ctx.record("rate_limiter_primitive_shipped", primitive.exists(), str(primitive))
+    ctx.record("rate_limiter_adapter_shipped", adapter.exists(), str(adapter))
     ctx.record(
-        "rate_limit_enabled_in_config",
-        "RATE_LIMIT_ENABLED" in cfg_src,
-        "RATE_LIMIT_ENABLED in app/core/config.py",
-    )
-    ctx.record(
-        "rate_limit_default_in_config",
-        "RATE_LIMIT_DEFAULT" in cfg_src,
-        "RATE_LIMIT_DEFAULT in app/core/config.py",
-    )
-    ctx.record(
-        "rate_limit_strategy_in_config",
-        "RATE_LIMIT_STRATEGY" in cfg_src,
-        "RATE_LIMIT_STRATEGY in app/core/config.py",
+        "rate_limit_glue_calls_install",
+        glue.exists() and "install_rate_limiting" in glue.read_text(),
+        "app/rate_limit.py exposes install_rate_limiting(app)",
     )
 
-    # --- 4. GET /rate-limit/status route FILE exists ---
-    # add_rate_limiting writes app/api/routes/rate_limit.py but does NOT auto-register
-    # the route in routes/__init__.py — that step is left to the developer.
-    # We verify the route file itself is present and defines the /status endpoint.
-    rl_route_file = project_dir / "app" / "api" / "routes" / "rate_limit.py"
-    if rl_route_file.exists():
-        rl_src = rl_route_file.read_text()
-        ctx.record(
-            "rate_limit_status_endpoint_exists",
-            ("@router.get" in rl_src or "status" in rl_src) and "rate" in rl_src.lower(),
-            "GET /rate-limit/status route defined in app/api/routes/rate_limit.py",
-        )
-    else:
-        ctx.record(
-            "rate_limit_status_endpoint_exists",
-            False,
-            "app/api/routes/rate_limit.py not found",
-        )
+    cfg_src = (project_dir / "app" / "core" / "config.py").read_text()
+    ctx.record(
+        "rate_limit_config_fields",
+        all(k in cfg_src for k in ("RATE_LIMIT_PER_SECOND", "RATE_LIMIT_BURST", "RATE_LIMIT_KEY")),
+        "RATE_LIMIT_PER_SECOND / _BURST / _KEY in app/core/config.py",
+    )
+
+    # --- 2. Primitive REALLY limits: token bucket admits burst, then rejects ----
+    rl = _import_project_module(
+        project_dir, "core.venous.resiliency.RateLimiter.RateLimiter"
+    )
+    limiter = rl.InMemoryRateLimiter(rate_per_second=1.0, burst=2)
+    admitted = [limiter.try_acquire("ip:1.2.3.4") for _ in range(2)]
+    rejected = limiter.try_acquire("ip:1.2.3.4")
+    ctx.record(
+        "primitive_admits_full_burst",
+        admitted == [True, True],
+        f"burst=2 admitted: {admitted}",
+    )
+    ctx.record(
+        "primitive_rejects_past_burst",
+        rejected is False,
+        f"3rd acquire past burst rejected: {rejected!r}",
+    )
+    ctx.record(
+        "primitive_rejection_carries_retry_after",
+        limiter.events and limiter.events[-1].retry_after_ms > 0,
+        f"retry_after_ms on rejection = {limiter.events[-1].retry_after_ms if limiter.events else None}",
+    )
+    # Distinct keys never cross-scope (RATE_INV_03).
+    ctx.record(
+        "primitive_keys_are_isolated",
+        limiter.try_acquire("ip:9.9.9.9") is True,
+        "a fresh key has its own full bucket",
+    )
+
+    # --- 3. Adapter REALLY enforces over HTTP: 200×burst then 429 + Retry-After --
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    adapter_mod = _import_project_module(
+        project_dir, "core.venous._adapters.fastapi.RateLimiterAdapter"
+    )
+    app = FastAPI()
+
+    @app.get("/things")
+    def _things() -> dict:
+        return {"ok": True}
+
+    adapter_mod.install(app, rate_per_second=1.0, burst=2, key="ip")
+    client = TestClient(app)
+    codes = [client.get("/things").status_code for _ in range(5)]
+    ctx.record(
+        "adapter_admits_then_429s",
+        codes[:2] == [200, 200] and codes[2] == 429,
+        f"status sequence under burst=2: {codes}",
+    )
+    last = client.get("/things")
+    ctx.record(
+        "adapter_429_has_retry_after_header",
+        last.status_code == 429 and last.headers.get("Retry-After") is not None,
+        f"429 Retry-After header = {last.headers.get('Retry-After')!r}",
+    )
+    # Exempt paths bypass the limiter even when the bucket is empty (404 here =
+    # no such route, but it proves the request was NOT shed with a 429).
+    healthz = client.get("/healthz")
+    ctx.record(
+        "adapter_exempts_health_paths",
+        healthz.status_code != 429,
+        f"GET /healthz after bucket empty: {healthz.status_code} (not 429)",
+    )
 
 
 RATE_LIMITING = Scenario(
     name="rate_limiting",
-    archetype="SlowAPI rate limiting with IP/user/endpoint keys + 429 Retry-After",
+    archetype="Venous token-bucket RateLimiter + FastAPI adapter (429 + Retry-After)",
     models={"Request": {"path": "str", "method": "str"}},
     tools=[
         ("add_rate_limiting", "adapt.extend.infrastructure.add_rate_limiting"),
     ],
     flow=flow_rate_limiting,
-    needs_boot=False,  # status route file written but not auto-registered; file checks are definitive
+    needs_boot=False,  # behavior proven by exercising the shipped primitive + adapter directly
 )
 
 

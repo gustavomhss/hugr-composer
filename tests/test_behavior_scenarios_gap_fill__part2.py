@@ -19,6 +19,7 @@ from tests.test_behavior_scenarios_gap_fill__shared import (
     Scenario,
     ScenarioContext,
     _assert_scenario,
+    _import_project_module,
 )
 
 # ===========================================================================
@@ -102,59 +103,98 @@ async def flow_data_pipeline(ctx: ScenarioContext) -> None:
         ]:
             ctx.record(label, False, "app/versioning/service.py not found")
 
-    # --- 4. EventStore has append / get_stream ---
-    store_file = project_dir / "app" / "events" / "store.py"
-    if store_file.exists():
-        src = store_file.read_text()
-        ctx.record(
-            "event_store_class_present",
-            "class EventStore" in src,
-            "EventStore class in app/events/store.py",
-        )
-        ctx.record(
-            "event_store_append_method",
-            "def append" in src or "async def append" in src,
-            "append method in EventStore",
-        )
-        ctx.record(
-            "event_store_get_stream_method",
-            "def get_stream" in src or "async def get_stream" in src,
-            "get_stream method in EventStore",
-        )
-    else:
-        for label in [
-            "event_store_class_present",
-            "event_store_append_method",
-            "event_store_get_stream_method",
-        ]:
-            ctx.record(label, False, "app/events/store.py not found")
+    # --- 4. CANONICAL: venous EventSourcedStore primitive + adapter + durable store
+    # add_event_sourcing copies core.venous.events.EventSourcedStore (+ DomainEvent)
+    # and the EventSourcedStoreAdapter, emits app/event_store.py glue, and emits a
+    # durable SQL-backed app/event_store_store.py (SqlEventSourcedStore) — NOT a
+    # hand-rolled app/events/store.py with EventStore.append/get_stream.
+    es_primitive = (
+        project_dir / "core" / "venous" / "events" / "EventSourcedStore" / "EventSourcedStore.py"
+    )
+    es_glue = project_dir / "app" / "event_store.py"
+    es_durable = project_dir / "app" / "event_store_store.py"
+    ctx.record(
+        "event_sourced_store_primitive_shipped",
+        es_primitive.exists(),
+        str(es_primitive),
+    )
+    ctx.record(
+        "event_store_glue_calls_install",
+        es_glue.exists() and "install_event_store" in es_glue.read_text(),
+        "app/event_store.py exposes install_event_store(app)",
+    )
+    ctx.record(
+        "durable_sql_event_store_shipped",
+        es_durable.exists() and "class SqlEventSourcedStore" in es_durable.read_text(),
+        "app/event_store_store.py ships SqlEventSourcedStore",
+    )
 
-    # --- 5. Projector has project / rebuild ---
-    projector_file = project_dir / "app" / "events" / "projector.py"
-    if projector_file.exists():
-        src = projector_file.read_text()
+    # ---- EventSourcedStore REALLY appends, loads in order, and replays ----------
+    # Assert against the shipped in-memory primitive (pure, deterministic): the
+    # state of an aggregate is rebuilt by replaying load() — this IS event sourcing.
+    es_mod = _import_project_module(
+        project_dir, "core.venous.events.EventSourcedStore.EventSourcedStore"
+    )
+    store = es_mod.InMemoryEventSourcedStore()
+    v1 = store.append("order-1", 0, [{"t": "created"}, {"t": "item_added"}])
+    v2 = store.append("order-1", v1, [{"t": "shipped"}])
+    replayed = [e["t"] for e in store.load("order-1")]
+    ctx.record(
+        "event_store_appends_and_replays_in_order",
+        v1 == 2 and v2 == 3 and replayed == ["created", "item_added", "shipped"],
+        f"versions {v1}->{v2}; replayed log: {replayed}",
+    )
+
+    # ---- Append enforces optimistic concurrency (ESS-INV-01), all-or-nothing ----
+    try:
+        store.append("order-1", 0, [{"t": "stale"}])  # stale expected_version
         ctx.record(
-            "projector_class_present",
-            "class Projector" in src,
-            "Projector class in app/events/projector.py",
+            "event_store_enforces_optimistic_concurrency",
+            False,
+            "stale append did NOT raise ConcurrencyError",
         )
+    except es_mod.ConcurrencyError:
+        still = [e["t"] for e in store.load("order-1")]
         ctx.record(
-            "projector_project_method",
-            "def project" in src,
-            "project method in Projector",
+            "event_store_enforces_optimistic_concurrency",
+            still == ["created", "item_added", "shipped"],
+            f"stale append rejected; log unchanged: {still} (ESS-INV-01 all-or-nothing)",
         )
-        ctx.record(
-            "projector_rebuild_method",
-            "def rebuild" in src or "async def rebuild" in src,
-            "rebuild method in Projector",
-        )
-    else:
-        for label in [
-            "projector_class_present",
-            "projector_project_method",
-            "projector_rebuild_method",
-        ]:
-            ctx.record(label, False, "app/events/projector.py not found")
+
+    # ---- Durable SQL store persists + serializes the tail (file-level proof) ----
+    durable_src = es_durable.read_text() if es_durable.exists() else ""
+    ctx.record(
+        "durable_store_serializes_tail_and_enforces_concurrency",
+        "with_for_update" in durable_src and "ConcurrencyError" in durable_src,
+        "SqlEventSourcedStore append serializes tail (with_for_update) + raises ConcurrencyError",
+    )
+
+    # --- 5. HONEST GAP: no Projector / read-model rebuild ships ------------------
+    # PRODUCT GAP (projector_not_shipped): the EventStore/Projector venous
+    # primitives exist ONLY in core/venous/_staging/_quarantine/ and are NOT
+    # registered by any tool. add_event_sourcing ships the append/load/replay
+    # half (above) but NO Projector that folds events into a queryable read model
+    # and rebuilds it. We assert the gap honestly rather than inventing a
+    # projector or weakening-by-deletion. See report for the future-capability
+    # product call.
+    projector_glue = project_dir / "app" / "projector.py"
+    shipped_projector = project_dir / "core" / "venous" / "events" / "Projector" / "Projector.py"
+    ctx.record(
+        "projector_not_shipped_by_add_event_sourcing",
+        not projector_glue.exists() and not shipped_projector.exists(),
+        "GAP: no app/projector.py and no registered core.venous.events.Projector "
+        "(Projector lives only in _staging/_quarantine) — event-store half ships, "
+        "read-model projector does not",
+    )
+    quarantined_projector = (
+        project_dir / "core" / "venous" / "_staging" / "_quarantine" / "Projector" / "Projector.py"
+    )
+    ctx.record(
+        "projector_capability_is_quarantined_not_emitted",
+        not quarantined_projector.exists(),
+        "GAP: quarantined Projector primitive is NOT copied into generated projects "
+        f"(checked {quarantined_projector.name}); replay-into-read-model is a future capability",
+    )
 
 
 DATA_PIPELINE = Scenario(

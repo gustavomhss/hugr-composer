@@ -87,6 +87,22 @@ _PASSTHROUGH_IDEMPOTENCY_PY = textwrap.dedent("""\
 ScenarioFlow = Callable[["ScenarioContext"], Awaitable[None]]
 
 
+def _import_project_module(project_dir: Path, dotted: str):
+    """Import a ``core.venous...`` module from the *generated project* copy.
+
+    Behavior scenarios assert against what each tool ACTUALLY ships, so we load
+    the project's own copied primitive/adapter (not the Arsenal source) by
+    putting the project dir first on ``sys.path`` and flushing stale modules.
+    """
+    key = str(project_dir)
+    if key not in sys.path:
+        sys.path.insert(0, key)
+    for m in list(sys.modules):
+        if m == "core" or m.startswith("core."):
+            del sys.modules[m]
+    return importlib.import_module(dotted)
+
+
 @dataclass
 class Scenario:
     name: str

@@ -11,6 +11,7 @@ import pytest
 from tests.test_behavior_scenarios_batch5__shared import (
     Scenario,
     ScenarioContext,
+    _import_project_module,
     run_scenario_assert,
 )
 
@@ -227,39 +228,74 @@ async def flow_business_stack(ctx: ScenarioContext) -> None:
             "billing_usage_response_is_structured", True, f"skipped (status {r_usage.status_code})"
         )
 
-    # ---- CostTracker has estimator pattern --------------------------------------
-    cost_tracker_path = project_dir / "app" / "costs" / "tracker.py"
-    estimators_path = project_dir / "app" / "costs" / "estimators.py"
+    # ---- CANONICAL: venous CostTracker primitive + adapter + glue ---------------
+    # add_cost_tracker copies core.venous.resiliency.CostTracker (the tracker +
+    # RequestContext/CostEstimate + the default DB/S3/API estimators) and the
+    # CostTrackerAdapter, then emits app/cost_tracker.py (NOT a hand-rolled
+    # app/costs/tracker.py + app/costs/estimators.py pair).
+    cost_primitive = (
+        project_dir / "core" / "venous" / "resiliency" / "CostTracker" / "CostTracker.py"
+    )
+    cost_glue = project_dir / "app" / "cost_tracker.py"
     ctx.record(
-        "cost_tracker_file_exists",
-        cost_tracker_path.exists(),
-        str(
-            cost_tracker_path.relative_to(project_dir)
-            if cost_tracker_path.exists()
-            else "NOT FOUND"
-        ),
+        "cost_tracker_primitive_shipped",
+        cost_primitive.exists(),
+        str(cost_primitive),
+    )
+    ctx.record(
+        "cost_tracker_glue_calls_install",
+        cost_glue.exists() and "install_cost_tracker" in cost_glue.read_text(),
+        "app/cost_tracker.py exposes install_cost_tracker(app)",
     )
 
-    if cost_tracker_path.exists():
-        tracker_src = cost_tracker_path.read_text()
-        ctx.record(
-            "cost_tracker_class_present",
-            "CostTracker" in tracker_src,
-            "CostTracker class in costs/tracker.py",
-        )
-    else:
-        ctx.record("cost_tracker_class_present", False, "tracker.py not found")
+    # ---- CostTracker REALLY aggregates per-component estimates + ranks endpoints -
+    ct_mod = _import_project_module(project_dir, "core.venous.resiliency.CostTracker.CostTracker")
+    tracker = ct_mod.CostTracker()
+    tracker.register(ct_mod.DBQueryCostEstimator(rate_per_query=0.01))
+    tracker.register(ct_mod.APICostEstimator(rate_per_call=0.5))
 
-    if estimators_path.exists():
-        est_src = estimators_path.read_text()
-        has_estimator = "estimat" in est_src.lower() or "Estimator" in est_src
-        ctx.record(
-            "cost_tracker_has_estimator_pattern",
-            has_estimator,
-            "estimator/Estimator pattern in costs/estimators.py",
-        )
-    else:
-        ctx.record("cost_tracker_has_estimator_pattern", False, "costs/estimators.py not found")
+    ctx_a = ct_mod.RequestContext(
+        request_id="r1", path="/a", method="GET", db_query_count=3, external_api_calls=2
+    )
+    est_a = tracker.estimate_request(ctx_a)
+    # db: 3 * 0.01 = 0.03 ; api: 2 * 0.5 = 1.0 ; total = 1.03
+    ctx.record(
+        "cost_tracker_aggregates_per_component_cost",
+        abs(est_a.db_cost_usd - 0.03) < 1e-9
+        and abs(est_a.api_cost_usd - 1.0) < 1e-9
+        and abs(est_a.total_cost_usd - 1.03) < 1e-9,
+        f"db={est_a.db_cost_usd}, api={est_a.api_cost_usd}, total={est_a.total_cost_usd}",
+    )
+
+    # A cheaper endpoint, then ranking should put the pricier /a first.
+    ctx_b = ct_mod.RequestContext(request_id="r2", path="/b", method="GET", db_query_count=1)
+    tracker.estimate_request(ctx_b)
+    ranked = tracker.get_by_endpoint(top_n=2)
+    ctx.record(
+        "cost_tracker_ranks_endpoints_by_cost",
+        len(ranked) == 2 and ranked[0]["endpoint"] == "GET /a",
+        f"top endpoint: {ranked[0]['endpoint'] if ranked else 'NONE'} (expected 'GET /a')",
+    )
+
+    # ---- CostTracker is fail-open: a broken estimator NEVER propagates (INV_01) --
+    class _BoomEstimator:
+        component = "db"
+
+        def estimate(self, _ctx):  # noqa: ANN001
+            raise RuntimeError("estimator blew up")
+
+    failopen_tracker = ct_mod.CostTracker()
+    failopen_tracker.register(_BoomEstimator())
+    failopen_tracker.register(ct_mod.APICostEstimator(rate_per_call=0.5))
+    ctx_c = ct_mod.RequestContext(
+        request_id="r3", path="/c", method="GET", db_query_count=5, external_api_calls=4
+    )
+    est_c = failopen_tracker.estimate_request(ctx_c)
+    ctx.record(
+        "cost_tracker_estimator_failure_is_fail_open",
+        abs(est_c.db_cost_usd - 0.0) < 1e-9 and abs(est_c.api_cost_usd - 2.0) < 1e-9,
+        f"broken db estimator swallowed; api still counted: db={est_c.db_cost_usd}, api={est_c.api_cost_usd}",
+    )
 
     # ---- OnboardingOrchestrator has step-based workflow with compensatable steps -
     orchestrator_path = project_dir / "app" / "onboarding" / "orchestrator.py"

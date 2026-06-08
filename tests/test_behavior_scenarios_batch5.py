@@ -24,9 +24,12 @@ Exit 1 → at least one scenario has failures.
 
 from __future__ import annotations
 
+import asyncio
 import contextlib
+import importlib
 import sys
 import time
+from pathlib import Path
 
 import pytest
 
@@ -36,6 +39,22 @@ from tests.test_behavior_scenarios_batch5__shared import (
     _run_scenario,
     run_scenario_assert,
 )
+
+
+def _import_project_module(project_dir: Path, dotted: str):
+    """Import a ``core.venous...`` module from the *generated project* copy.
+
+    Behavior scenarios assert against what each tool ACTUALLY ships, so we load
+    the project's own copied primitive/adapter (not the Arsenal source) by
+    putting the project dir first on ``sys.path`` and flushing stale modules.
+    """
+    key = str(project_dir)
+    if key not in sys.path:
+        sys.path.insert(0, key)
+    for m in list(sys.modules):
+        if m == "core" or m.startswith("core."):
+            del sys.modules[m]
+    return importlib.import_module(dotted)
 
 # ===========================================================================
 # SCENARIO 23 — Resiliency Stack
@@ -52,84 +71,52 @@ async def flow_resiliency_stack(ctx: ScenarioContext) -> None:
     if key not in sys.path:
         sys.path.insert(0, key)
 
-    # ---- LoadShedder class functional -----------------------------------------------
-    shedder_path = project_dir / "app" / "resilience" / "load_shedder.py"
+    # ---- CANONICAL: venous LoadShedder primitive + adapter + glue ----------------
+    # add_load_shedding copies core.venous.resiliency.LoadShedder + the FastAPI
+    # LoadShedderAdapter and emits app/load_shedding.py (NOT a hand-rolled
+    # app/resilience/load_shedder.py with get_p99). Priority is carried by the
+    # X-Priority header at the adapter (there is no priority.py classifier).
+    shedder_primitive = (
+        project_dir / "core" / "venous" / "resiliency" / "LoadShedder" / "LoadShedder.py"
+    )
+    shedder_glue = project_dir / "app" / "load_shedding.py"
     ctx.record(
-        "load_shedder_file_exists",
-        shedder_path.exists(),
-        str(shedder_path.relative_to(project_dir) if shedder_path.exists() else "NOT FOUND"),
+        "load_shedder_primitive_shipped",
+        shedder_primitive.exists(),
+        str(shedder_primitive),
+    )
+    ctx.record(
+        "load_shedder_glue_calls_install",
+        shedder_glue.exists() and "install_load_shedding" in shedder_glue.read_text(),
+        "app/load_shedding.py exposes install_load_shedding(app)",
     )
 
-    if shedder_path.exists():
-        try:
-            import importlib.util as _util
-
-            spec = _util.spec_from_file_location("_load_shedder_test", str(shedder_path))
-            if spec and spec.loader:
-                shedder_mod = _util.module_from_spec(spec)
-                spec.loader.exec_module(shedder_mod)  # type: ignore[attr-defined]
-            ctx.record(
-                "load_shedder_class_importable",
-                hasattr(shedder_mod, "LoadShedder"),
-                "LoadShedder class present in load_shedder.py",
-            )
-            # Verify basic functionality: can instantiate and call get_p99
-            shedder_instance = shedder_mod.LoadShedder()
-            p99 = shedder_instance.get_p99()
-            ctx.record(
-                "load_shedder_get_p99_callable",
-                isinstance(p99, (int, float)),
-                f"get_p99() returned: {p99}",
-            )
-        except Exception as exc:
-            ctx.record(
-                "load_shedder_class_importable", False, f"{type(exc).__name__}: {str(exc)[:200]}"
-            )
-            ctx.record("load_shedder_get_p99_callable", False, "import failed")
-    else:
-        ctx.record("load_shedder_class_importable", False, "file not found")
-        ctx.record("load_shedder_get_p99_callable", False, "file not found")
-
-    # ---- Priority classifier returns CRITICAL for /healthz ----------------------
-    priority_path = project_dir / "app" / "resilience" / "priority.py"
-    if priority_path.exists():
-        try:
-            import importlib.util as _util2
-
-            spec2 = _util2.spec_from_file_location("_priority_test", str(priority_path))
-            if spec2 and spec2.loader:
-                priority_mod = _util2.module_from_spec(spec2)
-                spec2.loader.exec_module(priority_mod)  # type: ignore[attr-defined]
-            classify_fn = getattr(priority_mod, "classify_request", None)
-            RequestPriority = getattr(priority_mod, "RequestPriority", None)  # noqa: N806 -- mirrors the generated enum class name
-            if classify_fn and RequestPriority:
-                result = classify_fn("/healthz", "GET")
-                is_critical = (
-                    result == RequestPriority.CRITICAL
-                    or str(result).lower() == "critical"
-                    or (hasattr(result, "value") and result.value == "critical")
-                )
-                ctx.record(
-                    "priority_classifier_healthz_is_critical",
-                    is_critical,
-                    f"classify_request('/healthz') = {result!r}",
-                )
-            else:
-                ctx.record(
-                    "priority_classifier_healthz_is_critical",
-                    False,
-                    "classify_request or RequestPriority not found in priority.py",
-                )
-        except Exception as exc:
-            ctx.record(
-                "priority_classifier_healthz_is_critical",
-                False,
-                f"{type(exc).__name__}: {str(exc)[:200]}",
-            )
-    else:
-        ctx.record(
-            "priority_classifier_healthz_is_critical", False, "app/resilience/priority.py not found"
-        )
+    # ---- LoadShedder REALLY sheds by priority under sustained overload ----------
+    ls_mod = _import_project_module(
+        project_dir, "core.venous.resiliency.LoadShedder.LoadShedder"
+    )
+    shedder = ls_mod.InMemoryLoadShedder()
+    # Drive sustained high pressure (cpu≈1.0, deep queue) so the cutoff tightens.
+    for _ in range(64):
+        shedder.admit("sheddable", queue_depth=100_000, cpu_load_ewma=1.0)
+    critical_ok = shedder.admit("critical", queue_depth=100_000, cpu_load_ewma=1.0)
+    sheddable_shed = shedder.admit("sheddable", queue_depth=100_000, cpu_load_ewma=1.0)
+    ctx.record(
+        "load_shedder_admits_critical_under_overload",
+        critical_ok is True,
+        f"critical admitted under overload: {critical_ok!r}, cutoff={shedder.current_cutoff()}",
+    )
+    ctx.record(
+        "load_shedder_sheds_low_priority_under_overload",
+        sheddable_shed is False,
+        f"sheddable rejected under overload: {sheddable_shed!r}",
+    )
+    rej = shedder.rejection_signal()
+    ctx.record(
+        "load_shedder_rejection_is_503_with_retry",
+        rej.http_status == 503 and rej.retry_after_seconds > 0,
+        f"rejection signal: http={rej.http_status}, retry_after={rej.retry_after_seconds}",
+    )
 
     # ---- Bulkhead pool config readable ------------------------------------------
     bulkhead_path = project_dir / "app" / "resilience" / "bulkhead.py"
@@ -222,33 +209,84 @@ async def flow_retry_chaos_shutdown(ctx: ScenarioContext) -> None:
     if key not in sys.path:
         sys.path.insert(0, key)
 
-    # ---- RetryBudget module imports cleanly -------------------------------------
-    budget_path = project_dir / "app" / "resilience" / "retry_budget.py"
+    # ---- CANONICAL: venous RetryPolicy primitive + adapter + glue ----------------
+    # add_retry_budget copies core.venous.resiliency.RetryPolicy (which carries the
+    # RetryBudget) + the RetryPolicyAdapter and emits app/retry.py (NOT a
+    # hand-rolled app/resilience/retry_budget.py).
+    retry_primitive = (
+        project_dir / "core" / "venous" / "resiliency" / "RetryPolicy" / "RetryPolicy.py"
+    )
+    retry_glue = project_dir / "app" / "retry.py"
     ctx.record(
-        "retry_budget_file_exists",
-        budget_path.exists(),
-        str(budget_path.relative_to(project_dir) if budget_path.exists() else "NOT FOUND"),
+        "retry_policy_primitive_shipped",
+        retry_primitive.exists(),
+        str(retry_primitive),
+    )
+    ctx.record(
+        "retry_glue_calls_install",
+        retry_glue.exists() and "install_retry_policy" in retry_glue.read_text(),
+        "app/retry.py exposes install_retry_policy(app)",
     )
 
-    if budget_path.exists():
-        try:
-            import importlib.util as _util
+    # ---- RetryPolicy REALLY retries transients, honors budget, skips programmer errs
+    rp_mod = _import_project_module(
+        project_dir, "core.venous.resiliency.RetryPolicy.RetryPolicy"
+    )
 
-            spec = _util.spec_from_file_location("_retry_budget_test", str(budget_path))
-            if spec and spec.loader:
-                rb_mod = _util.module_from_spec(spec)
-                spec.loader.exec_module(rb_mod)  # type: ignore[attr-defined]
-            ctx.record(
-                "retry_budget_class_importable",
-                hasattr(rb_mod, "RetryBudget"),
-                "RetryBudget class present in retry_budget.py",
-            )
-        except Exception as exc:
-            ctx.record(
-                "retry_budget_class_importable", False, f"{type(exc).__name__}: {str(exc)[:200]}"
-            )
-    else:
-        ctx.record("retry_budget_class_importable", False, "file not found")
+    transient_calls = {"n": 0}
+
+    async def _flaky() -> str:
+        transient_calls["n"] += 1
+        if transient_calls["n"] < 3:
+            raise ConnectionError("transient")  # retryable per default classifier
+        return "ok"
+
+    policy = rp_mod.ExponentialBackoffRetryPolicy(
+        max_attempts=5, initial_interval_ms=1, jitter=0.0
+    )
+    result = await policy.execute(_flaky, idempotent=True)
+    ctx.record(
+        "retry_recovers_transient_failure",
+        result == "ok" and transient_calls["n"] == 3,
+        f"retried ConnectionError to success in {transient_calls['n']} attempts",
+    )
+
+    nonretryable_calls = {"n": 0}
+
+    async def _programmer_error() -> str:
+        nonretryable_calls["n"] += 1
+        raise ValueError("programmer error")  # non_retryable per default classifier
+
+    policy2 = rp_mod.ExponentialBackoffRetryPolicy(
+        max_attempts=5, initial_interval_ms=1, jitter=0.0
+    )
+    try:
+        await policy2.execute(_programmer_error, idempotent=True)
+        ctx.record("retry_skips_non_retryable", False, "ValueError was not re-raised")
+    except ValueError:
+        ctx.record(
+            "retry_skips_non_retryable",
+            nonretryable_calls["n"] == 1,
+            f"non-retryable ValueError tried exactly once: {nonretryable_calls['n']}",
+        )
+
+    starved_budget = rp_mod.RetryBudget(budget_ratio=0.0, min_floor=0)
+    policy3 = rp_mod.ExponentialBackoffRetryPolicy(
+        max_attempts=5, initial_interval_ms=1, jitter=0.0, budget=starved_budget
+    )
+
+    async def _always_fail() -> str:
+        raise ConnectionError("down")
+
+    try:
+        await policy3.execute(_always_fail, idempotent=True)
+        ctx.record("retry_budget_caps_amplification", False, "no budget rejection raised")
+    except rp_mod.RetryPolicyInvariantError as exc:
+        ctx.record(
+            "retry_budget_caps_amplification",
+            "budget exhausted" in str(exc),
+            "exhausted retry budget refused to amplify load (RETRY-INV-02)",
+        )
 
     # ---- ChaosEngine has production guard (ENVIRONMENT check) -------------------
     chaos_init_path = project_dir / "app" / "chaos" / "__init__.py"
@@ -297,27 +335,49 @@ async def flow_retry_chaos_shutdown(ctx: ScenarioContext) -> None:
             "chaos_status_not_enabled_in_local", True, f"skipped (status {r_chaos.status_code})"
         )
 
-    # ---- GracefulShutdown signal handler registered in source -------------------
-    shutdown_path = project_dir / "app" / "lifecycle" / "shutdown.py"
+    # ---- CANONICAL: venous GracefulShutdown primitive + adapter + glue -----------
+    # add_graceful_shutdown copies core.venous.resiliency.GracefulShutdown (signal
+    # handling lives in the primitive's register(); the adapter wires drain
+    # middleware) and emits app/shutdown.py (NOT a hand-rolled
+    # app/lifecycle/shutdown.py).
+    shutdown_primitive = (
+        project_dir / "core" / "venous" / "resiliency" / "GracefulShutdown" / "GracefulShutdown.py"
+    )
+    shutdown_glue = project_dir / "app" / "shutdown.py"
     ctx.record(
-        "graceful_shutdown_file_exists",
-        shutdown_path.exists(),
-        str(shutdown_path.relative_to(project_dir) if shutdown_path.exists() else "NOT FOUND"),
+        "graceful_shutdown_primitive_shipped",
+        shutdown_primitive.exists(),
+        str(shutdown_primitive),
+    )
+    ctx.record(
+        "graceful_shutdown_glue_calls_install",
+        shutdown_glue.exists() and "install_graceful_shutdown" in shutdown_glue.read_text(),
+        "app/shutdown.py exposes install_graceful_shutdown(app)",
+    )
+    # The primitive's register() installs SIGTERM/SIGINT handlers.
+    prim_src = shutdown_primitive.read_text()
+    ctx.record(
+        "graceful_shutdown_registers_signal_handlers",
+        "SIGTERM" in prim_src and "SIGINT" in prim_src and "def register" in prim_src,
+        "GracefulShutdown.register() installs SIGTERM/SIGINT handlers",
     )
 
-    if shutdown_path.exists():
-        sd_src = shutdown_path.read_text()
-        # Must contain GracefulShutdown class and signal handling
-        has_signal_handling = "GracefulShutdown" in sd_src and (
-            "SIGTERM" in sd_src or "signal" in sd_src
-        )
-        ctx.record(
-            "graceful_shutdown_has_signal_handler",
-            has_signal_handling,
-            "GracefulShutdown class with SIGTERM/signal handling present",
-        )
-    else:
-        ctx.record("graceful_shutdown_has_signal_handler", False, "file not found")
+    # ---- GracefulShutdown REALLY drains: not draining → drain on signal → wait ---
+    gs_mod = _import_project_module(
+        project_dir, "core.venous.resiliency.GracefulShutdown.GracefulShutdown"
+    )
+    sd = gs_mod.GracefulShutdown(drain_seconds=0.0, timeout_seconds=2.0)
+    not_draining = sd.is_draining()
+    sd.increment_in_flight()
+    sd._on_signal()  # equivalent to receiving SIGTERM
+    draining_now = sd.is_draining()
+    sd.decrement_in_flight()  # last in-flight request completes
+    await asyncio.wait_for(sd.wait_complete(), timeout=3.0)
+    ctx.record(
+        "graceful_shutdown_drains_then_completes",
+        not_draining is False and draining_now is True,
+        f"draining before/after signal: {not_draining} -> {draining_now}; wait_complete() returned",
+    )
 
     # ---- POST /chaos/enable returns 403 or error in local (production guard) ----
     r_enable = await client.post("/chaos/enable", json={})
