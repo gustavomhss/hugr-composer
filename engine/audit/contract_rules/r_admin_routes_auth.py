@@ -190,6 +190,15 @@ _ADD_ROUTE_METHODS: frozenset[str] = frozenset({"add_api_route", "add_api_websoc
 # Parameter-name tokens that satisfy "has auth" at the handler signature.
 _AUTH_PARAM_TOKENS: frozenset[str] = frozenset({"current_user", "superuser", "principal"})
 
+# Typed dependency-alias annotations (``Annotated[User, Depends(...)]`` aliases in
+# ``app/api/deps.py``) that are auth-gated regardless of the parameter name. A
+# route written ``auditor: CurrentAuditor`` is as protected as
+# ``current_user: CurrentSuperuser``; recognise the alias so the param name need
+# not follow the ``current_user`` convention.
+_AUTH_ANNOTATION_TOKENS: frozenset[str] = frozenset(
+    {"CurrentUser", "CurrentSuperuser", "CurrentAuditor"}
+)
+
 # A Depends(...) target name that satisfies "has auth".
 _AUTH_DEPENDS_RE = re.compile(r"^(get_current_|require_|verify_).+")
 
@@ -350,9 +359,15 @@ def _expr_has_auth_token(expr: ast.AST) -> bool:
     Depends(<auth_name>)."""
     for sub in ast.walk(expr):
         # Bare name like ``current_user`` or annotation ``CurrentUser`` etc.
-        if isinstance(sub, ast.Name) and (sub.id in _AUTH_PARAM_TOKENS or sub.id == "Security"):
+        if isinstance(sub, ast.Name) and (
+            sub.id in _AUTH_PARAM_TOKENS
+            or sub.id in _AUTH_ANNOTATION_TOKENS
+            or sub.id == "Security"
+        ):
             return True
-        if isinstance(sub, ast.Attribute) and sub.attr in _AUTH_PARAM_TOKENS:
+        if isinstance(sub, ast.Attribute) and (
+            sub.attr in _AUTH_PARAM_TOKENS or sub.attr in _AUTH_ANNOTATION_TOKENS
+        ):
             return True
         # Calls — Security(...) anywhere, or Depends(<auth_name>).
         if isinstance(sub, ast.Call):

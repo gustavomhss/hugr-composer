@@ -123,9 +123,28 @@ class TestTool051FastapiDoctor:
         self.result = result
         import inspect
 
-        from adapt.proactive import fastapi_doctor as fd_module
+        from adapt.proactive import (
+            fastapi_doctor as fd_module,
+        )
+        from adapt.proactive import (
+            fastapi_doctor__impl1,
+            fastapi_doctor__impl2,
+            fastapi_doctor__impl3,
+        )
 
-        self.src = inspect.getsource(fd_module)
+        # fastapi_doctor.py is a thin facade; the implementation lives in the
+        # fastapi_doctor__impl{1,2,3} modules (split for the 500-LOC file-size
+        # cap). The INV-DOCTOR source assertions must inspect the full
+        # implementation surface, so concatenate the facade + all impl modules.
+        self.src = "\n".join(
+            inspect.getsource(m)
+            for m in (
+                fd_module,
+                fastapi_doctor__impl1,
+                fastapi_doctor__impl2,
+                fastapi_doctor__impl3,
+            )
+        )
 
     def test_inv_doctor_001_every_finding_has_severity(self):
         """INV-DOCTOR-001: _normalize_one defaults to MEDIUM; no finding has severity=None."""

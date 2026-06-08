@@ -1,0 +1,46 @@
+"""Request-scoped audit context via ContextVar (INV-AL-03/04).
+
+The current actor's user_id is stashed here by the auth/middleware layer at
+request ingress and read by the ``before_flush`` audit listener when it
+materializes audit rows.  A ``ContextVar`` is used (never a module global) so
+concurrent requests never observe each other's actor — each asyncio task / OS
+thread sees its own value.
+
+When no actor is in context (background jobs, unauthenticated paths) the
+default is ``None``: the listener still writes an audit row with
+``user_id=None`` rather than raising (INV-AL-04).
+
+Example::
+
+    from app.core.audit_context import set_audit_context, reset_audit_context
+
+    token = set_audit_context(current_user.id)
+    try:
+        await handler(...)
+    finally:
+        reset_audit_context(token)
+"""
+
+from __future__ import annotations
+
+import uuid
+from contextvars import ContextVar, Token
+
+# default=None => a context-less flush records user_id=None (INV-AL-04),
+# it does NOT raise.
+_audit_user_id: ContextVar[uuid.UUID | None] = ContextVar("audit_user_id", default=None)
+
+
+def set_audit_context(user_id: uuid.UUID | None) -> Token[uuid.UUID | None]:
+    """Set the current request's audit actor; returns a reset Token."""
+    return _audit_user_id.set(user_id)
+
+
+def reset_audit_context(token: Token[uuid.UUID | None]) -> None:
+    """Restore the previous audit actor (pair with set_audit_context)."""
+    _audit_user_id.reset(token)
+
+
+def get_audit_context() -> uuid.UUID | None:
+    """Return the current actor's user_id, or None when unset (default=None)."""
+    return _audit_user_id.get()
