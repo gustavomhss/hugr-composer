@@ -16,7 +16,12 @@ import re
 import time
 from pathlib import Path
 
-from adapt._base import patch_append_module_block, render, render_to
+from adapt._base import (
+    patch_append_module_block,
+    patch_append_router_endpoint,
+    render,
+    render_to,
+)
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
 from adapt.contracts.migration_helper import find_migration_head
 
@@ -36,6 +41,10 @@ MCP_TOOL = {
 # Fingerprint substring used to detect that ``app/crud/base.py`` has already
 # been patched with the soft-delete-aware overrides (drives idempotency).
 _PATCH_FINGERPRINT = "SOFT_DELETE_PATCH_APPLIED"
+
+# Fingerprint for the soft-delete management endpoints appended to each
+# domain model's route file (restore / permanent-delete / list-deleted).
+_ROUTES_FINGERPRINT = "SOFT_DELETE_ROUTES_APPLIED"
 
 
 def add_soft_delete(inp: ToolInput) -> ToolResult:
@@ -96,11 +105,15 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
     patched_models: list[str] = []
     versions_dir = project / "alembic" / "versions"
 
+    routes_dir = app_dir / "api" / "routes"
     for stem, pascal in model_pairs:
         model_file = app_dir / "models" / f"{stem}.py"
         if model_file.exists() and _patch_model(model_file, pascal):
             files_modified.append(str(model_file))
             patched_models.append(pascal)
+        route_file = routes_dir / f"{stem}.py"
+        if route_file.exists() and _patch_routes(route_file, stem, pascal):
+            files_modified.append(str(route_file))
         if versions_dir.exists():
             mig = _write_migration(versions_dir, pascal, stem)
             files_created.append(str(mig))
@@ -140,6 +153,8 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
             "  - get()/get_multi() filter out is_deleted=True rows.",
             "  - delete() flips is_deleted/deleted_at instead of issuing SQL DELETE.",
             "  - Models without is_deleted (auth/infra) keep original hard-delete behaviour.",
+            "Added management routes per model: GET /deleted/, POST /{id}/restore, "
+            "DELETE /{id}/permanent (auth-guarded, owner-scoped).",
             "Alembic migration generated for each patched model.",
         ],
         next_steps=[
@@ -149,6 +164,26 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
             "To hard-delete, issue a direct SQL DELETE or add a dedicated purge endpoint.",
         ],
         execution_time_ms=_elapsed_ms(start),
+    )
+
+
+def _patch_routes(route_file: Path, stem: str, pascal: str) -> bool:
+    """Append soft-delete management endpoints to a model's route file.
+
+    Adds ``GET /deleted/``, ``POST /{id}/restore`` and
+    ``DELETE /{id}/permanent`` to ``app/api/routes/<stem>.py``. Idempotent
+    via the ``SOFT_DELETE_ROUTES_APPLIED`` fingerprint. Returns ``True`` when
+    the block is appended, ``False`` when it was already present.
+    """
+    block = render(
+        _HERE,
+        "routes_patch.py.tmpl",
+        {"STEM": stem, "MODEL": pascal},
+    )
+    return patch_append_router_endpoint(
+        route_file,
+        endpoint_block=block,
+        fingerprint=_ROUTES_FINGERPRINT,
     )
 
 
