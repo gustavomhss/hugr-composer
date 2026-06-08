@@ -14,8 +14,12 @@ outside their frozen partitions and were deferred to this PR-G:
 * C2 F-007 — ``docs/repo-standard.md`` and the audit/docs-site code
   disagreed on whether ``CONTRIBUTING.md`` belongs at root or under
   ``docs/``. Fixed by picking root as canonical (the audit + the
-  docs-site already treat it that way) and turning ``docs/contributing.md``
-  into a pointer.
+  docs-site already treat it that way). STANDALONE re-anchor (2026-06):
+  after extraction there is no ``docs/contributing.md`` pointer nor a
+  ``docs/repo-standard.md`` — the docs builder renders root CONTRIBUTING.md
+  directly and ``scripts/checks/md_location.py`` encodes the root-canonical
+  convention, so the F-007 checks now assert *no parallel fork* + the
+  hygiene rule keeps root governance docs canonical.
 * C4 F-004 — ``install.sh`` printed a tool decomposition whose labels
   contradicted the catalog, and pointed at a missing skill ``README.md``.
   Fixed by reconciling the decomposition to the catalog truth and
@@ -44,7 +48,12 @@ import pytest
 # Skill root = the parent of the `engine` package (this file lives at
 # `engine/tests/test_codex_phase3_closures.py`).
 SKILL_ROOT = Path(__file__).resolve().parents[2]
-REPO_ROOT = SKILL_ROOT.parent.parent
+# Layout-aware repo root (mirrors engine/docs/build.py): in the Arsenal monorepo
+# the skill lived under `skills/SKILL-001-…/`, so the repo root was two levels up;
+# in this standalone repo the skill root IS the repo root. Without this, the
+# governance files (CONTRIBUTING.md, install.sh, scripts/checks/md_location.py)
+# resolve to a path OUTSIDE the repo and every REPO_ROOT-based check errors.
+REPO_ROOT = SKILL_ROOT.parents[1] if SKILL_ROOT.parent.name == "skills" else SKILL_ROOT
 
 
 # ---------------------------------------------------------------------------
@@ -193,50 +202,46 @@ def test_c2_f007_root_contributing_is_canonical_and_complete() -> None:
         assert needed in text, f"Root CONTRIBUTING.md missing `{needed}` coverage"
 
 
-def test_c2_f007_docs_contributing_is_a_pointer_not_a_fork() -> None:
-    """`docs/contributing.md` must be a thin pointer back to root.
+def test_c2_f007_root_contributing_has_no_parallel_fork() -> None:
+    """F-007 in the standalone repo: root CONTRIBUTING.md is the SINGLE source.
 
-    The original drift kept two long-form contributor guides in parallel.
-    The pointer must call out the canonical file (root) and stay short
-    enough that it can't drift into a second source of truth.
+    In the Arsenal monorepo the docs site rendered a thin ``docs/contributing.md``
+    pointer back to root. The standalone docs builder (``engine/docs/build.py``)
+    renders the ROOT ``CONTRIBUTING.md`` directly at ``/contributing/`` — so a
+    ``docs/contributing.md`` would re-introduce the very fork F-007 closed.
+    Assert no such fork exists and the builder still publishes the root file.
     """
-    docs_contrib = REPO_ROOT / "docs" / "contributing.md"
-    assert docs_contrib.exists(), (
-        "docs/contributing.md must remain as a pointer — "
-        "engine.docs.build renders it at /contributing/ and "
-        "removing it would break that link."
+    # No parallel contributor-doc fork under docs/.
+    assert not (REPO_ROOT / "docs" / "contributing.md").exists(), (
+        "docs/contributing.md re-introduces a contributor-doc fork — in the "
+        "standalone repo root CONTRIBUTING.md is the single source and "
+        "engine/docs/build.py renders it directly at /contributing/."
     )
-    text = docs_contrib.read_text(encoding="utf-8")
-    # Pointer hard-cap: keep it under ~60 lines so it can't grow into a
-    # parallel source of truth.
-    line_count = len(text.splitlines())
-    assert line_count <= 60, (
-        f"docs/contributing.md is {line_count} lines — pointer should stay "
-        "lean (cap = 60). If you need more, edit root CONTRIBUTING.md."
-    )
-    # Must reference root CONTRIBUTING.md.
-    assert "../CONTRIBUTING.md" in text or "/CONTRIBUTING.md" in text, (
-        "docs/contributing.md must link back to root CONTRIBUTING.md."
+    # The docs builder publishes root CONTRIBUTING.md at /contributing/.
+    build_src = (SKILL_ROOT / "engine" / "docs" / "build.py").read_text(encoding="utf-8")
+    assert '("CONTRIBUTING.md", "contributing"' in build_src, (
+        "engine/docs/build.py must render root CONTRIBUTING.md at /contributing/ "
+        "(the F-007 canonical publish path)."
     )
 
 
-def test_c2_f007_repo_standard_no_longer_contradicts_root_canonical_docs() -> None:
-    """`docs/repo-standard.md` must NOT say "ALL narrative docs … under /docs/"
-    while the audit + docs-site treat root as canonical for governance.
+def test_c2_f007_md_location_keeps_root_governance_canonical() -> None:
+    """F-007 in the standalone repo: the md-hygiene rule does NOT force root
+    governance docs under ``docs/``.
 
-    Pre-fix prose: "/docs/  ALL narrative docs: architecture, contributing, …"
-    Post-fix: explicit exemption for root convention docs.
+    The monorepo encoded the "where docs live" rule in ``docs/repo-standard.md``
+    ("ALL narrative docs under /docs/"), which contradicted root-canonical
+    CONTRIBUTING/CONTRACT/ROADMAP/…. The standalone repo encodes the convention
+    in ``scripts/checks/md_location.py`` instead: root governance basenames are
+    allowed at the repo root, so there is no contradiction left to remove.
     """
-    text = (REPO_ROOT / "docs" / "repo-standard.md").read_text(encoding="utf-8")
-    # The old absolute-claim line must be gone.
-    assert "ALL narrative docs" not in text, (
-        "repo-standard.md still claims `docs/` holds ALL narrative docs — "
-        "but root CONTRIBUTING/CONTRACT/ROADMAP/… are exempt by design. "
-        "F-007 drift returned."
-    )
-    # And the new exemption list must be present.
-    assert "exemption" in text.lower() or "exempt" in text.lower(), (
-        "repo-standard.md should document the root-vs-docs exemption set."
+    md = _load_md_location()
+    # The convention basenames remain allowed at the repo root (not forced into docs/).
+    assert md._is_violation("CONTRIBUTING.md") is False
+    # Root governance docs are recognised as canonical at the repo root.
+    assert {"CONTRACT.md", "ROADMAP.md", "STATUS.md"} <= md.ROOT_GOV, (
+        "md_location.ROOT_GOV must recognise root governance docs as canonical "
+        "at the repo root (the standalone replacement for repo-standard.md)."
     )
 
 
