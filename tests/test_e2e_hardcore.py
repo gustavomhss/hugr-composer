@@ -18,6 +18,7 @@ Exit 1 → failures (details printed)
 from __future__ import annotations
 
 import os
+
 os.environ.setdefault("RATE_LIMITING_ENABLED", "false")
 os.environ.setdefault("ENVIRONMENT", "local")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-for-e2e-must-be-32-chars-long!!")
@@ -36,8 +37,14 @@ from typing import Any
 # ---------------------------------------------------------------------------
 
 ECOMMERCE_MODELS = {
-    "Product":  {"name": "str", "description": "text", "price": "float", "sku": "str", "stock": "int"},
-    "Order":    {"status": "str", "total": "float", "notes": "text"},
+    "Product": {
+        "name": "str",
+        "description": "text",
+        "price": "float",
+        "sku": "str",
+        "stock": "int",
+    },
+    "Order": {"status": "str", "total": "float", "notes": "text"},
     "Customer": {"name": "str", "email": "email", "phone": "str", "tier": "str"},
     "Category": {"name": "str", "slug": "str", "is_active": "bool"},
 }
@@ -49,29 +56,29 @@ ECOMMERCE_MODELS = {
 #           add_oauth2_provider (FK to tenants table).
 # Those 4 are validated separately in test_boot_chains.py (boot-level only).
 ALL_TOOLS: list[tuple[str, str]] = [
-    ("add_soft_delete",       "adapt.extend.crud_data.add_soft_delete"),
+    ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete"),
     ("add_cursor_pagination", "adapt.extend.crud_data.add_cursor_pagination"),
-    ("add_search",            "adapt.extend.crud_data.add_search"),
-    ("add_audit_log",         "adapt.extend.crud_data.add_audit_log"),
-    ("add_bulk_operations",   "adapt.extend.crud_data.add_bulk_operations"),
-    ("add_data_export",       "adapt.extend.crud_data.add_data_export"),
-    ("add_file_upload",       "adapt.extend.crud_data.add_file_upload"),
-    ("add_api_key_auth",      "adapt.extend.auth_access.add_api_key_auth"),
-    ("add_feature_flags",     "adapt.extend.auth_access.add_feature_flags"),
-    ("add_cache_layer",       "adapt.extend.infrastructure.add_cache_layer"),
-    ("add_circuit_breaker",   "adapt.extend.infrastructure.add_circuit_breaker"),
-    ("add_outbox_pattern",    "adapt.extend.infrastructure.add_outbox_pattern"),
-    ("add_saga",              "adapt.extend.infrastructure.add_saga"),
-    ("add_sse",               "adapt.extend.realtime.add_sse"),
-    ("add_webhook_receiver",  "adapt.extend.realtime.add_webhook_receiver"),
-    ("add_webhook_sender",    "adapt.extend.realtime.add_webhook_sender"),
-    ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning"),
-    ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint"),
-    ("add_graphql",           "adapt.extend.api_design.add_graphql"),
+    ("add_search", "adapt.extend.crud_data.add_search"),
+    ("add_audit_log", "adapt.extend.crud_data.add_audit_log"),
+    ("add_bulk_operations", "adapt.extend.crud_data.add_bulk_operations"),
+    ("add_data_export", "adapt.extend.crud_data.add_data_export"),
+    ("add_file_upload", "adapt.extend.crud_data.add_file_upload"),
+    ("add_api_key_auth", "adapt.extend.auth_access.add_api_key_auth"),
+    ("add_feature_flags", "adapt.extend.auth_access.add_feature_flags"),
+    ("add_cache_layer", "adapt.extend.infrastructure.add_cache_layer"),
+    ("add_circuit_breaker", "adapt.extend.infrastructure.add_circuit_breaker"),
+    ("add_outbox_pattern", "adapt.extend.infrastructure.add_outbox_pattern"),
+    ("add_saga", "adapt.extend.infrastructure.add_saga"),
+    ("add_sse", "adapt.extend.realtime.add_sse"),
+    ("add_webhook_receiver", "adapt.extend.realtime.add_webhook_receiver"),
+    ("add_webhook_sender", "adapt.extend.realtime.add_webhook_sender"),
+    ("add_api_versioning", "adapt.extend.api_design.add_api_versioning"),
+    ("add_batch_endpoint", "adapt.extend.api_design.add_batch_endpoint"),
+    ("add_graphql", "adapt.extend.api_design.add_graphql"),
     ("add_long_running_task", "adapt.extend.api_design.add_long_running_task"),
-    ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests"),
-    ("add_factory",           "adapt.extend.testing_tools.add_factory"),
-    ("add_load_profile",      "adapt.extend.testing_tools.add_load_profile"),
+    ("add_contract_tests", "adapt.extend.testing_tools.add_contract_tests"),
+    ("add_factory", "adapt.extend.testing_tools.add_factory"),
+    ("add_load_profile", "adapt.extend.testing_tools.add_load_profile"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -87,8 +94,8 @@ def _setup() -> Path:
     if _PROJECT_DIR is not None:
         return _PROJECT_DIR
 
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
+    from tests.common.fixture_factory import create_fixture_project
 
     _TMPDIR = tempfile.TemporaryDirectory()
     project_dir = create_fixture_project(
@@ -121,8 +128,8 @@ def _load_app(project_dir: Path):
 
 
 async def _make_client(app, project_dir: Path):
-    from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
     from httpx import ASGITransport, AsyncClient
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
     get_session_mod = importlib.import_module("app.core.session")
     base_mod = importlib.import_module("app.models.base")
@@ -149,19 +156,29 @@ async def _teardown(app, client, session, engine):
     await session.close()
     async with engine.begin() as conn:
         from app.models.base import Base
+
         await conn.run_sync(Base.metadata.drop_all)
     await engine.dispose()
     app.dependency_overrides.clear()
 
 
 async def _signup_and_login(client, email: str, password: str, name: str = "Test") -> str:
-    r = await client.post("/api/v1/users/signup", json={
-        "email": email, "password": password, "full_name": name,
-    })
+    r = await client.post(
+        "/api/v1/users/signup",
+        json={
+            "email": email,
+            "password": password,
+            "full_name": name,
+        },
+    )
     assert r.status_code in (200, 201), f"signup failed: {r.status_code} {r.text[:300]}"
-    r = await client.post("/api/v1/login/access-token", data={
-        "username": email, "password": password,
-    })
+    r = await client.post(
+        "/api/v1/login/access-token",
+        data={
+            "username": email,
+            "password": password,
+        },
+    )
     assert r.status_code == 200, f"login failed: {r.status_code} {r.text[:300]}"
     return r.json()["access_token"]
 
@@ -185,6 +202,7 @@ async def _setup_tenant(session) -> str:
     try:
         tenant_mod = importlib.import_module("app.models.tenant")
         import uuid
+
         tenant = tenant_mod.Tenant(
             id=uuid.uuid4(),
             name="Test Corp",
@@ -208,6 +226,7 @@ def _auth(token: str) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 async def check_01_auth_full_cycle(pd: Path) -> tuple[bool, str]:
     """Signup → login → access protected route → expired/invalid token rejected."""
@@ -236,16 +255,25 @@ async def check_01_auth_full_cycle(pd: Path) -> tuple[bool, str]:
             fails.append(f"no token: expected 401, got {r.status_code}")
 
         # Duplicate signup → 400 or 409
-        r = await client.post("/api/v1/users/signup", json={
-            "email": "auth@test.com", "password": "AuthPass123!", "full_name": "Dup",
-        })
+        r = await client.post(
+            "/api/v1/users/signup",
+            json={
+                "email": "auth@test.com",
+                "password": "AuthPass123!",
+                "full_name": "Dup",
+            },
+        )
         if r.status_code not in (400, 409, 422):
             fails.append(f"duplicate signup: expected 400/409/422, got {r.status_code}")
 
         # Wrong password → 401
-        r = await client.post("/api/v1/login/access-token", data={
-            "username": "auth@test.com", "password": "WrongPass!",
-        })
+        r = await client.post(
+            "/api/v1/login/access-token",
+            data={
+                "username": "auth@test.com",
+                "password": "WrongPass!",
+            },
+        )
         if r.status_code not in (401, 400):
             fails.append(f"wrong password: expected 401/400, got {r.status_code}")
 
@@ -265,9 +293,26 @@ async def check_02_crud_lifecycle(pd: Path) -> tuple[bool, str]:
         h = _auth(token)
 
         for resource, payload in [
-            ("products", {"name": "Laptop", "description": "Fast", "price": 999.0, "sku": "LAP-001", "stock": 50}),
+            (
+                "products",
+                {
+                    "name": "Laptop",
+                    "description": "Fast",
+                    "price": 999.0,
+                    "sku": "LAP-001",
+                    "stock": 50,
+                },
+            ),
             ("orders", {"status": "pending", "total": 199.99, "notes": "Rush delivery"}),
-            ("customers", {"name": "Jane Doe", "email": "jane@example.com", "phone": "+1234567890", "tier": "gold"}),
+            (
+                "customers",
+                {
+                    "name": "Jane Doe",
+                    "email": "jane@example.com",
+                    "phone": "+1234567890",
+                    "tier": "gold",
+                },
+            ),
             ("categories", {"name": "Electronics", "slug": "electronics", "is_active": True}),
         ]:
             # CREATE
@@ -291,7 +336,9 @@ async def check_02_crud_lifecycle(pd: Path) -> tuple[bool, str]:
             update_val = payload[first_key]
             if isinstance(update_val, str):
                 update_val = update_val + " Updated"
-            r = await client.patch(f"/api/v1/{resource}/{item_id}", json={first_key: update_val}, headers=h)
+            r = await client.patch(
+                f"/api/v1/{resource}/{item_id}", json={first_key: update_val}, headers=h
+            )
             if r.status_code != 200:
                 fails.append(f"PATCH {resource}/{item_id}: {r.status_code} {r.text[:200]}")
 
@@ -301,7 +348,11 @@ async def check_02_crud_lifecycle(pd: Path) -> tuple[bool, str]:
                 fails.append(f"LIST {resource}: {r.status_code}")
             else:
                 body = r.json()
-                data = body.get("data") or body.get("items") or (body if isinstance(body, list) else [])
+                data = (
+                    body.get("data")
+                    or body.get("items")
+                    or (body if isinstance(body, list) else [])
+                )
                 if not data:
                     fails.append(f"LIST {resource}: empty response")
 
@@ -313,12 +364,17 @@ async def check_02_crud_lifecycle(pd: Path) -> tuple[bool, str]:
             # GET after delete → 404
             r = await client.get(f"/api/v1/{resource}/{item_id}", headers=h)
             if r.status_code != 404:
-                fails.append(f"GET after DELETE {resource}/{item_id}: expected 404, got {r.status_code}")
+                fails.append(
+                    f"GET after DELETE {resource}/{item_id}: expected 404, got {r.status_code}"
+                )
 
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "crud_lifecycle: " + ("; ".join(fails) if fails else "PASS — 4 models × 6 ops"))
+    return (
+        not fails,
+        "crud_lifecycle: " + ("; ".join(fails) if fails else "PASS — 4 models × 6 ops"),
+    )
 
 
 async def check_03_health_endpoints(pd: Path) -> tuple[bool, str]:
@@ -361,9 +417,17 @@ async def check_04_validation_errors(pd: Path) -> tuple[bool, str]:
             fails.append(f"empty body: expected 422, got {r.status_code}")
 
         # Wrong type (string for price)
-        r = await client.post("/api/v1/products/", json={
-            "name": "X", "description": "Y", "price": "not-a-number", "sku": "Z", "stock": 1,
-        }, headers=h)
+        r = await client.post(
+            "/api/v1/products/",
+            json={
+                "name": "X",
+                "description": "Y",
+                "price": "not-a-number",
+                "sku": "Z",
+                "stock": 1,
+            },
+            headers=h,
+        )
         if r.status_code not in (422, 500):
             fails.append(f"wrong type: expected 422, got {r.status_code}")
 
@@ -448,7 +512,11 @@ async def check_06_openapi_schema(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "openapi_schema: " + ("; ".join(fails) if fails else f"PASS — {len(paths)} paths, 0 dup operationIds"))
+    return (
+        not fails,
+        "openapi_schema: "
+        + ("; ".join(fails) if fails else f"PASS — {len(paths)} paths, 0 dup operationIds"),
+    )
 
 
 async def check_07_bulk_create(pd: Path) -> tuple[bool, str]:
@@ -461,14 +529,25 @@ async def check_07_bulk_create(pd: Path) -> tuple[bool, str]:
         h = _auth(token)
 
         bulk_items = [
-            {"name": f"Bulk Product {i}", "description": "bulk", "price": 10.0 + i, "sku": f"BLK-{i:03}", "stock": i}
+            {
+                "name": f"Bulk Product {i}",
+                "description": "bulk",
+                "price": 10.0 + i,
+                "sku": f"BLK-{i:03}",
+                "stock": i,
+            }
             for i in range(5)
         ]
         bulk_exc = False
         try:
-            r = await client.post("/api/v1/products/bulk", json={
-                "items": bulk_items, "mode": "all_or_nothing",
-            }, headers=h)
+            r = await client.post(
+                "/api/v1/products/bulk",
+                json={
+                    "items": bulk_items,
+                    "mode": "all_or_nothing",
+                },
+                headers=h,
+            )
         except* Exception:
             bulk_exc = True
 
@@ -503,10 +582,17 @@ async def check_08_search(pd: Path) -> tuple[bool, str]:
 
         # Create some products
         for i in range(3):
-            r = await client.post("/api/v1/products/", json={
-                "name": f"Searchable Widget {i}", "description": f"desc {i}",
-                "price": 10.0 * (i + 1), "sku": f"SW-{i:03}", "stock": i * 10,
-            }, headers=h)
+            r = await client.post(
+                "/api/v1/products/",
+                json={
+                    "name": f"Searchable Widget {i}",
+                    "description": f"desc {i}",
+                    "price": 10.0 * (i + 1),
+                    "sku": f"SW-{i:03}",
+                    "stock": i * 10,
+                },
+                headers=h,
+            )
 
         # Search endpoint — generated at GET /api/v1/{resource}/search?q=...
         search_exc = False
@@ -519,7 +605,12 @@ async def check_08_search(pd: Path) -> tuple[bool, str]:
             pass  # FTS uses PostgreSQL @@ operator — fails on SQLite
         elif r.status_code == 200:
             body = r.json()
-            results = body.get("data") or body.get("items") or body.get("results") or (body if isinstance(body, list) else [])
+            results = (
+                body.get("data")
+                or body.get("items")
+                or body.get("results")
+                or (body if isinstance(body, list) else [])
+            )
             if not results:
                 fails.append("search: 200 but empty results for q=Widget")
         elif r.status_code == 404:
@@ -547,9 +638,17 @@ async def check_09_multiple_users_isolation(pd: Path) -> tuple[bool, str]:
         h_b = _auth(token_b)
 
         # Alice creates a product
-        r = await client.post("/api/v1/products/", json={
-            "name": "Alice Product", "description": "mine", "price": 100.0, "sku": "ALC-001", "stock": 10,
-        }, headers=h_a)
+        r = await client.post(
+            "/api/v1/products/",
+            json={
+                "name": "Alice Product",
+                "description": "mine",
+                "price": 100.0,
+                "sku": "ALC-001",
+                "stock": 10,
+            },
+            headers=h_a,
+        )
         if r.status_code not in (200, 201):
             fails.append(f"Alice create: {r.status_code}")
             return (False, "user_isolation: " + "; ".join(fails))
@@ -560,7 +659,9 @@ async def check_09_multiple_users_isolation(pd: Path) -> tuple[bool, str]:
         r = await client.get("/api/v1/products/", headers=h_b)
         if r.status_code == 200:
             body = r.json()
-            items = body.get("data") or body.get("items") or (body if isinstance(body, list) else [])
+            items = (
+                body.get("data") or body.get("items") or (body if isinstance(body, list) else [])
+            )
             bob_ids = [item.get("id") for item in items if isinstance(item, dict)]
             if alice_pid in bob_ids:
                 fails.append("ISOLATION BREACH: Bob can see Alice's product")
@@ -570,7 +671,10 @@ async def check_09_multiple_users_isolation(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "user_isolation: " + ("; ".join(fails) if fails else "PASS — owner scoping enforced"))
+    return (
+        not fails,
+        "user_isolation: " + ("; ".join(fails) if fails else "PASS — owner scoping enforced"),
+    )
 
 
 async def check_10_pagination(pd: Path) -> tuple[bool, str]:
@@ -584,10 +688,17 @@ async def check_10_pagination(pd: Path) -> tuple[bool, str]:
 
         # Create 10 products
         for i in range(10):
-            r = await client.post("/api/v1/products/", json={
-                "name": f"Page Product {i:02}", "description": f"p{i}",
-                "price": float(i), "sku": f"PG-{i:03}", "stock": i,
-            }, headers=h)
+            r = await client.post(
+                "/api/v1/products/",
+                json={
+                    "name": f"Page Product {i:02}",
+                    "description": f"p{i}",
+                    "price": float(i),
+                    "sku": f"PG-{i:03}",
+                    "stock": i,
+                },
+                headers=h,
+            )
 
         # Paginated list — limit=3
         r = await client.get("/api/v1/products/?limit=3", headers=h)
@@ -595,7 +706,9 @@ async def check_10_pagination(pd: Path) -> tuple[bool, str]:
             fails.append(f"paginated list: {r.status_code}")
         else:
             body = r.json()
-            items = body.get("data") or body.get("items") or (body if isinstance(body, list) else [])
+            items = (
+                body.get("data") or body.get("items") or (body if isinstance(body, list) else [])
+            )
             if len(items) > 3:
                 fails.append(f"pagination: limit=3 but got {len(items)} items")
 
@@ -620,10 +733,17 @@ async def check_11_data_integrity(pd: Path) -> tuple[bool, str]:
         h = _auth(token)
 
         # Create with specific values
-        r = await client.post("/api/v1/products/", json={
-            "name": "Integrity Test", "description": "Verify all fields persist",
-            "price": 42.99, "sku": "INT-001", "stock": 100,
-        }, headers=h)
+        r = await client.post(
+            "/api/v1/products/",
+            json={
+                "name": "Integrity Test",
+                "description": "Verify all fields persist",
+                "price": 42.99,
+                "sku": "INT-001",
+                "stock": 100,
+            },
+            headers=h,
+        )
         assert r.status_code in (200, 201), f"create: {r.status_code}"
         item = r.json()
         pid = item["id"]
@@ -645,7 +765,9 @@ async def check_11_data_integrity(pd: Path) -> tuple[bool, str]:
                 fails.append(f"field '{field}': expected {expected!r}, got {actual!r}")
 
         # Update and verify
-        r = await client.patch(f"/api/v1/products/{pid}", json={"price": 99.99, "stock": 50}, headers=h)
+        r = await client.patch(
+            f"/api/v1/products/{pid}", json={"price": 99.99, "stock": 50}, headers=h
+        )
         if r.status_code != 200:
             fails.append(f"update: {r.status_code}")
         else:
@@ -663,7 +785,10 @@ async def check_11_data_integrity(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "data_integrity: " + ("; ".join(fails) if fails else "PASS — fields persist correctly"))
+    return (
+        not fails,
+        "data_integrity: " + ("; ".join(fails) if fails else "PASS — fields persist correctly"),
+    )
 
 
 async def check_12_concurrent_requests(pd: Path) -> tuple[bool, str]:
@@ -677,9 +802,15 @@ async def check_12_concurrent_requests(pd: Path) -> tuple[bool, str]:
         h = _auth(token)
 
         for i in range(5):
-            r = await client.post("/api/v1/categories/", json={
-                "name": f"Cat {i}", "slug": f"cat-{i}", "is_active": True,
-            }, headers=h)
+            r = await client.post(
+                "/api/v1/categories/",
+                json={
+                    "name": f"Cat {i}",
+                    "slug": f"cat-{i}",
+                    "is_active": True,
+                },
+                headers=h,
+            )
             if r.status_code in (200, 201):
                 created_ids.append(r.json().get("id", ""))
             elif r.status_code >= 500:
@@ -697,7 +828,11 @@ async def check_12_concurrent_requests(pd: Path) -> tuple[bool, str]:
     finally:
         await _teardown(app, client, session, engine)
 
-    return (not fails, "concurrent_requests: " + ("; ".join(fails) if fails else f"PASS — {len(created_ids)}/5 creates, all readable"))
+    return (
+        not fails,
+        "concurrent_requests: "
+        + ("; ".join(fails) if fails else f"PASS — {len(created_ids)}/5 creates, all readable"),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -705,18 +840,18 @@ async def check_12_concurrent_requests(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 TESTS = [
-    ("01_auth_full_cycle",       check_01_auth_full_cycle),
-    ("02_crud_lifecycle",        check_02_crud_lifecycle),
-    ("03_health_endpoints",      check_03_health_endpoints),
-    ("04_validation_errors",     check_04_validation_errors),
-    ("05_middleware_headers",     check_05_middleware_headers),
-    ("06_openapi_schema",        check_06_openapi_schema),
-    ("07_bulk_create",           check_07_bulk_create),
-    ("08_search",                check_08_search),
-    ("09_user_isolation",        check_09_multiple_users_isolation),
-    ("10_pagination",            check_10_pagination),
-    ("11_data_integrity",        check_11_data_integrity),
-    ("12_concurrent_requests",   check_12_concurrent_requests),
+    ("01_auth_full_cycle", check_01_auth_full_cycle),
+    ("02_crud_lifecycle", check_02_crud_lifecycle),
+    ("03_health_endpoints", check_03_health_endpoints),
+    ("04_validation_errors", check_04_validation_errors),
+    ("05_middleware_headers", check_05_middleware_headers),
+    ("06_openapi_schema", check_06_openapi_schema),
+    ("07_bulk_create", check_07_bulk_create),
+    ("08_search", check_08_search),
+    ("09_user_isolation", check_09_multiple_users_isolation),
+    ("10_pagination", check_10_pagination),
+    ("11_data_integrity", check_11_data_integrity),
+    ("12_concurrent_requests", check_12_concurrent_requests),
 ]
 
 
