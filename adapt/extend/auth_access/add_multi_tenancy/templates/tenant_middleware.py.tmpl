@@ -2,19 +2,23 @@
 
 IMPORTANT — security model
 --------------------------
-This middleware does NOT decide which tenant a request belongs to and
-it NEVER rejects a request on its own. Tenant authority is bound to
-IDENTITY and resolved in the auth dependency (see
-``app.api.deps.get_current_user`` / ``resolve_tenant``), AFTER the
-caller has been authenticated. A blind, header-driven pre-auth
+This middleware does NOT decide which tenant a request belongs to.
+Tenant authority is bound to IDENTITY and resolved in the auth
+dependency (see ``app.api.deps.get_current_user`` / ``resolve_tenant``),
+AFTER the caller has been authenticated. A blind, header-driven pre-auth
 middleware that 400s every request without ``X-Tenant-ID`` is both
 insecure (any caller who knows a slug operates in that tenant) and
 breaks every auth/public/CRUD route + bootstrap.
 
-What this middleware DOES:
+What this module DOES:
   * Reset the per-request tenant ContextVar to ``None`` at ingress so
     tenant context never leaks across requests sharing a worker.
   * Clear it again on the way out (defence in depth).
+  * Provide ``reject_if_tenant_inactive`` (INV-MT-05): the single
+    chokepoint that returns ``403`` for a ``suspended``/``archived``
+    tenant. It is invoked by ``resolve_tenant`` the instant a request's
+    tenant is known and BEFORE the route handler runs, so a non-active
+    tenant never receives a request handler.
 
 The X-Tenant-ID header is read and validated downstream, in the auth
 dependency, against the authenticated user's membership.
@@ -26,10 +30,39 @@ the same set by simply not requiring a tenant there).
 
 from __future__ import annotations
 
-from fastapi import Request
+from typing import TYPE_CHECKING
+
+from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.tenant_context import set_current_tenant
+
+if TYPE_CHECKING:
+    from app.models.tenant import Tenant
+
+
+def reject_if_tenant_inactive(tenant: Tenant) -> None:
+    """Reject requests bound to a non-active tenant (INV-MT-05 / QS-11).
+
+    A tenant in ``suspended`` or ``archived`` status must NEVER receive
+    request handlers: its users keep no access while the tenant is frozen.
+    This guard is the single chokepoint for that rule. It is invoked from
+    the identity-bound resolver (``app.api.deps.resolve_tenant``) the moment
+    a request's tenant is known and BEFORE the route handler runs, so a
+    suspended tenant's request is short-circuited with ``403`` before
+    reaching any business logic.
+
+    Args:
+        tenant: The tenant the current request has been bound to.
+
+    Raises:
+        HTTPException: ``403 Forbidden`` if ``tenant.status != "active"``.
+    """
+    if tenant.status != "active":
+        raise HTTPException(
+            status_code=403,
+            detail="Tenant is not active",
+        )
 
 # Public / auth / utility / bootstrap paths that operate with NO tenant.
 # These are the routes that must work before (or without) a tenant
