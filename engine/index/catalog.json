@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "a7be0e0c",
-  "generated_at": "2026-06-08T12:28:19+00:00",
+  "kit_commit": "6decde2b",
+  "generated_at": "2026-06-08T15:27:01+00:00",
   "verbs": [
     "add",
     "generate",
@@ -535,8 +535,8 @@
       "domain": "auth",
       "skill": "SKILL-001-fastapi-production",
       "bundle": "auth_access",
-      "synopsis": "Copy TotpVerifier primitive + FastAPI adapter into the project and wire a \u226420-line app/mfa.py caller",
-      "when_to_call": "Copy TotpVerifier primitive + FastAPI adapter into the project and wire a \u226420-line app/mfa.py caller.",
+      "synopsis": "Ship TOTP MFA into the project: MFADevice/MFARecoveryCode models, Fernet secret encryption, pyotp ve",
+      "when_to_call": "Ship TOTP MFA into the project: MFADevice/MFARecoveryCode models, Fernet secret encryption, pyotp verification, a brute-force limiter, a mounted /auth/mfa router, migration, and the TotpVerifier primitive.",
       "when_not_to_call": "",
       "tags": [
         "mfa"
@@ -544,10 +544,8 @@
       "tier": 2,
       "status": "stable",
       "since": "",
-      "module_path": "adapt/extend/auth_access/add_mfa.py",
-      "test_paths": [
-        "adapt/extend/auth_access/test_add_mfa.py"
-      ],
+      "module_path": "adapt/extend/auth_access/add_mfa/__init__.py",
+      "test_paths": [],
       "primitives_used": [
         "TotpVerifier"
       ],
@@ -12005,5 +12003,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "03a8833f96fc282950fccb633c5c6c7d2e98a97f6b9c2a3b6594b08f14a59c1e"
+  "stable_hash": "0302572a9a122acf1ed189106fe834ecfa6690f2cb9dfdff53dd7067a532f717"
 }

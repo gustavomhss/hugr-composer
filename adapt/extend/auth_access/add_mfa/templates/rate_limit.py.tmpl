@@ -1,0 +1,51 @@
+"""Brute-force rate limiting for MFA verification (INV-MFA-06).
+
+A 6-digit TOTP has only 1,000,000 possibilities; without a limiter an
+attacker can brute-force the second factor offline-fast. This module tracks
+failed verification attempts per user in a fixed window and raises HTTP 429
+once the cap is exceeded.
+
+The default in-memory store is process-local — fine for a single worker and
+for tests. For multi-worker / multi-instance deployments, back
+``_ATTEMPTS`` with Redis (the same interface: increment + TTL).
+"""
+
+from __future__ import annotations
+
+import time
+
+from fastapi import HTTPException, status
+
+from app.core.config import settings
+
+# user_id -> (window_start_epoch, attempt_count)
+_ATTEMPTS: dict[str, tuple[float, int]] = {}
+
+
+def record_failure_and_check(user_id: str) -> None:
+    """Record a failed MFA attempt for *user_id* and enforce the limit.
+
+    Raises:
+        HTTPException: 429 Too Many Requests once the configured maximum
+            number of failures within the window is exceeded.
+    """
+    max_attempts = settings.MFA_RATE_LIMIT_MAX
+    window = settings.MFA_RATE_LIMIT_WINDOW_SECONDS
+    now = time.time()
+    window_start, count = _ATTEMPTS.get(user_id, (now, 0))
+    if now - window_start >= window:
+        window_start, count = now, 0
+    count += 1
+    _ATTEMPTS[user_id] = (window_start, count)
+    if count > max_attempts:
+        retry_after = int(window - (now - window_start))
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many MFA attempts — try again later.",
+            headers={"Retry-After": str(max(retry_after, 1))},
+        )
+
+
+def reset(user_id: str) -> None:
+    """Clear the failure counter for *user_id* after a successful verify."""
+    _ATTEMPTS.pop(user_id, None)

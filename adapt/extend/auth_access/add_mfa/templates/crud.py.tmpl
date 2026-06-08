@@ -1,0 +1,52 @@
+"""CRUD helpers for MFA devices + recovery codes.
+
+INV-MFA-02: ``consume_recovery_code`` enforces exactly-once use. The UPDATE
+filters on ``used_at IS NULL`` and stamps ``used_at`` in the same statement,
+so two concurrent requests racing on the same code can only have one win —
+the database guarantees the code is consumed exactly once.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import uuid
+from datetime import datetime, timezone
+
+from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.mfa import MFADevice, MFARecoveryCode
+
+
+async def get_device(session: AsyncSession, user_id: uuid.UUID) -> MFADevice | None:
+    """Return the user's enrolled MFA device, if any."""
+    result = await session.execute(
+        select(MFADevice).where(MFADevice.user_id == user_id)
+    )
+    return result.scalar_one_or_none()
+
+
+def _hash_code(code: str) -> str:
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
+async def consume_recovery_code(
+    session: AsyncSession, user_id: uuid.UUID, code: str
+) -> bool:
+    """Atomically consume a recovery code; return True on success.
+
+    INV-MFA-02: the WHERE clause requires ``used_at IS NULL`` and the SET
+    stamps ``used_at`` — a used code can never be accepted twice.
+    """
+    code_hash = _hash_code(code)
+    result = await session.execute(
+        update(MFARecoveryCode)
+        .where(
+            MFARecoveryCode.user_id == user_id,
+            MFARecoveryCode.code_hash == code_hash,
+            MFARecoveryCode.used_at.is_(None),
+        )
+        .values(used_at=datetime.now(timezone.utc))
+    )
+    await session.commit()
+    return result.rowcount == 1
