@@ -192,6 +192,11 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
             req_file.write_text(req_src.rstrip("\n") + "\n" + "\n".join(req_adds) + "\n")
             files_modified.append(str(req_file))
 
+    # Step 4b: Document the env vars the emitted code reads (config consistency)
+    env_example = project / ".env.example"
+    if env_example.exists() and _patch_env_example(env_example):
+        files_modified.append(str(env_example))
+
     # Step 5: Enforce ≤20 logic lines in the primary glue (CONTRACT §B1.0.1)
     glue_loc = _count_logic_lines(glue_file.read_text())
     if glue_loc > 20:
@@ -300,6 +305,26 @@ def _patch_main(main_file: Path) -> None:
 
 def _ms(start: float) -> int:
     return int((time.monotonic() - start) * 1000)
+
+
+def _patch_env_example(env_example: Path) -> bool:
+    """Document the env vars the cache primitives read. Returns True if patched.
+
+    ``app/cache/primitives.py`` reads ``CACHE_LOCK_LEASE_S`` via ``os.getenv``;
+    surfacing it in ``.env.example`` keeps generated config self-consistent.
+    """
+    src = env_example.read_text()
+    if "CACHE_LOCK_LEASE_S" in src:
+        return False
+    trailing = "" if src.endswith("\n") else "\n"
+    block = (
+        "\n"
+        "# --- Cache layer (add_cache_layer) ---\n"
+        "# Distributed-lock lease duration in seconds (default 5).\n"
+        "CACHE_LOCK_LEASE_S=5\n"
+    )
+    env_example.write_text(src + trailing + block)
+    return True
 
 
 def _count_logic_lines(source: str) -> int:

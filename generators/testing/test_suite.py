@@ -236,8 +236,13 @@ def _generate_login_tests() -> str:
             superuser_token: dict[str, str],
         ) -> None:
             """Valid credentials return 200 with an access_token."""
+            # Mirror the email the ``superuser_token`` fixture actually creates:
+            # FIRST_SUPERUSER_EMAIL defaults to "" (seeding opt-in), so the
+            # fixture falls back to "admin@test.com". Using the bare setting
+            # here would POST an empty username (OAuth2PasswordRequestForm then
+            # rejects it with 422) and would not match the seeded user anyway.
             login_data = {
-                "username": settings.FIRST_SUPERUSER_EMAIL,
+                "username": settings.FIRST_SUPERUSER_EMAIL or "admin@test.com",
                 "password": "testpassword123",
             }
             response = await client.post(f"{API}/login/access-token", data=login_data)
@@ -254,8 +259,11 @@ def _generate_login_tests() -> str:
             superuser_token: dict[str, str],
         ) -> None:
             """Wrong password returns 401."""
+            # Same email the ``superuser_token`` fixture seeds (see
+            # ``test_login_success``): the bare FIRST_SUPERUSER_EMAIL default is
+            # "" which POSTs an empty username and yields 422, not 401.
             login_data = {
-                "username": settings.FIRST_SUPERUSER_EMAIL,
+                "username": settings.FIRST_SUPERUSER_EMAIL or "admin@test.com",
                 "password": "wrong-password",
             }
             response = await client.post(f"{API}/login/access-token", data=login_data)

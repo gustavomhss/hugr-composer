@@ -171,6 +171,10 @@ def add_api_key_auth(inp: ToolInput) -> ToolResult:
         )
         files_created.append(str(mig_file))
 
+    env_example = project / ".env.example"
+    if env_example.exists() and _patch_env_example(env_example):
+        files_modified.append(str(env_example))
+
     for path_str in files_created:
         p = Path(path_str)
         if p.suffix == ".py" and p.is_file():
@@ -237,6 +241,28 @@ def _patch_routes_init(routes_init: Path) -> None:
                 break
     lines.insert(last_include_idx + 1, include_line)
     routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
+
+
+def _patch_env_example(env_example: Path) -> bool:
+    """Document the env vars the API-key scopes module reads. Returns True if patched.
+
+    ``app/auth/api_key_scopes.py`` reads ``API_KEY_GRANTABLE_SCOPES`` via
+    ``os.getenv``; surfacing it in ``.env.example`` keeps generated config
+    self-consistent.
+    """
+    src = env_example.read_text()
+    if "API_KEY_GRANTABLE_SCOPES" in src:
+        return False
+    trailing = "" if src.endswith("\n") else "\n"
+    block = (
+        "\n"
+        "# --- API-key auth (add_api_key_auth) ---\n"
+        "# Comma-separated scopes an API key may be granted. Empty = no\n"
+        "# restriction beyond the built-in defaults.\n"
+        "API_KEY_GRANTABLE_SCOPES=\n"
+    )
+    env_example.write_text(src + trailing + block)
+    return True
 
 
 def _ms(start: float) -> int:

@@ -77,8 +77,13 @@ def _run_pytest_in_project(project_dir: Path) -> subprocess.CompletedProcess:
     python = project_dir / ".venv" / "bin" / "python3"
     return subprocess.run(
         [
-            str(python), "-m", "pytest", "tests/", "-v",
-            "--tb=short", "--no-header",
+            str(python),
+            "-m",
+            "pytest",
+            "tests/",
+            "-v",
+            "--tb=short",
+            "--no-header",
         ],
         cwd=str(project_dir),
         env={
@@ -94,6 +99,7 @@ def _run_pytest_in_project(project_dir: Path) -> subprocess.CompletedProcess:
 # ---------------------------------------------------------------------------
 # Blind Spot A: Generated tests pass
 # ---------------------------------------------------------------------------
+
 
 class TestGeneratedTestsPass:
     """Blind Spot A — the test files written by generate_test_suite() must pass."""
@@ -147,9 +153,7 @@ class TestGeneratedTestsPass:
         )
         assert n_failed == 0, f"{n_failed} generated tests failed"
         assert n_errors == 0, f"{n_errors} generated tests errored"
-        assert n_passed >= 19, (
-            f"Expected at least 19 tests to pass, got {n_passed}"
-        )
+        assert n_passed >= 19, f"Expected at least 19 tests to pass, got {n_passed}"
 
     def test_generated_test_count_matches_model_count(self, tmp_path: Path) -> None:
         """One test_<model>.py file must exist per domain model."""
@@ -203,7 +207,7 @@ _IMPORT_TO_PACKAGE: dict[str, str] = {
     "asyncpg": "asyncpg",
     "alembic": "alembic",
     "httpx": "httpx",
-    "jwt": "pyjwt",           # PyJWT exposes `import jwt`
+    "jwt": "pyjwt",  # PyJWT exposes `import jwt`
     "pwdlib": "pwdlib",
     "redis": "redis",
     "slowapi": "slowapi",
@@ -216,10 +220,10 @@ _IMPORT_TO_PACKAGE: dict[str, str] = {
     "segno": "segno",
     "arq": "arq",
     # transitive — always installed as deps of the explicit packages above
-    "argon2": "pwdlib",           # argon2-cffi via pwdlib[argon2]
+    "argon2": "pwdlib",  # argon2-cffi via pwdlib[argon2]
     "pydantic_core": "pydantic",  # bundled with pydantic >=2
-    "starlette": "fastapi",       # bundled with fastapi
-    "anyio": "fastapi",           # bundled with fastapi/starlette
+    "starlette": "fastapi",  # bundled with fastapi
+    "anyio": "fastapi",  # bundled with fastapi/starlette
     "multipart": "python_multipart",
     # These must be EXPLICIT — they are NOT transitive deps:
     "cryptography": "cryptography",
@@ -229,8 +233,44 @@ _IMPORT_TO_PACKAGE: dict[str, str] = {
 # Packages that must be listed explicitly (not relying on transitive install)
 _MUST_BE_EXPLICIT: dict[str, str] = {
     "cryptography": "cryptography>=41.0.0",  # add_mfa crypto.py uses Fernet
-    "msgpack": "msgpack>=1.0.0",             # add_cache_layer uses msgpack
+    "msgpack": "msgpack>=1.0.0",  # add_cache_layer uses msgpack
 }
+
+
+# Packages internal to the generated project — never on PyPI, must be excluded
+# from the external-requirements check. `core` is the bundled `core.venous.*`
+# library copied into <project>/core/ by generators/scaffold_venous.py (ADR 0002);
+# `app`/`tests`/`migrations` are the project's own source trees. This mirrors the
+# merged `_INTERNAL_PREFIXES` handling in tests/test_bandit_deps.py.
+#
+# `alembic` is deliberately NOT listed: the local `alembic/` directory is a bare
+# migrations folder with no `__init__.py`, so it is not an importable package.
+# `from alembic import context` / `from alembic import op` in the emitted
+# migration scripts therefore resolve to the third-party `alembic` PyPI package
+# (pinned in requirements.txt), and must be counted as a genuine third-party dep.
+_INTERNAL_PREFIXES = ("app", "tests", "migrations", "core")
+
+
+def _collect_internal_names(project_dir: Path) -> set[str]:
+    """Flat-path sibling-import names of bundled venous primitives.
+
+    The bundled venous primitives use dual-path sibling imports (e.g.
+    ``from InboxDeduplicator import ...`` / ``from TransactionalOutbox import ...``)
+    that resolve against a sibling primitive directory placed on sys.path at
+    runtime — they are intra-project modules, not third-party packages. The
+    signature of such a primitive is a directory ``<Name>/`` that contains a
+    same-named module ``<Name>.py`` (e.g. ``InboxDeduplicator/InboxDeduplicator.py``).
+    Only those names are treated as internal here, so real third-party imports
+    that merely share a filename (e.g. ``app/core/jwt.py`` → ``jwt``) are NOT
+    excluded.
+    """
+    names: set[str] = set()
+    for py_file in project_dir.rglob("*.py"):
+        if ".venv" in str(py_file) or "__pycache__" in str(py_file):
+            continue
+        if py_file.stem == py_file.parent.name:
+            names.add(py_file.stem)
+    return names
 
 
 def _get_all_third_party_imports(project_dir: Path) -> dict[str, list[str]]:
@@ -240,6 +280,7 @@ def _get_all_third_party_imports(project_dir: Path) -> dict[str, list[str]]:
         Dict mapping ``import_name`` to list of relative file paths that use it.
     """
     stdlib = set(sys.stdlib_module_names)
+    internal = _collect_internal_names(project_dir)
     result: dict[str, list[str]] = {}
 
     for py_file in sorted(project_dir.rglob("*.py")):
@@ -256,7 +297,7 @@ def _get_all_third_party_imports(project_dir: Path) -> dict[str, list[str]]:
             if isinstance(node, ast.Import):
                 for alias in node.names:
                     top = alias.name.split(".")[0]
-            elif isinstance(node, ast.ImportFrom):
+            elif isinstance(node, ast.ImportFrom):  # noqa: SIM102
                 if node.module and node.level == 0:
                     top = node.module.split(".")[0]
 
@@ -264,7 +305,11 @@ def _get_all_third_party_imports(project_dir: Path) -> dict[str, list[str]]:
                 continue
             if top in stdlib:
                 continue
-            if top in ("app", "tests", "alembic") or top.startswith("_"):
+            if top.startswith("_"):
+                continue
+            if any(top == p or top.startswith(p + ".") for p in _INTERNAL_PREFIXES):
+                continue
+            if top in internal:
                 continue
 
             rel = str(py_file.relative_to(project_dir))
@@ -291,9 +336,9 @@ def _apply_tools(project_dir: Path) -> None:
     """Apply all 5 extend tools to the project."""
     sys.path.insert(0, str(_SKILL_ROOT))
     from adapt.contracts import ToolInput  # noqa: PLC0415
-    from adapt.extend.crud_data.add_soft_delete import add_soft_delete  # noqa: PLC0415
-    from adapt.extend.auth_access.add_rbac import add_rbac  # noqa: PLC0415
     from adapt.extend.auth_access.add_mfa import add_mfa  # noqa: PLC0415
+    from adapt.extend.auth_access.add_rbac import add_rbac  # noqa: PLC0415
+    from adapt.extend.crud_data.add_soft_delete import add_soft_delete  # noqa: PLC0415
     from adapt.extend.infrastructure.add_cache_layer import add_cache_layer  # noqa: PLC0415
     from adapt.extend.realtime.add_webhook_receiver import add_webhook_receiver  # noqa: PLC0415
 
@@ -307,9 +352,7 @@ def _apply_tools(project_dir: Path) -> None:
     ]
     for name, fn in tools:
         result = fn(inp)
-        assert result.status in ("success", "no_op"), (
-            f"Tool '{name}' failed: {result.error}"
-        )
+        assert result.status in ("success", "no_op"), f"Tool '{name}' failed: {result.error}"
 
 
 class TestRequirementsCompleteness:
@@ -358,9 +401,8 @@ class TestRequirementsCompleteness:
             if pkg not in installed:
                 missing.append(f"  import '{imp}' (expected pkg '{pkg}') — {files[0]}")
 
-        assert not missing, (
-            "Base project requirements.txt is missing packages:\n"
-            + "\n".join(missing)
+        assert not missing, "Base project requirements.txt is missing packages:\n" + "\n".join(
+            missing
         )
 
     def test_requirements_import_count(self, tmp_path: Path) -> None:
@@ -392,9 +434,9 @@ class TestRequirementsCompleteness:
         """Applying all 5 tools must produce success/no_op (not error)."""
         sys.path.insert(0, str(_SKILL_ROOT))
         from adapt.contracts import ToolInput  # noqa: PLC0415
-        from adapt.extend.crud_data.add_soft_delete import add_soft_delete  # noqa: PLC0415
-        from adapt.extend.auth_access.add_rbac import add_rbac  # noqa: PLC0415
         from adapt.extend.auth_access.add_mfa import add_mfa  # noqa: PLC0415
+        from adapt.extend.auth_access.add_rbac import add_rbac  # noqa: PLC0415
+        from adapt.extend.crud_data.add_soft_delete import add_soft_delete  # noqa: PLC0415
         from adapt.extend.infrastructure.add_cache_layer import add_cache_layer  # noqa: PLC0415
         from adapt.extend.realtime.add_webhook_receiver import add_webhook_receiver  # noqa: PLC0415
 
@@ -426,9 +468,7 @@ class TestRequirementsCompleteness:
             try:
                 ast.parse(source)
             except SyntaxError as exc:
-                pytest.fail(
-                    f"SyntaxError in {py_file.relative_to(project_dir)} after tools: {exc}"
-                )
+                pytest.fail(f"SyntaxError in {py_file.relative_to(project_dir)} after tools: {exc}")
 
     def test_with_sentry_pins_sdk_in_requirements(self, tmp_path: Path) -> None:
         """with_sentry=True must add sentry-sdk to requirements.txt.

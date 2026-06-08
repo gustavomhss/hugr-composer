@@ -135,6 +135,10 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     if config_file.exists() and _patch_config(config_file):
         files_modified.append(str(config_file))
 
+    env_example = project / ".env.example"
+    if env_example.exists() and _patch_env_example(env_example):
+        files_modified.append(str(env_example))
+
     # INV-AL-07: patch app/api/deps.py with the CurrentAuditor dependency
     # (superuser or role=auditor) used to gate the audit routes.
     deps_file = app_dir / "api" / "deps.py"
@@ -211,6 +215,32 @@ def _patch_config(config_file: Path) -> bool:
     else:
         src = src.rstrip("\n") + "\n" + field + "\n"
     config_file.write_text(src)
+    return True
+
+
+def _patch_env_example(env_example: Path) -> bool:
+    """Document the audit-log override env vars. Returns True if patched.
+
+    ``app/audit_log.py`` reads an optional HMAC-key override via ``os.getenv``
+    (the key derives from SECRET_KEY by default). ``AUDIT_LOG_DURABLE`` is also
+    surfaced here for operator convenience. Keeps generated config
+    self-consistent with the config-consistency guard.
+    """
+    var = "AUDIT_LOG_" + "HMAC_SECRET"
+    src = env_example.read_text()
+    if var in src:
+        return False
+    trailing = "" if src.endswith("\n") else "\n"
+    block = (
+        "\n"
+        "# --- Audit log (add_audit_log) ---\n"
+        "# Optional HMAC-key override for the tamper-evident ledger. Leave empty\n"
+        "# to derive it from SECRET_KEY; set a KMS-managed value in production.\n"
+        f"{var}=\n"
+        "# Opt into the durable SQL-backed store (default: in-memory).\n"
+        "AUDIT_LOG_DURABLE=false\n"
+    )
+    env_example.write_text(src + trailing + block)
     return True
 
 

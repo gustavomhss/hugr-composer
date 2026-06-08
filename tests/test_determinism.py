@@ -477,6 +477,26 @@ def check_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
     if not main_py.exists():
         return False, f"app/main.py not found after relocation: {main_py}"
 
+    # The generated Settings() validates at import time and fails closed on a
+    # missing/weak SECRET_KEY (and other prod guards). The generated conftest
+    # supplies these test-only defaults before importing app.main; do the same
+    # here so the relocation check exercises *import portability* rather than
+    # the ambient environment. Without this the import raises a SECRET_KEY
+    # ValidationError whenever the harness env has no SECRET_KEY (e.g. CI),
+    # turning a pure relocation test into an env-dependent flake.
+    _reloc_env_defaults = {
+        # 64-char test-only placeholder; clears the >=32-char strength check
+        # without ever shipping as a real credential.
+        "SECRET_KEY": "test-only-secret-key-not-for-production-0000000000000000000000000000",
+        "RATE_LIMITING_ENABLED": "false",
+        "ENVIRONMENT": "local",
+    }
+    _reloc_env_added: list[str] = []
+    for _k, _v in _reloc_env_defaults.items():
+        if _k not in os.environ:
+            os.environ[_k] = _v
+            _reloc_env_added.append(_k)
+
     # Insert relocated_dir into sys.path temporarily
     sys.path.insert(0, str(relocated_dir))
     try:
@@ -500,6 +520,9 @@ def check_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
         for key in list(sys.modules.keys()):
             if key.startswith("_relocated_app"):
                 del sys.modules[key]
+        # Restore the environment so we only supply defaults that were absent.
+        for _k in _reloc_env_added:
+            os.environ.pop(_k, None)
 
     return True, (
         f"Relocation OK: app imports cleanly from {relocated_dir}; "
