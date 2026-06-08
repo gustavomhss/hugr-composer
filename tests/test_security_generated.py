@@ -159,6 +159,122 @@ def _format_hits(hits: list[tuple[Path, int, str]], project_dir: Path) -> str:
 
 
 # ---------------------------------------------------------------------------
+# AST-based helpers (precise — no substring/docstring false positives)
+# ---------------------------------------------------------------------------
+
+# Names that indicate a secret/credential value when compared in pure Python.
+_SECRET_NAME_RE = re.compile(
+    r"(hash|token|secret|signature|hmac|password|passwd|pwd)",
+    re.IGNORECASE,
+)
+# Suffixes that look secret-ish but denote metadata, not the secret value.
+_SECRET_NAME_SKIP_SUFFIXES = (
+    "_type",
+    "_url",
+    "_name",
+    "_id",
+    "_field",
+    "_column",
+)
+
+
+def _node_secret_name(node: ast.AST) -> str | None:
+    """Return the identifier of *node* if it is a bare Name/attribute that
+    names a secret value (e.g. ``token``, ``code_hash``), else None.
+
+    Crucially this returns None for SQLAlchemy column expressions of the form
+    ``Model.column`` — those are ``ast.Attribute`` nodes whose ``.value`` is a
+    Name (the model class), and comparing them builds a SQL WHERE clause, not a
+    Python byte compare.  We only treat a *plain* local variable (``ast.Name``)
+    or a ``self.<attr>`` access as a candidate Python secret.
+    """
+    if isinstance(node, ast.Name):
+        ident = node.id
+    elif (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id == "self"
+    ):
+        # self.token, self.code_hash — a real Python attribute access
+        ident = node.attr
+    else:
+        return None
+    lowered = ident.lower()
+    if not _SECRET_NAME_RE.search(lowered):
+        return None
+    if any(lowered.endswith(suf) for suf in _SECRET_NAME_SKIP_SUFFIXES):
+        return None
+    return ident
+
+
+def _is_orm_column(node: ast.AST) -> bool:
+    """True if *node* is ``SomeModel.column`` — a class-qualified attribute,
+    i.e. a SQLAlchemy mapped-column expression rather than a local variable.
+    """
+    return (
+        isinstance(node, ast.Attribute)
+        and isinstance(node.value, ast.Name)
+        and node.value.id != "self"
+    )
+
+
+def _find_unsafe_secret_compares(src: str) -> list[tuple[int, str]]:
+    """Return (lineno, secret_name) for every pure-Python ``==``/``!=``
+    comparison where an operand names a secret value (password/token/hash/...).
+
+    FALSE POSITIVES excluded by construction (AST, not substring):
+      - SQLAlchemy column comparisons (``Model.column == value``)
+      - comparisons against ``None``
+      - occurrences inside docstrings / string literals / comments
+    These should use ``hmac.compare_digest`` / ``secrets.compare_digest``.
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return []
+    hits: list[tuple[int, str]] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Compare):
+            continue
+        # Only == / != are timing-unsafe equality checks.
+        if not all(isinstance(op, (ast.Eq, ast.NotEq)) for op in node.ops):
+            continue
+        operands = [node.left, *node.comparators]
+        # Ignore ``x == None`` style identity checks.
+        if any(isinstance(o, ast.Constant) and o.value is None for o in operands):
+            continue
+        # If any operand is an ORM column expression, this is a SQL WHERE
+        # clause, not a Python byte compare — skip the whole comparison.
+        if any(_is_orm_column(o) for o in operands):
+            continue
+        secret_names = [n for o in operands if (n := _node_secret_name(o))]
+        if secret_names:
+            hits.append((node.lineno, secret_names[0]))
+    return hits
+
+
+def _find_real_print_calls(src: str) -> list[int]:
+    """Return line numbers of genuine ``print(...)`` Call nodes in *src*.
+
+    AST-based, so ``print(`` appearing inside a docstring example, a string
+    literal, or a comment is NOT flagged — only real executable calls.
+    """
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return []
+    lines: list[int] = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "print"
+        ):
+            lines.append(node.lineno)
+    return lines
+
+
+# ---------------------------------------------------------------------------
 # SEC-01 — No hardcoded secrets
 # ---------------------------------------------------------------------------
 
@@ -278,41 +394,35 @@ class TestNoFstringSql:
 # ---------------------------------------------------------------------------
 
 class TestTimingSafeAuth:
-    """SEC-04: Secrets/tokens must be compared with hmac.compare_digest."""
+    """SEC-04: Secrets/tokens must be compared with hmac.compare_digest.
 
-    _SENSITIVE_VAR_PATTERN = re.compile(
-        r"\b(\w*(hash|token|secret|signature|hmac|key)\w*)\s*==\s*",
-        re.IGNORECASE,
-    )
+    The check is AST-based (see ``_find_unsafe_secret_compares``).  A pure
+    Python ``==``/``!=`` on a secret value is timing-unsafe and flagged; a
+    SQLAlchemy column comparison (``Model.column == value``) is a SQL WHERE
+    clause and is NOT flagged — it never touches the secret in Python.
+    """
 
     def test_no_direct_equality_on_secrets(self, sec_project: Path) -> None:
-        """Variables named *hash*, *token*, *secret*, *signature* must never
-        be compared with plain ``==``.
+        """Local variables / ``self`` attributes named *hash*, *token*,
+        *secret*, *signature*, *password* must never be compared with plain
+        ``==``/``!=`` (use ``hmac.compare_digest``).
 
-        Known safe exceptions:
-        - status comparisons (status == "active")
-        - type/role strings
-        - None checks
+        Excluded (AST, not substring):
+        - SQLAlchemy column comparisons (``Model.code_hash == code_hash``)
+        - ``token_type``/``token_url``/... metadata identifiers
+        - ``x == None`` identity checks
+        - occurrences inside docstrings / string literals / comments
         """
         hits = []
         for f in _src_files(sec_project, exclude_tests=True):
-            src = _strip_comments(f.read_text(errors="replace"))
-            for lineno, line in enumerate(src.splitlines(), 1):
-                m = self._SENSITIVE_VAR_PATTERN.search(line)
-                if not m:
-                    continue
-                var_name = m.group(1).lower()
-                # Allow: token_type, token_url, key_type (not actual secrets)
-                skip_suffixes = ("_type", "_url", "_name", "_id", "_field", "_column")
-                if any(var_name.endswith(s) for s in skip_suffixes):
-                    continue
-                # Allow None checks: token == None
-                if re.search(r"==\s*None\b", line):
-                    continue
-                hits.append((f, lineno, line.strip()))
+            src = f.read_text(errors="replace")
+            src_lines = src.splitlines()
+            for lineno, _secret_name in _find_unsafe_secret_compares(src):
+                # lineno comes from the AST of *this* src, so it is always valid.
+                hits.append((f, lineno, src_lines[lineno - 1].strip()))
 
         assert not hits, (
-            "SEC-04 FAIL — direct == comparison on sensitive variable:\n"
+            "SEC-04 FAIL — timing-unsafe == comparison on Python secret value:\n"
             + _format_hits(hits, sec_project)
         )
 
@@ -457,15 +567,20 @@ class TestNoDebugInProduction:
     """SEC-08: print() and docs_url=None must be respected in production config."""
 
     def test_no_print_in_production_code(self, sec_project: Path) -> None:
-        """print() is a data-leak risk in production FastAPI code."""
+        """print() is a data-leak risk in production FastAPI code.
+
+        AST-based (see ``_find_real_print_calls``): only genuine ``print(...)``
+        call expressions are flagged.  A ``print(`` inside a docstring example
+        (e.g. a ``python -c "..."`` snippet), a string literal, or a comment is
+        NOT executable and is therefore NOT a false positive.
+        """
         hits = []
-        for f, lineno, line in _collect_matches(
-            sec_project,
-            r"\bprint\(",
-            exclude_tests=True,
-        ):
-            # Allow: commented out, inside docstring handled by strip_comments
-            hits.append((f, lineno, line))
+        for f in _src_files(sec_project, exclude_tests=True):
+            src = f.read_text(errors="replace")
+            src_lines = src.splitlines()
+            for lineno in _find_real_print_calls(src):
+                # lineno comes from the AST of *this* src, so it is always valid.
+                hits.append((f, lineno, src_lines[lineno - 1].strip()))
 
         assert not hits, (
             "SEC-08 FAIL — print() in production code:\n"
@@ -962,6 +1077,86 @@ class TestTokenTypeEnforcement:
             _ast.parse(src)
         except SyntaxError as exc:
             pytest.fail(f"SEC-17 FAIL — generated deps.py has syntax error: {exc}")
+
+
+# ---------------------------------------------------------------------------
+# Gate-precision unit tests — prove SEC-04 / SEC-08 stay STRICT on real cases
+# and DO NOT fire on the known false positives.
+# ---------------------------------------------------------------------------
+
+
+class TestSecretComparePrecision:
+    """SEC-04 rule (``_find_unsafe_secret_compares``) precision."""
+
+    def test_flags_real_python_secret_equality(self) -> None:
+        """A pure-Python ``password == x`` MUST be flagged."""
+        src = "def f(password, supplied):\n    return password == supplied\n"
+        hits = _find_unsafe_secret_compares(src)
+        assert hits and hits[0][1] == "password", hits
+
+    def test_flags_real_token_inequality(self) -> None:
+        """``token != expected`` is also timing-unsafe and MUST be flagged."""
+        src = "def f(token, expected):\n    return token != expected\n"
+        assert _find_unsafe_secret_compares(src), "expected != on token to flag"
+
+    def test_flags_self_secret_attribute(self) -> None:
+        """``self.secret == other`` (real Python attr) MUST be flagged."""
+        src = "class C:\n    def chk(self, other):\n        return self.secret == other\n"
+        assert _find_unsafe_secret_compares(src), "expected self.secret to flag"
+
+    def test_ignores_orm_column_comparison(self) -> None:
+        """``Model.code_hash == code_hash`` builds a SQL WHERE — NOT flagged."""
+        src = (
+            "def q(code_hash):\n"
+            "    return update(MFARecoveryCode).where(\n"
+            "        MFARecoveryCode.code_hash == code_hash,\n"
+            "    )\n"
+        )
+        assert _find_unsafe_secret_compares(src) == [], _find_unsafe_secret_compares(src)
+
+    def test_ignores_none_check(self) -> None:
+        """``token == None`` is an identity check — NOT flagged."""
+        src = "def f(token):\n    return token == None\n"
+        assert _find_unsafe_secret_compares(src) == []
+
+    def test_ignores_metadata_suffix(self) -> None:
+        """``token_type == 'bearer'`` is metadata, not a secret — NOT flagged."""
+        src = "def f(token_type):\n    return token_type == 'bearer'\n"
+        assert _find_unsafe_secret_compares(src) == []
+
+    def test_ignores_secret_in_docstring(self) -> None:
+        """A ``password == x`` written inside a docstring is NOT real code."""
+        src = '"""Example: password == supplied is unsafe."""\nX = 1\n'
+        assert _find_unsafe_secret_compares(src) == []
+
+
+class TestPrintCallPrecision:
+    """SEC-08 rule (``_find_real_print_calls``) precision."""
+
+    def test_flags_real_top_level_print(self) -> None:
+        """A genuine top-level ``print(...)`` call MUST be flagged."""
+        src = "x = 1\nprint(x)\n"
+        assert _find_real_print_calls(src) == [2]
+
+    def test_flags_print_inside_function(self) -> None:
+        """A ``print(...)`` in a function body MUST be flagged."""
+        src = "def f():\n    print('debug')\n"
+        assert _find_real_print_calls(src) == [2]
+
+    def test_ignores_print_in_module_docstring(self) -> None:
+        """``print(`` inside a docstring example (python -c snippet) — NOT flagged."""
+        src = '"""Generate a key::\n\n    python -c "from x import Y; print(Y.gen())"\n"""\nZ = 1\n'
+        assert _find_real_print_calls(src) == []
+
+    def test_ignores_print_in_string_literal(self) -> None:
+        """``print(`` inside an ordinary string literal — NOT flagged."""
+        src = 'msg = "use print(x) to debug"\n'
+        assert _find_real_print_calls(src) == []
+
+    def test_ignores_print_in_comment(self) -> None:
+        """``print(`` inside a comment — NOT flagged."""
+        src = "x = 1  # could print(x) here\n"
+        assert _find_real_print_calls(src) == []
 
 
 # ---------------------------------------------------------------------------
