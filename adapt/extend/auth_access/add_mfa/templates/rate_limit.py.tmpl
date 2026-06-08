@@ -1,0 +1,77 @@
+"""Durable brute-force throttling for MFA verification (INV-MFA-06).
+
+A 6-digit TOTP has only 1,000,000 possibilities; without a limiter an
+attacker can brute-force the second factor offline-fast. This module enforces
+a failure cap per *device*, but it holds **NO module-level state** — there is
+no in-memory, per-worker counter an attacker could bypass by spreading guesses
+across processes. The failure count (``failed_attempts``) and the lockout
+deadline (``locked_until``) live on the persisted ``MFADevice`` row, so the
+limit is durable across every worker and instance.
+
+These are pure helpers: they read and mutate the columns of an ``MFADevice``
+instance you pass in. The caller persists the mutated row inside the same DB
+transaction as the verify (see ``app/api/routes/mfa.py``). ``check_not_locked``
+raises HTTP 429 when the device is currently locked out.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from typing import TYPE_CHECKING
+
+from fastapi import HTTPException, status
+
+from app.core.config import settings
+
+if TYPE_CHECKING:
+    from app.models.mfa import MFADevice
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def check_not_locked(device: MFADevice) -> None:
+    """Raise HTTP 429 if *device* is currently locked out (INV-MFA-06).
+
+    Call this BEFORE attempting verification. The lockout state is read from
+    the durable ``locked_until`` column, so the 429 is enforced uniformly
+    across all workers.
+
+    Raises:
+        HTTPException: 429 Too Many Requests while ``locked_until`` is in the
+            future.
+    """
+    locked_until = device.locked_until
+    if locked_until is None:
+        return
+    if locked_until.tzinfo is None:
+        locked_until = locked_until.replace(tzinfo=timezone.utc)
+    now = _now()
+    if locked_until > now:
+        retry_after = int((locked_until - now).total_seconds())
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many MFA attempts — try again later.",
+            headers={"Retry-After": str(max(retry_after, 1))},
+        )
+
+
+def record_failure(device: MFADevice) -> None:
+    """Increment *device*'s durable failure counter; lock out on cap (INV-MFA-06).
+
+    Mutates ``device.failed_attempts`` (and ``device.locked_until`` once the
+    cap is exceeded). The caller MUST persist the device in the same
+    transaction so the count survives across workers and restarts.
+    """
+    max_attempts = settings.MFA_RATE_LIMIT_MAX
+    window = settings.MFA_RATE_LIMIT_WINDOW_SECONDS
+    device.failed_attempts = (device.failed_attempts or 0) + 1
+    if device.failed_attempts >= max_attempts:
+        device.locked_until = _now() + timedelta(seconds=window)
+
+
+def reset(device: MFADevice) -> None:
+    """Clear the durable failure counter + lockout after a successful verify."""
+    device.failed_attempts = 0
+    device.locked_until = None

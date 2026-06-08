@@ -1,0 +1,92 @@
+"""SQLAlchemy models for MFA (TOTP) enrollment + recovery codes.
+
+INV-MFA-01: the TOTP shared secret is NEVER stored in plaintext. The
+``secret_enc`` column holds the Fernet-encrypted secret (see
+``app/core/mfa/crypto.py``); decryption only happens in memory at verify
+time.
+
+INV-MFA-02: recovery codes are single-use. ``used_at`` is set atomically
+the first time a code is consumed; the verifier filters
+``WHERE used_at IS NULL`` so a code can never be replayed.
+
+INV-MFA-06: brute-force throttling is DURABLE, not per-worker. The failure
+counter (``failed_attempts``) and lockout deadline (``locked_until``) live
+on the persisted ``MFADevice`` row and are read/incremented/reset inside the
+verify transaction, so the limit holds across every worker and instance —
+an attacker cannot spread guesses over processes to bypass it (there is no
+in-memory, process-local counter).
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, LargeBinary, String, Uuid, func
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.models.base import Base
+
+
+class MFADevice(Base):
+    """A user's enrolled TOTP authenticator.
+
+    Attributes:
+        id: Primary key UUID.
+        user_id: Owning user.
+        secret_enc: Fernet-encrypted TOTP shared secret (never plaintext).
+        mfa_enabled: True once enrollment has been confirmed with a valid code.
+        last_step: Anti-replay — the last accepted TOTP step counter.
+        failed_attempts: Durable count of consecutive failed verifications in
+            the current window (INV-MFA-06). Reset to 0 on success.
+        locked_until: When set and in the future, verification is locked out
+            (HTTP 429) until this deadline. Durable, so the lockout holds
+            across every worker — NOT a per-process in-memory counter.
+        created_at: Creation timestamp.
+    """
+
+    __tablename__ = "mfa_devices"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    secret_enc: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    mfa_enabled: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    last_step: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    failed_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+
+class MFARecoveryCode(Base):
+    """A single-use recovery code for account recovery when TOTP is unavailable.
+
+    INV-MFA-02: ``used_at`` enforces exactly-once consumption — the verifier
+    only accepts codes where ``used_at IS NULL`` and stamps it atomically.
+
+    Attributes:
+        id: Primary key UUID.
+        user_id: Owning user.
+        code_hash: Hash of the recovery code (never the plaintext).
+        used_at: When the code was consumed; NULL means still valid.
+        created_at: Creation timestamp.
+    """
+
+    __tablename__ = "mfa_recovery_codes"
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    code_hash: Mapped[str] = mapped_column(String(128), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )

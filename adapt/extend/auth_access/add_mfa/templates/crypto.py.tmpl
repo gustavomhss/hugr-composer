@@ -1,0 +1,46 @@
+"""Encryption helpers for MFA TOTP secrets at rest (INV-MFA-01).
+
+The TOTP shared secret is a long-lived credential: if it leaks, an attacker
+can mint valid codes forever. We therefore NEVER store it in plaintext.
+``encrypt_secret`` / ``decrypt_secret`` wrap the secret with Fernet
+(AES-128-CBC + HMAC authentication) keyed by ``settings.MFA_ENCRYPTION_KEY``.
+
+The Fernet key is a url-safe base64-encoded 32-byte key. Generate one with::
+
+    python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+
+and set it as ``MFA_ENCRYPTION_KEY`` in your environment. Rotating the key
+requires re-encrypting every stored secret.
+"""
+
+from __future__ import annotations
+
+from cryptography.fernet import Fernet
+
+from app.core.config import settings
+
+
+def _fernet() -> Fernet:
+    """Build a Fernet cipher from the configured MFA encryption key.
+
+    Raises:
+        ValueError: when ``MFA_ENCRYPTION_KEY`` is unset or malformed — the
+            tool fails closed rather than silently storing weak ciphertext.
+    """
+    key = settings.MFA_ENCRYPTION_KEY
+    if not key:
+        raise ValueError(
+            "MFA_ENCRYPTION_KEY is not set — cannot encrypt TOTP secrets. "
+            "Generate one with Fernet.generate_key()."
+        )
+    return Fernet(key.encode() if isinstance(key, str) else key)
+
+
+def encrypt_secret(secret: bytes) -> bytes:
+    """Encrypt a raw TOTP secret for storage in ``MFADevice.secret_enc``."""
+    return _fernet().encrypt(secret)
+
+
+def decrypt_secret(secret_enc: bytes) -> bytes:
+    """Decrypt a stored TOTP secret back to its raw bytes for verification."""
+    return _fernet().decrypt(secret_enc)

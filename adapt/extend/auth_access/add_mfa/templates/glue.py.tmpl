@@ -1,0 +1,43 @@
+"""Wire MFA (TOTP) into the FastAPI app.
+
+Delegates to `TotpVerifierAdapter` copied under `core/venous/` by
+`add_mfa`. Hand-editing is safe but the file is re-emitted idempotently
+on subsequent tool runs.
+
+⚠ MFA IS NOT ENFORCED: the login route does NOT require a second factor
+  until you wire verify_code into your login flow. No MFA state (secret,
+  last_used_step) exists on the user model — you must add those fields.
+  See app/api/routes/_mfa_example.py for the copy-paste login-verify step.
+
+Minimal wiring (login route, after password check)::
+
+    from app.mfa import get_verifier, verify_code
+    verifier = get_verifier(request.app)
+    new_step = await verify_code(verifier, secret=user.totp_secret,
+                                 code=body.totp_code,
+                                 last_step=user.totp_last_step)
+    # persist new_step → user.totp_last_step before returning the token
+
+Missing user-model fields you MUST add::
+
+    totp_secret: bytes | None = None   # store the TOTP shared secret
+    totp_last_step: int = 0            # anti-replay: last accepted step
+"""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+
+from core.venous._adapters.fastapi.TotpVerifierAdapter import (
+    get_verifier,
+    install as _install,
+    verify_code,
+)
+
+
+def install_mfa(app: FastAPI):
+    """Attach a StandardTotpVerifier to app.state.totp; return it."""
+    return _install(app)
+
+
+__all__ = ["install_mfa", "get_verifier", "verify_code"]
