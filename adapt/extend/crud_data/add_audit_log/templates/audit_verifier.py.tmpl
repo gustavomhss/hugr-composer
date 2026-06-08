@@ -1,0 +1,65 @@
+"""Hash-chain verifier for the audit log (INV-AL-05).
+
+Walks the ``audit_logs`` table in sequence order and recomputes each row's
+``entry_hash`` (folding in the stored ``prev_hash``, INV-AL-08). Any mutated,
+reordered, inserted, or deleted row makes a recomputed hash diverge from the
+stored hash, or breaks the prev/next linkage — both are reported.
+
+``verify_hash_chain`` returns a ``ChainVerification`` with:
+  * ``is_intact`` — True only when every link verifies end to end.
+  * ``broken_at`` — the ``seq`` of the first row that fails, else None.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from dataclasses import dataclass
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.models.audit_log import AuditLog
+
+
+@dataclass(frozen=True)
+class ChainVerification:
+    """Result of a hash-chain integrity check."""
+
+    is_intact: bool
+    broken_at: int | None = None
+    checked: int = 0
+
+
+def _recompute(entry: AuditLog) -> str:
+    """Recompute a row's entry_hash exactly as the listener did (INV-AL-08)."""
+    payload = {
+        "seq": entry.seq,
+        "user_id": str(entry.user_id) if entry.user_id is not None else None,
+        "action": entry.action,
+        "resource": entry.resource,
+        "payload": entry.payload,
+        "prev_hash": entry.prev_hash,
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def verify_hash_chain(session: Session) -> ChainVerification:
+    """Verify the audit-log hash chain end to end (INV-AL-05).
+
+    Returns a ChainVerification whose ``is_intact`` is True only when every row
+    hashes correctly AND links to its predecessor; otherwise ``broken_at`` holds
+    the ``seq`` of the first offending row.
+    """
+    rows = list(session.execute(select(AuditLog).order_by(AuditLog.seq.asc())).scalars())
+    expected_prev = ""
+    checked = 0
+    for entry in rows:
+        checked += 1
+        if entry.prev_hash != expected_prev:
+            return ChainVerification(is_intact=False, broken_at=entry.seq, checked=checked)
+        if _recompute(entry) != entry.entry_hash:
+            return ChainVerification(is_intact=False, broken_at=entry.seq, checked=checked)
+        expected_prev = entry.entry_hash
+    return ChainVerification(is_intact=True, broken_at=None, checked=checked)

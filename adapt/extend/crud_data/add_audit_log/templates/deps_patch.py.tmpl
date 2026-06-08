@@ -1,0 +1,23 @@
+# --- Audit log auditor dependency (INV-AL-07, added by add_audit_log) --------
+# CurrentAuditor authorizes the read-only /audit-logs API: a superuser, or any
+# user whose ``role`` attribute is ``"auditor"``. Other principals get 403.
+from typing import Annotated as _AuditAnnotated  # noqa: E402
+
+from fastapi import Depends as _AuditDepends  # noqa: E402
+from fastapi import HTTPException as _AuditHTTPException  # noqa: E402
+from fastapi import status as _audit_status  # noqa: E402
+
+
+async def get_current_auditor(current_user: CurrentUser):
+    """Require the current user to be a superuser or have role 'auditor'."""
+    is_superuser = bool(getattr(current_user, "is_superuser", False))
+    is_auditor = getattr(current_user, "role", None) == "auditor"
+    if not (is_superuser or is_auditor):
+        raise _AuditHTTPException(
+            status_code=_audit_status.HTTP_403_FORBIDDEN,
+            detail="Auditor or superuser privileges required",
+        )
+    return current_user
+
+
+CurrentAuditor = _AuditAnnotated[object, _AuditDepends(get_current_auditor)]

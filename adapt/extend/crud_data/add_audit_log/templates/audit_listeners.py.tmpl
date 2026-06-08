@@ -1,0 +1,116 @@
+"""SQLAlchemy event listeners that materialize audit rows (INV-AL-01/08).
+
+Audit entries are created ONLY here, inside the ``before_flush`` Session event
+-- never by application/route code calling the model constructor directly. This
+guarantees every persisted mutation that opts into auditing is captured in the
+same unit of work / transaction as the change itself.
+
+The private ``_emit_audit`` helper computes the per-entry hash. It is module
+private (leading underscore) and is deliberately NOT re-exported from
+``app/__init__.py`` so callers cannot fabricate or back-date entries
+out-of-band (INV-AL-01).
+
+Hash chain (INV-AL-08): ``entry_hash`` is a SHA-256 over a canonical payload
+that ALWAYS folds in the previous row's hash (``"prev_hash": entry.prev_hash``)
+so any reordering, insertion, or mutation breaks verification downstream
+(``app.core.audit_verifier.verify_hash_chain``).
+
+Activate by importing this module once at startup (side-effect registration)::
+
+    import app.core.audit_listeners  # noqa: F401
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from typing import Any
+
+from sqlalchemy import event, func, select
+from sqlalchemy.orm import Session
+
+from app.core.audit_context import get_audit_context
+from app.models.audit_log import AuditLog
+
+
+def _compute_entry_hash(entry: AuditLog) -> str:
+    """Return the SHA-256 entry hash, always folding in prev_hash (INV-AL-08)."""
+    payload = {
+        "seq": entry.seq,
+        "user_id": str(entry.user_id) if entry.user_id is not None else None,
+        "action": entry.action,
+        "resource": entry.resource,
+        "payload": entry.payload,
+        # INV-AL-08: the previous link is ALWAYS part of the hashed payload.
+        "prev_hash": entry.prev_hash,
+    }
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _emit_audit(
+    session: Session,
+    action: str,
+    resource: str,
+    extra: dict[str, Any] | None = None,
+) -> AuditLog:
+    """Create and stage a single hash-chained audit row (INV-AL-01).
+
+    This is the ONE sanctioned entry point for audit creation. It links the new
+    row to the current chain head and computes its hash before the flush
+    completes. Private by design — not exported from app/__init__.py.
+    """
+    last_hash = session.execute(
+        select(AuditLog.entry_hash).order_by(AuditLog.seq.desc()).limit(1)
+    ).scalar_one_or_none()
+    next_seq = session.execute(select(func.max(AuditLog.seq))).scalar_one_or_none()
+
+    entry = AuditLog(
+        seq=(next_seq or 0) + 1,
+        user_id=get_audit_context(),
+        action=action,
+        resource=resource,
+        payload=json.dumps(extra or {}, sort_keys=True, separators=(",", ":")),
+        prev_hash=last_hash or "",
+    )
+    entry.entry_hash = _compute_entry_hash(entry)
+    session.add(entry)
+    return entry
+
+
+@event.listens_for(Session, "before_flush")
+def _audit_before_flush(session: Session, flush_context, instances) -> None:
+    """Emit audit rows for staged mutations via the before_flush listener.
+
+    Iterates the unit of work's pending changes and records one audit entry per
+    auditable object. AuditLog rows themselves are skipped so the listener never
+    recurses on its own writes.
+    """
+    actor = get_audit_context()
+    for obj in list(session.new):
+        if isinstance(obj, AuditLog):
+            continue
+        _emit_audit(
+            session,
+            action="create",
+            resource=obj.__tablename__,
+            extra={"actor": str(actor) if actor is not None else None},
+        )
+    for obj in list(session.dirty):
+        if isinstance(obj, AuditLog) or not session.is_modified(obj):
+            continue
+        _emit_audit(
+            session,
+            action="update",
+            resource=obj.__tablename__,
+            extra={"actor": str(actor) if actor is not None else None},
+        )
+    for obj in list(session.deleted):
+        if isinstance(obj, AuditLog):
+            continue
+        _emit_audit(
+            session,
+            action="delete",
+            resource=obj.__tablename__,
+            extra={"actor": str(actor) if actor is not None else None},
+        )
