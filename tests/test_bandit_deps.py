@@ -454,8 +454,11 @@ _IMPORT_TO_PACKAGE: dict[str, str] = {
     "requests":         "requests",
 }
 
-# Packages that are internal to the project and should never be in requirements
-_INTERNAL_PREFIXES = ("app", "tests", "alembic", "migrations")
+# Packages that are internal to the project and should never be in requirements.
+# `core` is the bundled `core.venous.*` library copied into <project>/core/ by
+# generators/scaffold_venous.py (ADR 0002) — it lives in the project tree, not
+# on PyPI, so it must be excluded from the external-requirements check.
+_INTERNAL_PREFIXES = ("app", "tests", "alembic", "migrations", "core")
 
 # Top-level names that are part of Python stdlib (supplement sys.stdlib_module_names)
 _EXTRA_STDLIB: frozenset[str] = frozenset({
