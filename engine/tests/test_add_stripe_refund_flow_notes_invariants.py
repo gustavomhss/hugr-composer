@@ -25,10 +25,15 @@ What we actually assert
 =======================
 
 1. ``test_refund_webhook_signature_verified_calls_construct_event``
-   — the emitted ``stripe_refund_webhook`` handler in
+   — the emitted ``stripe_refund_webhook`` route in
    ``refunds_routes.py.tmpl`` MUST call
-   ``stripe.Webhook.construct_event(payload, sig_header, secret)``.
-   This is the load-bearing SDK call that performs HMAC verification.
+   ``stripe.Webhook.construct_event(payload, sig_header, secret)``
+   either inline in the handler OR in the ``Depends(...)`` verification
+   dependency it injects (currently ``verify_stripe_signature``). The
+   tests resolve through the dependency via ``_verification_func`` — the
+   dependency runs before the handler body, so it is the real
+   verification gate. This is the load-bearing SDK call that performs
+   HMAC verification.
 
 2. ``test_refund_webhook_signature_verified_raises_400_on_failure``
    — the call MUST be wrapped in ``try/except`` that re-raises as
@@ -51,8 +56,9 @@ Bypass surface declared
 =======================
 
 * AST-only inspection of ``refunds_routes.py.tmpl`` — no FastAPI
-  app boot, no Stripe SDK install. The shape of the route
-  handler is load-bearing.
+  app boot, no Stripe SDK install. The shape of the route handler
+  (and the ``Depends`` verification dependency it injects) is
+  load-bearing.
 * The Stripe SDK itself is trusted to implement ``construct_event``
   correctly (HMAC-SHA256 with 5-minute replay tolerance); we assert
   the *call exists with the right argument shape*, not the SDK's
@@ -104,6 +110,50 @@ def _find_async_func(tree: ast.Module, name: str) -> ast.AsyncFunctionDef:
     raise AssertionError(f"async def {name}(...) not found in template")
 
 
+def _verifier_dep_name(handler: ast.AsyncFunctionDef) -> str | None:
+    """Return the name of the function injected via ``Depends(...)`` as the
+    handler's webhook-auth dependency, if any.
+
+    The route delegates signature verification to a FastAPI ``Depends``
+    dependency (e.g. ``event = Depends(verify_stripe_signature)``) rather
+    than inlining ``construct_event`` in the handler body. The dependency
+    IS the verification gate — it runs before the handler executes — so the
+    honesty assertions resolve through it. Returns the first ``Depends``
+    argument that is a bare ``Name`` (the dependency callable).
+    """
+    for default in handler.args.defaults + handler.args.kw_defaults:
+        if not isinstance(default, ast.Call):
+            continue
+        if not _attr_chain(default).endswith("Depends"):
+            continue
+        for arg in default.args:
+            if isinstance(arg, ast.Name):
+                return arg.id
+    return None
+
+
+def _verification_func(tree: ast.Module) -> ast.AsyncFunctionDef:
+    """Resolve the function that actually performs webhook signature
+    verification for ``stripe_refund_webhook``.
+
+    If the handler inlines ``construct_event`` it is returned directly;
+    otherwise the ``Depends(...)`` dependency it injects is resolved and
+    returned. Either way the returned function is the load-bearing
+    verification surface the B0.13 honesty test must inspect.
+    """
+    handler = _find_async_func(tree, "stripe_refund_webhook")
+    inline = [c for c in _calls(handler) if _attr_chain(c).endswith("construct_event")]
+    if inline:
+        return handler
+    dep_name = _verifier_dep_name(handler)
+    assert dep_name, (
+        "stripe_refund_webhook neither calls construct_event inline nor "
+        "injects a Depends(...) verification dependency — the webhook is "
+        "unguarded and the `signature-verified` claim is false."
+    )
+    return _find_async_func(tree, dep_name)
+
+
 def _calls(node: ast.AST) -> list[ast.Call]:
     return [n for n in ast.walk(node) if isinstance(n, ast.Call)]
 
@@ -131,11 +181,9 @@ def test_refund_webhook_signature_verified_calls_construct_event() -> None:
     structurally false.
     """
     tree = _parse(ROUTES_TMPL)
-    handler = _find_async_func(tree, "stripe_refund_webhook")
+    handler = _verification_func(tree)
 
-    matching_calls = [
-        c for c in _calls(handler) if _attr_chain(c).endswith("construct_event")
-    ]
+    matching_calls = [c for c in _calls(handler) if _attr_chain(c).endswith("construct_event")]
     assert matching_calls, (
         "stripe_refund_webhook MUST call `stripe.Webhook.construct_event"
         "(payload, sig_header, secret)` — the SDK path that performs "
@@ -162,15 +210,13 @@ def test_refund_webhook_signature_verified_raises_400_on_failure() -> None:
     silent-fail pattern this honesty test exists to block.
     """
     tree = _parse(ROUTES_TMPL)
-    handler = _find_async_func(tree, "stripe_refund_webhook")
+    handler = _verification_func(tree)
 
     found = False
     for node in ast.walk(handler):
         if not isinstance(node, ast.Try):
             continue
-        body_calls = [
-            _attr_chain(c) for c in _calls(ast.Module(body=node.body, type_ignores=[]))
-        ]
+        body_calls = [_attr_chain(c) for c in _calls(ast.Module(body=node.body, type_ignores=[]))]
         if not any(name.endswith("construct_event") for name in body_calls):
             continue
         for hdlr in node.handlers:
@@ -191,10 +237,7 @@ def test_refund_webhook_signature_verified_raises_400_on_failure() -> None:
                     if isinstance(v, ast.Constant) and v.value == 400:
                         found = True
                     # Accept `status.HTTP_400_BAD_REQUEST` as well.
-                    if (
-                        isinstance(v, ast.Attribute)
-                        and v.attr == "HTTP_400_BAD_REQUEST"
-                    ):
+                    if isinstance(v, ast.Attribute) and v.attr == "HTTP_400_BAD_REQUEST":
                         found = True
     assert found, (
         "stripe_refund_webhook MUST wrap construct_event in try/except "
@@ -212,7 +255,7 @@ def test_refund_webhook_signature_verified_reads_stripe_signature_header() -> No
     body-derived value would defeat the claim.
     """
     tree = _parse(ROUTES_TMPL)
-    handler = _find_async_func(tree, "stripe_refund_webhook")
+    handler = _verification_func(tree)
 
     found = False
     for node in ast.walk(handler):
@@ -225,12 +268,12 @@ def test_refund_webhook_signature_verified_reads_stripe_signature_header() -> No
         if not chain.endswith("headers.get"):
             continue
         for arg in node.args:
-            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):  # noqa: SIM102
                 if arg.value.lower() == "stripe-signature":
                     found = True
     assert found, (
         "stripe_refund_webhook MUST read the `stripe-signature` header "
-        "via `request.headers.get(\"stripe-signature\", ...)` and pass "
+        'via `request.headers.get("stripe-signature", ...)` and pass '
         "it to construct_event. Without this read the verifier has no "
         "signature to validate against and the `verified` claim is "
         "structurally hollow."
