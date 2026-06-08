@@ -56,11 +56,7 @@ def _src_files(
         if ".venv" not in str(f) and "__pycache__" not in str(f)
     ]
     if exclude_tests:
-        files = [
-            f
-            for f in files
-            if "/tests/" not in str(f) and f.name != "conftest.py"
-        ]
+        files = [f for f in files if "/tests/" not in str(f) and f.name != "conftest.py"]
     if exclude_alembic:
         files = [f for f in files if "/alembic/" not in str(f)]
     return files
@@ -103,53 +99,53 @@ def _generate_project(output_dir: Path, name: str = "bd") -> Path:
 
 # The 10 extend tools used in test_security_generated.py
 _TEN_TOOLS: list[tuple[str, str]] = [
-    ("soft_delete",      "adapt.extend.crud_data.add_soft_delete",         "add_soft_delete"),
-    ("multi_tenancy",    "adapt.extend.auth_access.add_multi_tenancy",     "add_multi_tenancy"),
-    ("rbac",             "adapt.extend.auth_access.add_rbac",              "add_rbac"),
-    ("mfa",              "adapt.extend.auth_access.add_mfa",               "add_mfa"),
-    ("api_key_auth",     "adapt.extend.auth_access.add_api_key_auth",      "add_api_key_auth"),
-    ("audit_log",        "adapt.extend.crud_data.add_audit_log",           "add_audit_log"),
-    ("webhook_receiver", "adapt.extend.realtime.add_webhook_receiver",     "add_webhook_receiver"),
-    ("cache_layer",      "adapt.extend.infrastructure.add_cache_layer",    "add_cache_layer"),
-    ("search",           "adapt.extend.crud_data.add_search",              "add_search"),
-    ("file_upload",      "adapt.extend.crud_data.add_file_upload",         "add_file_upload"),
+    ("soft_delete", "adapt.extend.crud_data.add_soft_delete", "add_soft_delete"),
+    ("multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy", "add_multi_tenancy"),
+    ("rbac", "adapt.extend.auth_access.add_rbac", "add_rbac"),
+    ("mfa", "adapt.extend.auth_access.add_mfa", "add_mfa"),
+    ("api_key_auth", "adapt.extend.auth_access.add_api_key_auth", "add_api_key_auth"),
+    ("audit_log", "adapt.extend.crud_data.add_audit_log", "add_audit_log"),
+    ("webhook_receiver", "adapt.extend.realtime.add_webhook_receiver", "add_webhook_receiver"),
+    ("cache_layer", "adapt.extend.infrastructure.add_cache_layer", "add_cache_layer"),
+    ("search", "adapt.extend.crud_data.add_search", "add_search"),
+    ("file_upload", "adapt.extend.crud_data.add_file_upload", "add_file_upload"),
 ]
 
 # All 27 extend tools (extend category only — not evolve generators)
 _ALL_27_TOOLS: list[tuple[str, str, str]] = [
     # crud_data (7)
-    ("soft_delete",        "adapt.extend.crud_data.add_soft_delete",            "add_soft_delete"),
-    ("cursor_pagination",  "adapt.extend.crud_data.add_cursor_pagination",      "add_cursor_pagination"),
-    ("file_upload",        "adapt.extend.crud_data.add_file_upload",            "add_file_upload"),
-    ("search",             "adapt.extend.crud_data.add_search",                 "add_search"),
-    ("audit_log",          "adapt.extend.crud_data.add_audit_log",              "add_audit_log"),
-    ("data_export",        "adapt.extend.crud_data.add_data_export",            "add_data_export"),
-    ("bulk_operations",    "adapt.extend.crud_data.add_bulk_operations",        "add_bulk_operations"),
+    ("soft_delete", "adapt.extend.crud_data.add_soft_delete", "add_soft_delete"),
+    ("cursor_pagination", "adapt.extend.crud_data.add_cursor_pagination", "add_cursor_pagination"),
+    ("file_upload", "adapt.extend.crud_data.add_file_upload", "add_file_upload"),
+    ("search", "adapt.extend.crud_data.add_search", "add_search"),
+    ("audit_log", "adapt.extend.crud_data.add_audit_log", "add_audit_log"),
+    ("data_export", "adapt.extend.crud_data.add_data_export", "add_data_export"),
+    ("bulk_operations", "adapt.extend.crud_data.add_bulk_operations", "add_bulk_operations"),
     # auth_access (6)
-    ("rbac",               "adapt.extend.auth_access.add_rbac",                 "add_rbac"),
-    ("mfa",                "adapt.extend.auth_access.add_mfa",                  "add_mfa"),
-    ("multi_tenancy",      "adapt.extend.auth_access.add_multi_tenancy",        "add_multi_tenancy"),
-    ("feature_flags",      "adapt.extend.auth_access.add_feature_flags",        "add_feature_flags"),
-    ("api_key_auth",       "adapt.extend.auth_access.add_api_key_auth",         "add_api_key_auth"),
-    ("oauth2_provider",    "adapt.extend.auth_access.add_oauth2_provider",      "add_oauth2_provider"),
+    ("rbac", "adapt.extend.auth_access.add_rbac", "add_rbac"),
+    ("mfa", "adapt.extend.auth_access.add_mfa", "add_mfa"),
+    ("multi_tenancy", "adapt.extend.auth_access.add_multi_tenancy", "add_multi_tenancy"),
+    ("feature_flags", "adapt.extend.auth_access.add_feature_flags", "add_feature_flags"),
+    ("api_key_auth", "adapt.extend.auth_access.add_api_key_auth", "add_api_key_auth"),
+    ("oauth2_provider", "adapt.extend.auth_access.add_oauth2_provider", "add_oauth2_provider"),
     # api_design (4)
-    ("api_versioning",     "adapt.extend.api_design.add_api_versioning",        "add_api_versioning"),
-    ("graphql",            "adapt.extend.api_design.add_graphql",               "add_graphql"),
-    ("batch_endpoint",     "adapt.extend.api_design.add_batch_endpoint",        "add_batch_endpoint"),
-    ("long_running_task",  "adapt.extend.api_design.add_long_running_task",     "add_long_running_task"),
+    ("api_versioning", "adapt.extend.api_design.add_api_versioning", "add_api_versioning"),
+    ("graphql", "adapt.extend.api_design.add_graphql", "add_graphql"),
+    ("batch_endpoint", "adapt.extend.api_design.add_batch_endpoint", "add_batch_endpoint"),
+    ("long_running_task", "adapt.extend.api_design.add_long_running_task", "add_long_running_task"),
     # infrastructure (4)
-    ("cache_layer",        "adapt.extend.infrastructure.add_cache_layer",       "add_cache_layer"),
-    ("circuit_breaker",    "adapt.extend.infrastructure.add_circuit_breaker",   "add_circuit_breaker"),
-    ("outbox_pattern",     "adapt.extend.infrastructure.add_outbox_pattern",    "add_outbox_pattern"),
-    ("saga",               "adapt.extend.infrastructure.add_saga",              "add_saga"),
+    ("cache_layer", "adapt.extend.infrastructure.add_cache_layer", "add_cache_layer"),
+    ("circuit_breaker", "adapt.extend.infrastructure.add_circuit_breaker", "add_circuit_breaker"),
+    ("outbox_pattern", "adapt.extend.infrastructure.add_outbox_pattern", "add_outbox_pattern"),
+    ("saga", "adapt.extend.infrastructure.add_saga", "add_saga"),
     # realtime (3)
-    ("sse",                "adapt.extend.realtime.add_sse",                     "add_sse"),
-    ("webhook_sender",     "adapt.extend.realtime.add_webhook_sender",          "add_webhook_sender"),
-    ("webhook_receiver",   "adapt.extend.realtime.add_webhook_receiver",        "add_webhook_receiver"),
+    ("sse", "adapt.extend.realtime.add_sse", "add_sse"),
+    ("webhook_sender", "adapt.extend.realtime.add_webhook_sender", "add_webhook_sender"),
+    ("webhook_receiver", "adapt.extend.realtime.add_webhook_receiver", "add_webhook_receiver"),
     # testing_tools (3)
-    ("factory",            "adapt.extend.testing_tools.add_factory",            "add_factory"),
-    ("contract_tests",     "adapt.extend.testing_tools.add_contract_tests",     "add_contract_tests"),
-    ("load_profile",       "adapt.extend.testing_tools.add_load_profile",       "add_load_profile"),
+    ("factory", "adapt.extend.testing_tools.add_factory", "add_factory"),
+    ("contract_tests", "adapt.extend.testing_tools.add_contract_tests", "add_contract_tests"),
+    ("load_profile", "adapt.extend.testing_tools.add_load_profile", "add_load_profile"),
 ]
 
 assert len(_ALL_27_TOOLS) == 27, f"Expected 27 tools, got {len(_ALL_27_TOOLS)}"
@@ -183,24 +179,28 @@ def _apply_tools(
 
 _BANDIT_MANUAL_PATTERNS: list[tuple[str, str, str]] = [
     # (bandit-like ID, regex, description)
-    ("B602",  r"subprocess\.call\(",                        "subprocess.call without explicit shell=False"),
-    ("B605",  r"os\.system\(",                              "os.system() — shell injection risk"),
-    ("B506",  r"yaml\.load\s*\([^,)]+\)",                   "yaml.load without SafeLoader"),
-    ("B301",  r"pickle\.loads\s*\(",                        "pickle.loads — RCE vector"),
-    ("B302",  r"marshal\.loads\s*\(",                       "marshal.loads — RCE vector"),
-    ("B318",  r"tempfile\.mktemp\s*\(",                     "tempfile.mktemp — insecure, use mkstemp"),
-    ("B303a", r"hashlib\.md5\s*\(",                         "hashlib.md5 — weak hash"),
-    ("B303b", r"hashlib\.sha1\s*\(",                        "hashlib.sha1 — weak hash"),
-    ("B311",  r"\brandom\.(random|randint|choice|seed)\s*\(",  "random.* — not cryptographically secure"),
+    ("B602", r"subprocess\.call\(", "subprocess.call without explicit shell=False"),
+    ("B605", r"os\.system\(", "os.system() — shell injection risk"),
+    ("B506", r"yaml\.load\s*\([^,)]+\)", "yaml.load without SafeLoader"),
+    ("B301", r"pickle\.loads\s*\(", "pickle.loads — RCE vector"),
+    ("B302", r"marshal\.loads\s*\(", "marshal.loads — RCE vector"),
+    ("B318", r"tempfile\.mktemp\s*\(", "tempfile.mktemp — insecure, use mkstemp"),
+    ("B303a", r"hashlib\.md5\s*\(", "hashlib.md5 — weak hash"),
+    ("B303b", r"hashlib\.sha1\s*\(", "hashlib.sha1 — weak hash"),
+    (
+        "B311",
+        r"\brandom\.(random|randint|choice|seed)\s*\(",
+        "random.* — not cryptographically secure",
+    ),
 ]
 
 # Patterns to whitelist (false-positive suppression)
 # random.* inside test files / factories is acceptable
 # yaml.load with SafeLoader qualifier is safe
 _SAFE_PATTERNS: list[tuple[str, re.Pattern[str]]] = [
-    ("B506",  re.compile(r"yaml\.load\s*\(.*SafeLoader", re.IGNORECASE)),
-    ("B602",  re.compile(r"shell\s*=\s*False")),
-    ("B311",  re.compile(r"#.*noqa|#.*nosec|random\.seed|test|factory|fake", re.IGNORECASE)),
+    ("B506", re.compile(r"yaml\.load\s*\(.*SafeLoader", re.IGNORECASE)),
+    ("B602", re.compile(r"shell\s*=\s*False")),
+    ("B311", re.compile(r"#.*noqa|#.*nosec|random\.seed|test|factory|fake", re.IGNORECASE)),
 ]
 
 
@@ -266,9 +266,11 @@ def _run_bandit(project_dir: Path) -> list[dict[str, Any]]:
     proc = subprocess.run(
         [
             "bandit",
-            "-r", str(app_dir),
-            "-f", "json",
-            "-ll",          # only HIGH and CRITICAL
+            "-r",
+            str(app_dir),
+            "-f",
+            "json",
+            "-ll",  # only HIGH and CRITICAL
             "--silent",
         ],
         capture_output=True,
@@ -363,8 +365,7 @@ def _check_version_conflicts(
             max_upper = max(upper_bounds)
             if min_lower >= max_upper:
                 conflicts.append(
-                    f"  {pkg}: lower bound {min_lower} >= upper bound {max_upper} — "
-                    f"lines: {raws}"
+                    f"  {pkg}: lower bound {min_lower} >= upper bound {max_upper} — lines: {raws}"
                 )
 
     return conflicts
@@ -373,85 +374,85 @@ def _check_version_conflicts(
 # Import-to-package mapping (top-level import name -> PyPI normalized name)
 _IMPORT_TO_PACKAGE: dict[str, str] = {
     # Core
-    "fastapi":          "fastapi",
-    "uvicorn":          "uvicorn",
-    "pydantic":         "pydantic",
-    "pydantic_settings":"pydantic_settings",
-    "pydantic_core":    "pydantic",        # bundled
+    "fastapi": "fastapi",
+    "uvicorn": "uvicorn",
+    "pydantic": "pydantic",
+    "pydantic_settings": "pydantic_settings",
+    "pydantic_core": "pydantic",  # bundled
     # Database
-    "sqlalchemy":       "sqlalchemy",
-    "asyncpg":          "asyncpg",
-    "alembic":          "alembic",
-    "aiosqlite":        "aiosqlite",
+    "sqlalchemy": "sqlalchemy",
+    "asyncpg": "asyncpg",
+    "alembic": "alembic",
+    "aiosqlite": "aiosqlite",
     # Auth
-    "jwt":              "pyjwt",
-    "pwdlib":           "pwdlib",
-    "argon2":           "pwdlib",          # argon2-cffi via pwdlib[argon2]
-    "pyotp":            "pyotp",
-    "segno":            "segno",
+    "jwt": "pyjwt",
+    "pwdlib": "pwdlib",
+    "argon2": "pwdlib",  # argon2-cffi via pwdlib[argon2]
+    "pyotp": "pyotp",
+    "segno": "segno",
     # Cache
-    "redis":            "redis",
-    "msgpack":          "msgpack",
+    "redis": "redis",
+    "msgpack": "msgpack",
     # Web
-    "httpx":            "httpx",
-    "starlette":        "fastapi",         # bundled
-    "anyio":            "anyio",
-    "multipart":        "python_multipart",
+    "httpx": "httpx",
+    "starlette": "fastapi",  # bundled
+    "anyio": "anyio",
+    "multipart": "python_multipart",
     # Rate limiting
-    "slowapi":          "slowapi",
-    "limits":           "limits",
+    "slowapi": "slowapi",
+    "limits": "limits",
     # Observability
-    "structlog":        "structlog",
+    "structlog": "structlog",
     # Email
-    "email_validator":  "email_validator",
+    "email_validator": "email_validator",
     # Crypto
-    "cryptography":     "cryptography",
+    "cryptography": "cryptography",
     # Testing
-    "pytest":           "pytest",
-    "pytest_asyncio":   "pytest_asyncio",
-    "factory":          "factory_boy",
-    "factory_boy":      "factory_boy",
+    "pytest": "pytest",
+    "pytest_asyncio": "pytest_asyncio",
+    "factory": "factory_boy",
+    "factory_boy": "factory_boy",
     # Jobs
-    "arq":              "arq",
+    "arq": "arq",
     # GraphQL
-    "strawberry":       "strawberry_graphql",
+    "strawberry": "strawberry_graphql",
     # OAuth2
-    "authlib":          "authlib",
+    "authlib": "authlib",
     # SSE
-    "sse_starlette":    "sse_starlette",
+    "sse_starlette": "sse_starlette",
     # Pact contract testing
-    "pact":             "pact_python",
+    "pact": "pact_python",
     # Export / data
-    "openpyxl":         "openpyxl",
-    "fpdf":             "fpdf2",
-    "pyarrow":          "pyarrow",          # add_data_export — KNOWN MISSING from reqs
-    "xlsxwriter":       "xlsxwriter",       # add_data_export — KNOWN MISSING from reqs
+    "openpyxl": "openpyxl",
+    "fpdf": "fpdf2",
+    "pyarrow": "pyarrow",  # add_data_export — KNOWN MISSING from reqs
+    "xlsxwriter": "xlsxwriter",  # add_data_export — KNOWN MISSING from reqs
     # File upload
-    "magic":            "python_magic",     # add_file_upload (python-magic in reqs)
+    "magic": "python_magic",  # add_file_upload (python-magic in reqs)
     # AWS / S3 (file upload presigned URLs)
-    "botocore":         "boto3",            # botocore is transitive dep of boto3
-    "boto3":            "boto3",
+    "botocore": "boto3",  # botocore is transitive dep of boto3
+    "boto3": "boto3",
     # Observability
-    "prometheus_client":"prometheus_client",  # add_circuit_breaker/saga — KNOWN MISSING
+    "prometheus_client": "prometheus_client",  # add_circuit_breaker/saga — KNOWN MISSING
     # Misc
-    "httpcore":         "httpcore",
-    "certifi":          "certifi",
-    "typing_extensions":"typing_extensions",
-    "annotated_types":  "annotated_types",
-    "idna":             "idna",
-    "sniffio":          "sniffio",
-    "click":            "click",
-    "h11":              "h11",
-    "exceptiongroup":   "exceptiongroup",
-    "frozenlist":       "frozenlist",
-    "aiohttp":          "aiohttp",
+    "httpcore": "httpcore",
+    "certifi": "certifi",
+    "typing_extensions": "typing_extensions",
+    "annotated_types": "annotated_types",
+    "idna": "idna",
+    "sniffio": "sniffio",
+    "click": "click",
+    "h11": "h11",
+    "exceptiongroup": "exceptiongroup",
+    "frozenlist": "frozenlist",
+    "aiohttp": "aiohttp",
     "aiohappyeyeballs": "aiohappyeyeballs",
-    "aiosignal":        "aiosignal",
-    "multidict":        "multidict",
-    "yarl":             "yarl",
-    "attrs":            "attrs",
-    "charset_normalizer":"charset_normalizer",
-    "requests":         "requests",
+    "aiosignal": "aiosignal",
+    "multidict": "multidict",
+    "yarl": "yarl",
+    "attrs": "attrs",
+    "charset_normalizer": "charset_normalizer",
+    "requests": "requests",
 }
 
 # Packages that are internal to the project and should never be in requirements.
@@ -461,16 +462,62 @@ _IMPORT_TO_PACKAGE: dict[str, str] = {
 _INTERNAL_PREFIXES = ("app", "tests", "alembic", "migrations", "core")
 
 # Top-level names that are part of Python stdlib (supplement sys.stdlib_module_names)
-_EXTRA_STDLIB: frozenset[str] = frozenset({
-    "abc", "ast", "asyncio", "base64", "collections", "contextlib",
-    "copy", "dataclasses", "datetime", "decimal", "enum", "functools",
-    "hashlib", "hmac", "http", "importlib", "inspect", "io", "itertools",
-    "json", "logging", "math", "mimetypes", "operator", "os", "pathlib",
-    "pickle", "platform", "queue", "random", "re", "shutil", "signal",
-    "socket", "ssl", "string", "subprocess", "sys", "tempfile", "textwrap",
-    "threading", "time", "traceback", "types", "typing", "unicodedata",
-    "unittest", "urllib", "uuid", "warnings", "weakref", "zlib",
-})
+_EXTRA_STDLIB: frozenset[str] = frozenset(
+    {
+        "abc",
+        "ast",
+        "asyncio",
+        "base64",
+        "collections",
+        "contextlib",
+        "copy",
+        "dataclasses",
+        "datetime",
+        "decimal",
+        "enum",
+        "functools",
+        "hashlib",
+        "hmac",
+        "http",
+        "importlib",
+        "inspect",
+        "io",
+        "itertools",
+        "json",
+        "logging",
+        "math",
+        "mimetypes",
+        "operator",
+        "os",
+        "pathlib",
+        "pickle",
+        "platform",
+        "queue",
+        "random",
+        "re",
+        "shutil",
+        "signal",
+        "socket",
+        "ssl",
+        "string",
+        "subprocess",
+        "sys",
+        "tempfile",
+        "textwrap",
+        "threading",
+        "time",
+        "traceback",
+        "types",
+        "typing",
+        "unicodedata",
+        "unittest",
+        "urllib",
+        "uuid",
+        "warnings",
+        "weakref",
+        "zlib",
+    }
+)
 
 
 def _get_third_party_imports(project_dir: Path) -> dict[str, list[str]]:
@@ -547,9 +594,8 @@ def project_10_tools(tmp_path_factory: pytest.TempPathFactory) -> Path:
         except Exception as exc:  # noqa: BLE001
             failures.append((tool_name, str(exc)))
 
-    assert not failures, (
-        "Tool failures during fixture setup:\n"
-        + "\n".join(f"  {n}: {e}" for n, e in failures)
+    assert not failures, "Tool failures during fixture setup:\n" + "\n".join(
+        f"  {n}: {e}" for n, e in failures
     )
     return project_dir
 
@@ -566,8 +612,7 @@ def project_all_27_tools(tmp_path_factory: pytest.TempPathFactory) -> Path:
         import warnings  # noqa: PLC0415
 
         warnings.warn(
-            f"Some tools failed during 27-tool fixture setup: "
-            + ", ".join(n for n, _ in failures),
+            f"Some tools failed during 27-tool fixture setup: " + ", ".join(n for n, _ in failures),
             stacklevel=1,
         )
     return project_dir
@@ -581,9 +626,7 @@ def project_all_27_tools(tmp_path_factory: pytest.TempPathFactory) -> Path:
 class TestBanditScan:
     """Test 1: Zero HIGH/CRITICAL security findings in generated app/ code."""
 
-    def test_bandit_or_manual_zero_high_critical(
-        self, project_10_tools: Path
-    ) -> None:
+    def test_bandit_or_manual_zero_high_critical(self, project_10_tools: Path) -> None:
         """Run bandit if available; otherwise use manual pattern scan.
 
         Asserts ZERO HIGH/CRITICAL findings in app/ code.
@@ -600,8 +643,7 @@ class TestBanditScan:
 
         if findings:
             detail = "\n".join(
-                f"  [{f['id']}] {f['file']}:{f['line']}  {f['text']}\n"
-                f"    -> {f['description']}"
+                f"  [{f['id']}] {f['file']}:{f['line']}  {f['text']}\n    -> {f['description']}"
                 for f in findings[:20]
             )
             if len(findings) > 20:
@@ -623,9 +665,8 @@ class TestBanditScan:
                     rel = str(f.relative_to(project_10_tools))
                     findings.append(f"  {rel}:{lineno}  {line.strip()}")
 
-        assert not findings, (
-            "BANDIT B604 — subprocess with shell=True found:\n"
-            + "\n".join(findings)
+        assert not findings, "BANDIT B604 — subprocess with shell=True found:\n" + "\n".join(
+            findings
         )
 
     def test_no_assert_used_for_auth(self, project_10_tools: Path) -> None:
@@ -641,8 +682,7 @@ class TestBanditScan:
                     findings.append(f"  {rel}:{lineno}  {line.strip()}")
 
         assert not findings, (
-            "BANDIT B101-AUTH — assert used for auth/access control:\n"
-            + "\n".join(findings)
+            "BANDIT B101-AUTH — assert used for auth/access control:\n" + "\n".join(findings)
         )
 
 
@@ -677,8 +717,7 @@ class TestDependencyConflicts:
         conflicts = _check_version_conflicts(entries)
 
         assert not conflicts, (
-            "DEP-CONFLICT: Version pin conflicts in requirements.txt:\n"
-            + "\n".join(conflicts)
+            "DEP-CONFLICT: Version pin conflicts in requirements.txt:\n" + "\n".join(conflicts)
         )
 
     def test_essential_packages_present(self, project_all_27_tools: Path) -> None:
@@ -707,9 +746,8 @@ class TestDependencyConflicts:
             if not re.match(r"^[A-Za-z0-9_\-\.]+(\[[\w,\-]+\])?([><=!~][^;].*)?$", stripped):
                 bad_lines.append(f"  line {i}: {stripped}")
 
-        assert not bad_lines, (
-            "DEP-PARSE: Unparseable lines in requirements.txt:\n"
-            + "\n".join(bad_lines)
+        assert not bad_lines, "DEP-PARSE: Unparseable lines in requirements.txt:\n" + "\n".join(
+            bad_lines
         )
 
 
@@ -721,9 +759,7 @@ class TestDependencyConflicts:
 class TestImportsVsRequirements:
     """Test 3: Every import in app/ must map to a package in requirements.txt."""
 
-    def test_all_imports_covered_by_requirements(
-        self, project_all_27_tools: Path
-    ) -> None:
+    def test_all_imports_covered_by_requirements(self, project_all_27_tools: Path) -> None:
         """Scan app/ imports via AST and verify requirements.txt covers them.
 
         Known confirmed gaps (cryptography, msgpack) are documented but NOT
@@ -741,13 +777,15 @@ class TestImportsVsRequirements:
         # cryptography / msgpack: tracked in test_generated_quality.py
         # pyarrow / xlsxwriter:   add_data_export does not patch requirements.txt
         # prometheus_client:      add_circuit_breaker / add_saga do not patch reqs
-        _KNOWN_MISSING: frozenset[str] = frozenset({
-            "cryptography",
-            "msgpack",
-            "pyarrow",
-            "xlsxwriter",
-            "prometheus_client",
-        })
+        _KNOWN_MISSING: frozenset[str] = frozenset(
+            {
+                "cryptography",
+                "msgpack",
+                "pyarrow",
+                "xlsxwriter",
+                "prometheus_client",
+            }
+        )
 
         new_missing = []
         covered = []
@@ -762,8 +800,7 @@ class TestImportsVsRequirements:
             else:
                 files_sample = third_party[imp][:3]
                 new_missing.append(
-                    f"  import '{imp}' -> expected pkg '{pkg}'"
-                    f" | used in: {files_sample}"
+                    f"  import '{imp}' -> expected pkg '{pkg}' | used in: {files_sample}"
                 )
 
         if new_missing:
@@ -774,9 +811,7 @@ class TestImportsVsRequirements:
                 + f"\n\n(Covered: {len(covered)} imports)"
             )
 
-    def test_import_to_package_mapping_complete(
-        self, project_all_27_tools: Path
-    ) -> None:
+    def test_import_to_package_mapping_complete(self, project_all_27_tools: Path) -> None:
         """Every third-party import must have a mapping in _IMPORT_TO_PACKAGE
         OR be inferrable via normalization.
 
@@ -784,9 +819,14 @@ class TestImportsVsRequirements:
         is insufficient — these need explicit entries in _IMPORT_TO_PACKAGE.
         """
         # Packages that are genuinely NOT in requirements (internal or stdlib-like)
-        _ACTUALLY_INTERNAL: frozenset[str] = frozenset({
-            "app", "tests", "alembic", "migrations",
-        })
+        _ACTUALLY_INTERNAL: frozenset[str] = frozenset(
+            {
+                "app",
+                "tests",
+                "alembic",
+                "migrations",
+            }
+        )
 
         req = project_all_27_tools / "requirements.txt"
         entries = _parse_requirements(req)
@@ -794,13 +834,15 @@ class TestImportsVsRequirements:
 
         third_party = _get_third_party_imports(project_all_27_tools)
         # Same set as in test_all_imports_covered_by_requirements
-        _KNOWN_MISSING: frozenset[str] = frozenset({
-            "cryptography",
-            "msgpack",
-            "pyarrow",
-            "xlsxwriter",
-            "prometheus_client",
-        })
+        _KNOWN_MISSING: frozenset[str] = frozenset(
+            {
+                "cryptography",
+                "msgpack",
+                "pyarrow",
+                "xlsxwriter",
+                "prometheus_client",
+            }
+        )
 
         unmapped = []
         for imp in sorted(third_party):
@@ -824,9 +866,7 @@ class TestImportsVsRequirements:
             + "\n".join(unmapped)
         )
 
-    def test_third_party_import_count_reasonable(
-        self, project_all_27_tools: Path
-    ) -> None:
+    def test_third_party_import_count_reasonable(self, project_all_27_tools: Path) -> None:
         """Sanity check: after 27 tools, at least 10 distinct third-party
         imports should exist in app/ — confirms the scan ran on real files."""
         third_party = _get_third_party_imports(project_all_27_tools)
@@ -851,8 +891,8 @@ if __name__ == "__main__":
     # Track pass/fail per test class
     results: dict[str, bool] = {}
     classes = [
-        ("Test 1 (Bandit scan)",     "TestBanditScan"),
-        ("Test 2 (Dep conflicts)",   "TestDependencyConflicts"),
+        ("Test 1 (Bandit scan)", "TestBanditScan"),
+        ("Test 2 (Dep conflicts)", "TestDependencyConflicts"),
         ("Test 3 (Imports vs reqs)", "TestImportsVsRequirements"),
     ]
 
@@ -860,12 +900,18 @@ if __name__ == "__main__":
         proc = subprocess.run(
             [
                 sys.executable,
-                "-m", "pytest",
+                "-m",
+                "pytest",
                 f"{Path(__file__)}::{cls_name}",
-                "-v", "--tb=short", "--no-header", "-q",
+                "-v",
+                "--tb=short",
+                "--no-header",
+                "-q",
                 # Disable known broken plugins that crash pytest startup in some envs
-                "-p", "no:deepeval",
-                "-p", "no:logfire",
+                "-p",
+                "no:deepeval",
+                "-p",
+                "no:logfire",
             ],
             cwd=str(skill_root),
             env=env,
