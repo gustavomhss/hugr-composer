@@ -11,11 +11,14 @@ file-size cap. The actual tests and helpers now live in:
   - tests/test_consistency__part2.py   — Test 3 (schemas) + Test 4 (routes)
   - tests/test_consistency__part3.py   — Test 5 (migrations) + Test 6 (config) + runner
 
+This suite is a **script-runner** (same convention as ``tests/test_boot.py``):
+the check functions in the sibling part files return ``(ok, message)`` tuples
+and are driven by the part3 ``run_all_tests()`` runner — they are NOT pytest
+tests, so they are named ``check_*`` rather than ``test_*`` to keep pytest from
+collecting them.
+
 Run standalone (delegates to the part3 runner):
     PYTHONPATH=. python3 tests/test_consistency.py
-
-Run via pytest (collects from the sibling part files):
-    PYTHONPATH=. pytest tests/test_consistency__*.py -v
 
 Exit code 0  → all 6 test groups pass
 Exit code 1  → one or more groups failed (details printed)

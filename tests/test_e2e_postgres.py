@@ -285,7 +285,7 @@ async def _signup_and_login(client, email: str, password: str, name: str = "Test
 # ---------------------------------------------------------------------------
 
 
-async def test_01_tenant_aware_auth(pd: Path) -> tuple[bool, str]:
+async def check_01_tenant_aware_auth(pd: Path) -> tuple[bool, str]:
     """Signup → login → protected endpoint, all with X-Tenant-ID header."""
     app = _load_app(pd)
     client, session, engine, tid = await _make_client(app, pd)
@@ -343,7 +343,7 @@ async def test_01_tenant_aware_auth(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def test_02_postgres_fts_search(pd: Path) -> tuple[bool, str]:
+async def check_02_postgres_fts_search(pd: Path) -> tuple[bool, str]:
     """Real FTS path: create products, search by term, verify ranked results."""
     app = _load_app(pd)
     client, session, engine, _ = await _make_client(app, pd)
@@ -407,7 +407,7 @@ async def test_02_postgres_fts_search(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def test_03_rbac_guard(pd: Path) -> tuple[bool, str]:
+async def check_03_rbac_guard(pd: Path) -> tuple[bool, str]:
     """RBAC role guard admits a principal carrying the role, denies otherwise.
 
     add_rbac ships app/rbac.py exposing require_roles() over the RoleGuard +
@@ -469,7 +469,7 @@ async def test_03_rbac_guard(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def test_04_mfa_totp(pd: Path) -> tuple[bool, str]:
+async def check_04_mfa_totp(pd: Path) -> tuple[bool, str]:
     """TOTP verifier accepts a valid code, rejects replay and a wrong code.
 
     add_mfa ships app/mfa.py's install_mfa(app), which attaches a
@@ -528,7 +528,7 @@ async def test_04_mfa_totp(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def test_05_oauth2_introspection(pd: Path) -> tuple[bool, str]:
+async def check_05_oauth2_introspection(pd: Path) -> tuple[bool, str]:
     """OAuth2 bearer introspection admits a valid token, rejects bad/missing.
 
     add_oauth2_provider ships app/oauth2.py's install_oauth2(app, introspector,
@@ -601,7 +601,7 @@ async def test_05_oauth2_introspection(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def test_06_tenant_isolation(pd: Path) -> tuple[bool, str]:
+async def check_06_tenant_isolation(pd: Path) -> tuple[bool, str]:
     """Two tenants, same model, each sees only their own rows."""
     app = _load_app(pd)
     client, session, engine, _ = await _make_client(app, pd, tenant_slug="acme")
@@ -664,7 +664,7 @@ async def test_06_tenant_isolation(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def test_07_bulk_create_persists(pd: Path) -> tuple[bool, str]:
+async def check_07_bulk_create_persists(pd: Path) -> tuple[bool, str]:
     """Bulk create 10 products, verify all 10 are queryable via GET /products/."""
     app = _load_app(pd)
     client, session, engine, _ = await _make_client(app, pd)
@@ -720,7 +720,7 @@ async def test_07_bulk_create_persists(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 
-async def test_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
+async def check_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
     """The tamper-evident audit log appends, verifies its hash chain, exports.
 
     add_audit_log ships an in-memory HMAC-chained audit log + REST router
@@ -790,14 +790,14 @@ async def test_08_audit_log_tamper_evident(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 TESTS = [
-    ("01_tenant_aware_auth", test_01_tenant_aware_auth),
-    ("02_postgres_fts_search", test_02_postgres_fts_search),
-    ("03_rbac_guard", test_03_rbac_guard),
-    ("04_mfa_totp", test_04_mfa_totp),
-    ("05_oauth2_introspection", test_05_oauth2_introspection),
-    ("06_tenant_isolation", test_06_tenant_isolation),
-    ("07_bulk_create_persists", test_07_bulk_create_persists),
-    ("08_audit_log_tamper_evident", test_08_audit_log_tamper_evident),
+    ("01_tenant_aware_auth", check_01_tenant_aware_auth),
+    ("02_postgres_fts_search", check_02_postgres_fts_search),
+    ("03_rbac_guard", check_03_rbac_guard),
+    ("04_mfa_totp", check_04_mfa_totp),
+    ("05_oauth2_introspection", check_05_oauth2_introspection),
+    ("06_tenant_isolation", check_06_tenant_isolation),
+    ("07_bulk_create_persists", check_07_bulk_create_persists),
+    ("08_audit_log_tamper_evident", check_08_audit_log_tamper_evident),
 ]
 
 
