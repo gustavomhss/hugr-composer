@@ -1,0 +1,49 @@
+"""Read-only audit-log API, gated on CurrentAuditor (INV-AL-07).
+
+Every endpoint depends on ``CurrentAuditor`` (a superuser, or a user whose role
+is ``auditor``), patched into ``app.api.deps`` by the add_audit_log tool. There
+is deliberately NO create/update/delete endpoint: entries are produced only by
+the ``before_flush`` listener and the table is immutable at the DB layer.
+"""
+
+from __future__ import annotations
+
+from fastapi import APIRouter
+
+from app.api.deps import CurrentAuditor, SessionDep
+from app.core.audit_verifier import verify_hash_chain
+from app.crud.audit_log import list_audit_logs
+
+router = APIRouter(prefix="/audit-logs", tags=["audit"])
+
+
+@router.get("/")
+async def read_audit_logs(
+    session: SessionDep,
+    auditor: CurrentAuditor,
+    limit: int = 100,
+) -> list[dict]:
+    """List recent audit entries (auditor/superuser only)."""
+    rows = await list_audit_logs(session, limit=limit)
+    return [
+        {
+            "seq": r.seq,
+            "user_id": str(r.user_id) if r.user_id is not None else None,
+            "action": r.action,
+            "resource": r.resource,
+            "entry_hash": r.entry_hash,
+            "prev_hash": r.prev_hash,
+        }
+        for r in rows
+    ]
+
+
+@router.post("/verify")
+async def verify_audit_chain(
+    session: SessionDep,
+    auditor: CurrentAuditor,
+) -> dict:
+    """Verify the hash chain's integrity (auditor/superuser only)."""
+    sync_session = getattr(session, "sync_session", session)
+    result = verify_hash_chain(sync_session)
+    return {"is_intact": result.is_intact, "broken_at": result.broken_at}

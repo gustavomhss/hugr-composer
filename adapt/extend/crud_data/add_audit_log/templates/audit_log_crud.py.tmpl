@@ -1,0 +1,49 @@
+"""Audit-log CRUD: read access + retention purge (INV-AL-06).
+
+Audit rows are NEVER created here — that happens exclusively in the
+``before_flush`` listener (``app.core.audit_listeners``). The only mutation this
+module performs is the retention purge, which deletes entries strictly OLDER
+than the cutoff (``now - retain_days``); rows newer than the cutoff are never
+touched, so an attacker cannot pass a tiny ``retain_days`` to wipe recent
+activity it just generated — the cutoff is computed server-side from
+``retain_days`` and clamped to be non-negative.
+
+NOTE: the immutability trigger (``trg_audit_log_immutable``) blocks UPDATE and
+DELETE for ordinary roles; the purge is expected to run as a privileged
+maintenance job whose role is exempt from / authorized for the trigger.
+"""
+
+from __future__ import annotations
+
+import datetime
+
+from sqlalchemy import select, text
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.audit_log import AuditLog
+
+
+async def list_audit_logs(session: AsyncSession, limit: int = 100) -> list[AuditLog]:
+    """Return recent audit entries in reverse-chronological order (read-only)."""
+    result = await session.execute(select(AuditLog).order_by(AuditLog.seq.desc()).limit(limit))
+    return list(result.scalars())
+
+
+async def purge_expired_audit_logs(session: AsyncSession, retain_days: int) -> int:
+    """Delete audit rows older than the retention window (INV-AL-06).
+
+    Computes a server-side ``cutoff = now - retain_days`` and deletes ONLY rows
+    created at or before it; rows newer than the cutoff are never removed. A
+    negative ``retain_days`` is clamped to 0 (cutoff = now) so the call can never
+    reach into the future and delete nothing-but-the-newest by accident.
+
+    Returns the number of rows deleted.
+    """
+    days = max(retain_days, 0)
+    cutoff = datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=days)
+    result = await session.execute(
+        text("DELETE FROM audit_logs WHERE created_at < :cutoff"),
+        {"cutoff": cutoff},
+    )
+    await session.commit()
+    return int(result.rowcount or 0)

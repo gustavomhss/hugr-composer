@@ -16,8 +16,9 @@ import ast
 import time
 from pathlib import Path
 
-from adapt._base import render, render_to
+from adapt._base import load_template, render, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
 
@@ -58,6 +59,8 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
         inp.project_dir,
         Prereq.CONFIG_SETTINGS,
         Prereq.REQUIREMENTS_TXT,
+        Prereq.BASE_MODEL,
+        Prereq.MODELS_INIT,
         auto_scaffold=not inp.dry_run,
     )
     if prereq_errors:
@@ -113,6 +116,14 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     render_to(_HERE, "audit_log_store.py.tmpl", dest=store_file, substitutions={})
     files_created.append(str(store_file))
 
+    # C6: emit the ORM-flush-driven append-only audit subsystem that satisfies
+    # the Section-8 INV-AL-01..08 invariants — a per-request ContextVar actor
+    # (audit_context), the before_flush listener that materializes hash-chained
+    # rows (audit_listeners), the chain verifier, the AuditLog model, the
+    # retention-purge CRUD, the auditor-gated routes, plus the immutability
+    # migration. These complement the in-memory primitive ledger above.
+    _emit_audit_subsystem(project, app_dir, files_created)
+
     # Wire install_audit_log(app) into main.py after app = FastAPI(...).
     # Without this the audit log primitives are copied but never activated.
     files_modified: list[str] = []
@@ -123,6 +134,12 @@ def add_audit_log(inp: ToolInput) -> ToolResult:
     config_file = app_dir / "core" / "config.py"
     if config_file.exists() and _patch_config(config_file):
         files_modified.append(str(config_file))
+
+    # INV-AL-07: patch app/api/deps.py with the CurrentAuditor dependency
+    # (superuser or role=auditor) used to gate the audit routes.
+    deps_file = app_dir / "api" / "deps.py"
+    if deps_file.exists() and _patch_deps(deps_file):
+        files_modified.append(str(deps_file))
 
     _emit_project_test(project, files_created)
 
@@ -194,6 +211,89 @@ def _patch_config(config_file: Path) -> bool:
     else:
         src = src.rstrip("\n") + "\n" + field + "\n"
     config_file.write_text(src)
+    return True
+
+
+def _emit_raw(template_name: str, dest: Path) -> None:
+    """Write a no-substitution template verbatim (idempotent overwrite)."""
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_text(load_template(_HERE, template_name).template)
+
+
+def _emit_audit_subsystem(project: Path, app_dir: Path, created: list[str]) -> None:
+    """Emit the ORM-flush audit subsystem (INV-AL-01..08) — idempotent.
+
+    Only files that are absent are (re)written and recorded in *created*, so a
+    second run that finds them already present adds nothing (no_op contract).
+    """
+    targets: list[tuple[str, Path]] = [
+        ("audit_context.py.tmpl", app_dir / "core" / "audit_context.py"),
+        ("audit_listeners.py.tmpl", app_dir / "core" / "audit_listeners.py"),
+        ("audit_verifier.py.tmpl", app_dir / "core" / "audit_verifier.py"),
+        ("audit_log_model.py.tmpl", app_dir / "models" / "audit_log.py"),
+        ("audit_log_crud.py.tmpl", app_dir / "crud" / "audit_log.py"),
+        ("audit_logs_routes.py.tmpl", app_dir / "api" / "routes" / "audit_logs.py"),
+    ]
+    for template_name, dest in targets:
+        if dest.exists():
+            continue
+        _emit_raw(template_name, dest)
+        created.append(str(dest))
+
+    # Register AuditLog in app/models/__init__.py so Base.metadata sees the table.
+    _patch_models_init(app_dir / "models" / "__init__.py")
+
+    # INV-AL-02: emit the immutability migration chained off the current head.
+    versions_dir = project / "alembic" / "versions"
+    if versions_dir.is_dir():
+        rev_id = "0014_add_audit_log"
+        if not (versions_dir / f"{rev_id}.py").exists():
+            # Chain off the real head when one exists; on an empty versions dir
+            # (no chain root yet) fall back to the canonical "0001_initial"
+            # baseline rather than calling find_migration_head (which raises on
+            # an empty dir). This keeps the migration first/only in the dir so
+            # the chain is single-rooted.
+            existing = [p for p in versions_dir.glob("*.py") if not p.name.startswith("__")]
+            down_rev = find_migration_head(versions_dir) if existing else "0001_initial"
+            render_to(
+                _HERE,
+                "audit_log_migration.py.tmpl",
+                dest=versions_dir / f"{rev_id}.py",
+                substitutions={"rev_id": rev_id, "down_rev": down_rev or "0001_initial"},
+            )
+            created.append(str(versions_dir / f"{rev_id}.py"))
+
+
+def _patch_models_init(models_init: Path) -> None:
+    """Add the AuditLog import to app/models/__init__.py — idempotent."""
+    marker = "from app.models.audit_log import AuditLog"
+    if models_init.exists():
+        content = models_init.read_text()
+        if marker in content:
+            return
+        if content and not content.endswith("\n"):
+            content += "\n"
+    else:
+        content = ""
+    content += f"{marker}  # noqa: F401\n"
+    models_init.parent.mkdir(parents=True, exist_ok=True)
+    models_init.write_text(content)
+
+
+def _patch_deps(deps_file: Path) -> bool:
+    """Append the CurrentAuditor dependency to app/api/deps.py — idempotent.
+
+    Adds a ``get_current_auditor`` dependency (superuser OR role=='auditor') and
+    the ``CurrentAuditor`` Annotated alias used by the audit routes (INV-AL-07).
+    Imports are referenced defensively so the patch works against both the rich
+    generated deps.py and the minimal scaffold stub.
+    """
+    src = deps_file.read_text()
+    if "CurrentAuditor" in src:
+        return False
+    block = load_template(_HERE, "deps_patch.py.tmpl").template
+    src = src.rstrip("\n") + "\n\n" + block
+    deps_file.write_text(src)
     return True
 
 
