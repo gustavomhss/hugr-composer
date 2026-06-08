@@ -209,7 +209,7 @@ def _auth(token: str) -> dict[str, str]:
 # Tests
 # ---------------------------------------------------------------------------
 
-async def test_01_auth_full_cycle(pd: Path) -> tuple[bool, str]:
+async def check_01_auth_full_cycle(pd: Path) -> tuple[bool, str]:
     """Signup → login → access protected route → expired/invalid token rejected."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -255,7 +255,7 @@ async def test_01_auth_full_cycle(pd: Path) -> tuple[bool, str]:
     return (not fails, "auth_full_cycle: " + ("; ".join(fails) if fails else "PASS"))
 
 
-async def test_02_crud_lifecycle(pd: Path) -> tuple[bool, str]:
+async def check_02_crud_lifecycle(pd: Path) -> tuple[bool, str]:
     """Create → Read → Update → List → Delete for each model."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -321,7 +321,7 @@ async def test_02_crud_lifecycle(pd: Path) -> tuple[bool, str]:
     return (not fails, "crud_lifecycle: " + ("; ".join(fails) if fails else "PASS — 4 models × 6 ops"))
 
 
-async def test_03_health_endpoints(pd: Path) -> tuple[bool, str]:
+async def check_03_health_endpoints(pd: Path) -> tuple[bool, str]:
     """Health check endpoints respond correctly."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -346,7 +346,7 @@ async def test_03_health_endpoints(pd: Path) -> tuple[bool, str]:
     return (not fails, "health_endpoints: " + ("; ".join(fails) if fails else "PASS"))
 
 
-async def test_04_validation_errors(pd: Path) -> tuple[bool, str]:
+async def check_04_validation_errors(pd: Path) -> tuple[bool, str]:
     """Malformed requests return proper 422 validation errors."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -378,7 +378,7 @@ async def test_04_validation_errors(pd: Path) -> tuple[bool, str]:
     return (not fails, "validation_errors: " + ("; ".join(fails) if fails else "PASS"))
 
 
-async def test_05_middleware_headers(pd: Path) -> tuple[bool, str]:
+async def check_05_middleware_headers(pd: Path) -> tuple[bool, str]:
     """Security headers and correlation ID are present in responses."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -406,7 +406,7 @@ async def test_05_middleware_headers(pd: Path) -> tuple[bool, str]:
     return (not fails, "middleware_headers: " + ("; ".join(fails) if fails else "PASS"))
 
 
-async def test_06_openapi_schema(pd: Path) -> tuple[bool, str]:
+async def check_06_openapi_schema(pd: Path) -> tuple[bool, str]:
     """OpenAPI schema is valid and contains expected endpoints."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -451,7 +451,7 @@ async def test_06_openapi_schema(pd: Path) -> tuple[bool, str]:
     return (not fails, "openapi_schema: " + ("; ".join(fails) if fails else f"PASS — {len(paths)} paths, 0 dup operationIds"))
 
 
-async def test_07_bulk_create(pd: Path) -> tuple[bool, str]:
+async def check_07_bulk_create(pd: Path) -> tuple[bool, str]:
     """Bulk operations endpoint works (from add_bulk_operations tool)."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -492,7 +492,7 @@ async def test_07_bulk_create(pd: Path) -> tuple[bool, str]:
     return (not fails, "bulk_create: " + ("; ".join(fails) if fails else "PASS"))
 
 
-async def test_08_search(pd: Path) -> tuple[bool, str]:
+async def check_08_search(pd: Path) -> tuple[bool, str]:
     """Search endpoint works (from add_search tool)."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -535,7 +535,7 @@ async def test_08_search(pd: Path) -> tuple[bool, str]:
     return (not fails, "search: " + ("; ".join(fails) if fails else "PASS"))
 
 
-async def test_09_multiple_users_isolation(pd: Path) -> tuple[bool, str]:
+async def check_09_multiple_users_isolation(pd: Path) -> tuple[bool, str]:
     """User A cannot see User B's data (owner isolation)."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -573,7 +573,7 @@ async def test_09_multiple_users_isolation(pd: Path) -> tuple[bool, str]:
     return (not fails, "user_isolation: " + ("; ".join(fails) if fails else "PASS — owner scoping enforced"))
 
 
-async def test_10_pagination(pd: Path) -> tuple[bool, str]:
+async def check_10_pagination(pd: Path) -> tuple[bool, str]:
     """List endpoint supports pagination (skip/limit or cursor)."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -610,7 +610,7 @@ async def test_10_pagination(pd: Path) -> tuple[bool, str]:
     return (not fails, "pagination: " + ("; ".join(fails) if fails else "PASS"))
 
 
-async def test_11_data_integrity(pd: Path) -> tuple[bool, str]:
+async def check_11_data_integrity(pd: Path) -> tuple[bool, str]:
     """Verify data persists correctly across operations."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -666,7 +666,7 @@ async def test_11_data_integrity(pd: Path) -> tuple[bool, str]:
     return (not fails, "data_integrity: " + ("; ".join(fails) if fails else "PASS — fields persist correctly"))
 
 
-async def test_12_concurrent_requests(pd: Path) -> tuple[bool, str]:
+async def check_12_concurrent_requests(pd: Path) -> tuple[bool, str]:
     """Fire 5 sequential creates rapidly — verify no data corruption."""
     app = _load_app(pd)
     client, session, engine = await _make_client(app, pd)
@@ -705,18 +705,18 @@ async def test_12_concurrent_requests(pd: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 TESTS = [
-    ("01_auth_full_cycle",       test_01_auth_full_cycle),
-    ("02_crud_lifecycle",        test_02_crud_lifecycle),
-    ("03_health_endpoints",      test_03_health_endpoints),
-    ("04_validation_errors",     test_04_validation_errors),
-    ("05_middleware_headers",     test_05_middleware_headers),
-    ("06_openapi_schema",        test_06_openapi_schema),
-    ("07_bulk_create",           test_07_bulk_create),
-    ("08_search",                test_08_search),
-    ("09_user_isolation",        test_09_multiple_users_isolation),
-    ("10_pagination",            test_10_pagination),
-    ("11_data_integrity",        test_11_data_integrity),
-    ("12_concurrent_requests",   test_12_concurrent_requests),
+    ("01_auth_full_cycle",       check_01_auth_full_cycle),
+    ("02_crud_lifecycle",        check_02_crud_lifecycle),
+    ("03_health_endpoints",      check_03_health_endpoints),
+    ("04_validation_errors",     check_04_validation_errors),
+    ("05_middleware_headers",     check_05_middleware_headers),
+    ("06_openapi_schema",        check_06_openapi_schema),
+    ("07_bulk_create",           check_07_bulk_create),
+    ("08_search",                check_08_search),
+    ("09_user_isolation",        check_09_multiple_users_isolation),
+    ("10_pagination",            check_10_pagination),
+    ("11_data_integrity",        check_11_data_integrity),
+    ("12_concurrent_requests",   check_12_concurrent_requests),
 ]
 
 

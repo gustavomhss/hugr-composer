@@ -7,11 +7,13 @@ Test 2: Tools write nothing outside project_dir (sandbox containment)
 Test 3: Generated project is self-contained (survives relocation)
 Test 4: Golden snapshot regression guard (file count, LOC, routes, models, migrations)
 
+This is a **script-runner** (same convention as ``tests/test_boot.py``): the
+check functions return ``(ok, message)`` tuples and are driven by the
+``run_all_tests()`` runner below — they are NOT pytest tests, so they are named
+``check_*`` rather than ``test_*`` to keep pytest from collecting them.
+
 Run standalone:
     PYTHONPATH=. python3 tests/test_determinism.py
-
-Run via pytest:
-    PYTHONPATH=. pytest tests/test_determinism.py -v
 
 Exit code 0  → all 4 tests pass
 Exit code 1  → one or more tests failed (details printed)
@@ -234,7 +236,7 @@ def _count_loc(project_dir: Path) -> int:
 # Test 1 — Determinism: same inputs → identical file-by-file output
 # ---------------------------------------------------------------------------
 
-def test_1_determinism(tmp_dir: Path) -> tuple[bool, str]:
+def check_1_determinism(tmp_dir: Path) -> tuple[bool, str]:
     """Test 1: Identical inputs produce byte-for-byte identical output.
 
     Generates two projects (A and B) with exactly the same name and applies
@@ -312,7 +314,7 @@ def test_1_determinism(tmp_dir: Path) -> tuple[bool, str]:
 # Test 2 — Sandbox containment: no writes outside project_dir
 # ---------------------------------------------------------------------------
 
-def test_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
+def check_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
     """Test 2: Tools write nothing outside the project_dir boundary.
 
     Strategy:
@@ -441,7 +443,7 @@ def test_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
 # Test 3 — Relocation: no hardcoded absolute paths
 # ---------------------------------------------------------------------------
 
-def test_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
+def check_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
     """Test 3: Generated project survives relocation (no hardcoded paths).
 
     Steps:
@@ -564,7 +566,7 @@ def _build_snapshot(project_dir: Path) -> dict:
     }
 
 
-def test_4_regression_snapshot(tmp_dir: Path) -> tuple[bool, str]:
+def check_4_regression_snapshot(tmp_dir: Path) -> tuple[bool, str]:
     """Test 4: Golden snapshot regression guard.
 
     On the FIRST run (no snapshot file found): generates the project,
@@ -660,10 +662,10 @@ def test_4_regression_snapshot(tmp_dir: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 _TESTS = [
-    ("Determinism (same inputs → identical output)", test_1_determinism),
-    ("Sandbox containment (no writes outside project_dir)", test_2_sandbox_containment),
-    ("Relocation (no hardcoded absolute paths)", test_3_relocation),
-    ("Regression snapshot (golden file comparison)", test_4_regression_snapshot),
+    ("Determinism (same inputs → identical output)", check_1_determinism),
+    ("Sandbox containment (no writes outside project_dir)", check_2_sandbox_containment),
+    ("Relocation (no hardcoded absolute paths)", check_3_relocation),
+    ("Regression snapshot (golden file comparison)", check_4_regression_snapshot),
 ]
 
 

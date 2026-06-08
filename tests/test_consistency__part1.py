@@ -113,7 +113,7 @@ def _tarjan_scc(graph: dict[str, set[str]]) -> list[list[str]]:
     return [scc for scc in sccs if len(scc) > 1]
 
 
-def test_1_no_import_cycles(project_dir: Path) -> tuple[bool, str]:
+def check_1_no_import_cycles(project_dir: Path) -> tuple[bool, str]:
     """Test 1: Zero circular imports inside app/.
 
     Returns:
@@ -244,7 +244,7 @@ def _collect_sa_models(app_dir: Path) -> dict[str, dict]:
     return models
 
 
-def test_2_model_consistency(project_dir: Path) -> tuple[bool, str]:
+def check_2_model_consistency(project_dir: Path) -> tuple[bool, str]:
     """Test 2: SQLAlchemy model sanity checks.
 
     Returns:
