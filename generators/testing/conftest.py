@@ -126,6 +126,16 @@ def generate_test_infrastructure(
         #   not get 429-throttled by the production limiter.
         # - ENVIRONMENT: "local" so the strict prod-only validators
         #   relax.
+        # - FIRST_SUPERUSER_EMAIL / FIRST_SUPERUSER_PASSWORD: the scaffold
+        #   ships EMPTY defaults (no baked-in credentials, by design) and its
+        #   Settings validator requires the pair to be set TOGETHER or both
+        #   empty. The auth fixtures and the /login tests read
+        #   ``settings.FIRST_SUPERUSER_EMAIL`` as the superuser's email, so it
+        #   MUST be a non-empty, valid address here: posting an empty
+        #   ``username`` to the OAuth2 form endpoint yields HTTP 422 ("field
+        #   required"). The password is set to the same value the fixtures
+        #   hash for the seeded user; it clears the ≥12-char / non-weak
+        #   checks. Both are clearly test-only and never ship.
         import os
         os.environ.setdefault(
             "SECRET_KEY",
@@ -134,6 +144,8 @@ def generate_test_infrastructure(
         )
         os.environ.setdefault("RATE_LIMITING_ENABLED", "false")
         os.environ.setdefault("ENVIRONMENT", "local")
+        os.environ.setdefault("FIRST_SUPERUSER_EMAIL", "admin@test.com")
+        os.environ.setdefault("FIRST_SUPERUSER_PASSWORD", "testpassword123")
 
         from collections.abc import AsyncGenerator
 
