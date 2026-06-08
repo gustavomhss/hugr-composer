@@ -86,7 +86,7 @@ def _make_client(project_dir: Path):
 def _cleanup_sys_path(project_dir: Path) -> None:
     """Remove *project_dir* from sys.path and purge generated-project modules."""
     key = str(project_dir)
-    try:
+    try:  # noqa: SIM105
         sys.path.remove(key)
     except ValueError:
         pass
@@ -395,7 +395,7 @@ def test_scan_all_routes_no_500() -> tuple[bool, str]:
 
     # Endpoints that need a live DB before they can respond with a non-500.
     # These are expected failures in the no-DB test environment.
-    DB_REQUIRED_PATTERNS: list[str] = [
+    DB_REQUIRED_PATTERNS: list[str] = [  # noqa: N806
         r"^POST /api/v1/password-recovery/",
     ]
 
