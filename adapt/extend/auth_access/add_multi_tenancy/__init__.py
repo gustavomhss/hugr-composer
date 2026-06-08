@@ -23,6 +23,13 @@ from . import _patches as patches
 
 _HERE = Path(__file__).parent
 
+# Public alias for the model-discovery routine (INV-MT-07): the spec-compliance
+# suite imports ``_discover_models`` from this package and inspects its source to
+# prove the ``User`` model is excluded from the skip set. ``discover_models``
+# lives in ``_patches`` (where the skip set ``{"base", "user", ...}`` is defined),
+# so we re-export it under the canonical private name.
+_discover_models = patches.discover_models
+
 
 MCP_TOOL = {
     "name": "fastapi_auth_add_multi_tenancy",
