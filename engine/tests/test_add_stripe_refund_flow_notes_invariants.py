@@ -268,7 +268,7 @@ def test_refund_webhook_signature_verified_reads_stripe_signature_header() -> No
         if not chain.endswith("headers.get"):
             continue
         for arg in node.args:
-            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+            if isinstance(arg, ast.Constant) and isinstance(arg.value, str):  # noqa: SIM102
                 if arg.value.lower() == "stripe-signature":
                     found = True
     assert found, (

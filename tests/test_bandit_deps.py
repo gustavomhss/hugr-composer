@@ -156,8 +156,9 @@ def _apply_tools(
     tools: list[tuple[str, str, str]],
 ) -> list[tuple[str, str]]:
     """Apply a list of tools.  Returns list of (name, error) for failures."""
-    from adapt.contracts import ToolInput  # noqa: PLC0415
     import importlib  # noqa: PLC0415
+
+    from adapt.contracts import ToolInput  # noqa: PLC0415
 
     inp = ToolInput(project_dir=str(project_dir))
     failures = []
@@ -541,7 +542,7 @@ def _get_third_party_imports(project_dir: Path) -> dict[str, list[str]]:
                 for alias in node.names:
                     top = alias.name.split(".")[0]
                     _record_import(top, py_file, project_dir, stdlib, result)
-            elif isinstance(node, ast.ImportFrom):
+            elif isinstance(node, ast.ImportFrom):  # noqa: SIM102
                 if node.module and node.level == 0:
                     top = node.module.split(".")[0]
                     _record_import(top, py_file, project_dir, stdlib, result)
@@ -612,7 +613,7 @@ def project_all_27_tools(tmp_path_factory: pytest.TempPathFactory) -> Path:
         import warnings  # noqa: PLC0415
 
         warnings.warn(
-            f"Some tools failed during 27-tool fixture setup: " + ", ".join(n for n, _ in failures),
+            "Some tools failed during 27-tool fixture setup: " + ", ".join(n for n, _ in failures),
             stacklevel=1,
         )
     return project_dir
@@ -777,7 +778,7 @@ class TestImportsVsRequirements:
         # cryptography / msgpack: tracked in test_generated_quality.py
         # pyarrow / xlsxwriter:   add_data_export does not patch requirements.txt
         # prometheus_client:      add_circuit_breaker / add_saga do not patch reqs
-        _KNOWN_MISSING: frozenset[str] = frozenset(
+        _KNOWN_MISSING: frozenset[str] = frozenset(  # noqa: N806
             {
                 "cryptography",
                 "msgpack",
@@ -819,7 +820,7 @@ class TestImportsVsRequirements:
         is insufficient — these need explicit entries in _IMPORT_TO_PACKAGE.
         """
         # Packages that are genuinely NOT in requirements (internal or stdlib-like)
-        _ACTUALLY_INTERNAL: frozenset[str] = frozenset(
+        _ACTUALLY_INTERNAL: frozenset[str] = frozenset(  # noqa: N806
             {
                 "app",
                 "tests",
@@ -834,7 +835,7 @@ class TestImportsVsRequirements:
 
         third_party = _get_third_party_imports(project_all_27_tools)
         # Same set as in test_all_imports_covered_by_requirements
-        _KNOWN_MISSING: frozenset[str] = frozenset(
+        _KNOWN_MISSING: frozenset[str] = frozenset(  # noqa: N806
             {
                 "cryptography",
                 "msgpack",
@@ -850,7 +851,7 @@ class TestImportsVsRequirements:
                 continue
             if imp in _KNOWN_MISSING:
                 continue
-            pkg = _IMPORT_TO_PACKAGE.get(imp, None)
+            pkg = _IMPORT_TO_PACKAGE.get(imp)
             if pkg is None:
                 # Auto-normalize: if the auto-name is in requirements it is fine
                 auto = imp.lower().replace("-", "_")
