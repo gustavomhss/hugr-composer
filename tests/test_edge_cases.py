@@ -14,6 +14,7 @@ Run:
 from __future__ import annotations
 
 import ast
+import os
 import subprocess
 import sys
 import tempfile
@@ -24,10 +25,10 @@ from adapt.extend.crud_data.add_audit_log import add_audit_log
 from adapt.extend.crud_data.add_soft_delete import add_soft_delete
 from generators.orchestrator import generate_project
 
-
 # ---------------------------------------------------------------------------
 # Python executable resolution
 # ---------------------------------------------------------------------------
+
 
 def _resolve_python() -> str:
     """Return a Python executable that has FastAPI installed.
@@ -50,9 +51,28 @@ def _resolve_python() -> str:
 _PYTHON = _resolve_python()
 
 
+def _boot_timeout() -> float:
+    """Boot subprocess timeout (seconds), tunable for loaded CI runners.
+
+    Defaults to 60s — generous enough to survive CPU contention on a
+    loaded CI runner — and overridable via ``HUGR_BOOT_TIMEOUT``.
+    Falls back to the default if the env var is unset or unparseable.
+    """
+    raw = os.environ.get("HUGR_BOOT_TIMEOUT")
+    if raw:
+        try:
+            value = float(raw)
+            if value > 0:
+                return value
+        except ValueError:
+            pass
+    return 60.0
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _boot_project(project_dir: Path) -> tuple[bool, str]:
     """Attempt to import ``app.main`` in a subprocess.
@@ -73,7 +93,7 @@ def _boot_project(project_dir: Path) -> tuple[bool, str]:
         cwd=str(project_dir),
         capture_output=True,
         text=True,
-        timeout=15,
+        timeout=_boot_timeout(),
     )
     if "BOOT_OK" in result.stdout:
         return True, "BOOT_OK"
@@ -83,12 +103,10 @@ def _boot_project(project_dir: Path) -> tuple[bool, str]:
     for line in result.stderr.splitlines():
         stripped = line.strip()
         if stripped and any(
-            kw in stripped
-            for kw in ("Error", "error", "Exception", "Traceback", "SyntaxError")
+            kw in stripped for kw in ("Error", "error", "Exception", "Traceback", "SyntaxError")
         ):
             if any(
-                skip in stripped
-                for skip in ("pydantic", "opentelemetry", "logfire", "UserWarning")
+                skip in stripped for skip in ("pydantic", "opentelemetry", "logfire", "UserWarning")
             ):
                 continue
             error_lines.append(stripped)
@@ -158,8 +176,8 @@ EDGE_CASE_SCENARIOS: list[tuple[str, dict[str, dict[str, str]]]] = [
     (
         "multi_word_names",
         {
-            "OrderItem":      {"quantity": "int", "price": "Decimal"},
-            "PaymentMethod":  {"type": "str", "last_four": "str"},
+            "OrderItem": {"quantity": "int", "price": "Decimal"},
+            "PaymentMethod": {"type": "str", "last_four": "str"},
             "ShippingAddress": {"street": "str", "city": "str", "country": "str"},
         },
     ),
@@ -175,16 +193,16 @@ EDGE_CASE_SCENARIOS: list[tuple[str, dict[str, dict[str, str]]]] = [
     (
         "many_models_10",
         {
-            "Alpha":   {"name": "str"},
-            "Beta":    {"name": "str"},
-            "Gamma":   {"name": "str"},
-            "Delta":   {"name": "str"},
+            "Alpha": {"name": "str"},
+            "Beta": {"name": "str"},
+            "Gamma": {"name": "str"},
+            "Delta": {"name": "str"},
             "Epsilon": {"name": "str"},
-            "Zeta":    {"name": "str"},
-            "Eta":     {"name": "str"},
-            "Theta":   {"name": "str"},
-            "Iota":    {"name": "str"},
-            "Kappa":   {"name": "str"},
+            "Zeta": {"name": "str"},
+            "Eta": {"name": "str"},
+            "Theta": {"name": "str"},
+            "Iota": {"name": "str"},
+            "Kappa": {"name": "str"},
         },
     ),
     # 4. One model with 20 fields
@@ -219,7 +237,7 @@ EDGE_CASE_SCENARIOS: list[tuple[str, dict[str, dict[str, str]]]] = [
     (
         "names_with_numbers",
         {
-            "Item2":   {"value": "str"},
+            "Item2": {"value": "str"},
             "V2Order": {"status": "str", "total": "Decimal"},
         },
     ),
@@ -241,11 +259,11 @@ EDGE_CASE_SCENARIOS: list[tuple[str, dict[str, dict[str, str]]]] = [
         "complex_field_types_safe",
         {
             "Config": {
-                "extra_data": "json",   # 'metadata' is RESERVED in SQLAlchemy Base — must use safe name
-                "tags":       "json",
-                "settings":   "json",
-                "name":       "str",
-                "version":    "str",
+                "extra_data": "json",  # 'metadata' is RESERVED in SQLAlchemy Base — must use safe name
+                "tags": "json",
+                "settings": "json",
+                "name": "str",
+                "version": "str",
             },
         },
     ),
@@ -258,8 +276,8 @@ EDGE_CASE_SCENARIOS: list[tuple[str, dict[str, dict[str, str]]]] = [
         "complex_field_types_reserved_metadata",
         {
             "Config": {
-                "metadata": "json",   # BUG: reserved name — crashes at import time
-                "name":     "str",
+                "metadata": "json",  # BUG: reserved name — crashes at import time
+                "name": "str",
             },
         },
     ),
@@ -337,6 +355,7 @@ def run_blind_spot_a() -> tuple[int, int, list[str], list[str]]:
 # Blind Spot B — Alembic migration chain validity
 # ---------------------------------------------------------------------------
 
+
 def _collect_migration_meta(versions_dir: Path) -> dict[str, dict]:
     """Parse every migration file and extract revision metadata.
 
@@ -388,13 +407,19 @@ def _collect_migration_meta(versions_dir: Path) -> dict[str, dict]:
                             if isinstance(node.value, ast.Constant):
                                 record["down_revision"] = node.value.value
             elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
-                if node.target.id == "revision" and node.value and isinstance(node.value, ast.Constant):
+                if (
+                    node.target.id == "revision"
+                    and node.value
+                    and isinstance(node.value, ast.Constant)
+                ):
                     revision_id = node.value.value
-                elif node.target.id == "down_revision" and node.value and isinstance(node.value, ast.Constant):
+                elif (
+                    node.target.id == "down_revision"
+                    and node.value
+                    and isinstance(node.value, ast.Constant)
+                ):
                     record["down_revision"] = node.value.value
-            elif isinstance(node, ast.FunctionDef) or isinstance(
-                node, ast.AsyncFunctionDef
-            ):
+            elif isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
                 fn_name = node.name
                 if fn_name == "upgrade":
                     record["has_upgrade"] = True
@@ -508,22 +533,16 @@ def run_blind_spot_b() -> tuple[bool, str]:
         # ---- Check 1: All files parse ----
         for rev_id, info in meta.items():
             if not info["parse_ok"]:
-                issues.append(
-                    f"PARSE ERROR in '{info['file'].name}': {info['parse_error']}"
-                )
+                issues.append(f"PARSE ERROR in '{info['file'].name}': {info['parse_error']}")
 
         # ---- Check 2: Every migration has upgrade() and downgrade() ----
         for rev_id, info in meta.items():
             if not info["parse_ok"]:
                 continue
             if not info["has_upgrade"]:
-                issues.append(
-                    f"MISSING upgrade() in '{info['file'].name}' (rev={rev_id})"
-                )
+                issues.append(f"MISSING upgrade() in '{info['file'].name}' (rev={rev_id})")
             if not info["has_downgrade"]:
-                issues.append(
-                    f"MISSING downgrade() in '{info['file'].name}' (rev={rev_id})"
-                )
+                issues.append(f"MISSING downgrade() in '{info['file'].name}' (rev={rev_id})")
 
         # ---- Check 3: downgrade() must not be just `pass` ----
         # Exception: the no-op chain root (0001_initial, down_revision=None)
@@ -532,9 +551,7 @@ def run_blind_spot_b() -> tuple[bool, str]:
             if not info["parse_ok"]:
                 continue
             if info["has_downgrade"] and info["downgrade_empty"]:
-                is_chain_root = (
-                    info.get("down_revision") is None and rev_id == "0001_initial"
-                )
+                is_chain_root = info.get("down_revision") is None and rev_id == "0001_initial"
                 if not is_chain_root:
                     issues.append(
                         f"EMPTY downgrade() (only `pass`) in '{info['file'].name}' (rev={rev_id})"
@@ -571,6 +588,7 @@ def run_blind_spot_b() -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
+
 
 def main() -> int:
     """Run Blind Spot A and Blind Spot B tests, print summary.
