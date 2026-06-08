@@ -16,6 +16,7 @@ from tests.test_behavior_scenarios_new_tools__shared import (
     Scenario,
     ScenarioContext,
     _assert_scenario,
+    _promote_superuser,
     _signup,
     _th,
 )
@@ -109,6 +110,7 @@ S3_STORAGE = Scenario(
 async def flow_health_deep(ctx: ScenarioContext) -> None:
     """GET /health/live, /health/ready, /health/deep behave correctly."""
     client = ctx.client
+    session = ctx.session
 
     # /health/live → 200
     r = await client.get("/health/live")
@@ -120,8 +122,29 @@ async def flow_health_deep(ctx: ScenarioContext) -> None:
         "health_ready_no_crash", r.status_code in (200, 503), f"GET /health/ready: {r.status_code}"
     )
 
-    # /health/deep → JSON body with status + checks array
+    # /health/deep is superuser-gated (CONTRACT §B0.11 — the deep matrix
+    # enumerates every downstream + per-dep latency and is an attacker
+    # fingerprint). Unauthenticated probes MUST be rejected; only /live and
+    # /ready are public for the kubelet. Authenticate as a superuser first.
     r = await client.get("/health/deep")
+    ctx.record(
+        "health_deep_requires_auth",
+        r.status_code in (401, 403),
+        f"unauthenticated GET /health/deep: {r.status_code} (B0.11: must be gated)",
+    )
+
+    token = await _signup(client, "health_admin@example.com", "HealthPass123!", "Health Admin")
+    await _promote_superuser(session, "health_admin@example.com")
+    r = await client.post(
+        "/api/v1/login/access-token",
+        data={"username": "health_admin@example.com", "password": "HealthPass123!"},
+    )
+    if r.status_code == 200:
+        token = r.json()["access_token"]
+    admin_h = _th(token)
+
+    # /health/deep → JSON body with status + checks array (superuser-gated)
+    r = await client.get("/health/deep", headers=admin_h)
     ctx.record(
         "health_deep_status_code", r.status_code in (200, 503), f"GET /health/deep: {r.status_code}"
     )
