@@ -98,7 +98,11 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
-REPO_ROOT = SKILL_ROOT.parents[1]
+# Layout-aware (monorepo skills/ vs standalone repo root); see engine/docs/build.py.
+# Only feeds the catalog's kit_commit provenance (git sha) — excluded from
+# stable_hash. Without this it resolved outside the repo, so kit_commit fell
+# back to "unknown".
+REPO_ROOT = SKILL_ROOT.parents[1] if SKILL_ROOT.parent.name == "skills" else SKILL_ROOT
 REGISTRY_PATH = SKILL_ROOT / "engine" / "primitives_by_concern.yaml"
 CATALOG_PATH = SKILL_ROOT / "engine" / "index" / "catalog.json"
 VENOUS_ROOT = SKILL_ROOT / "core" / "venous"

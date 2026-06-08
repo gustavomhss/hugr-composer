@@ -29,7 +29,8 @@ from engine.bench.blind.spec import Spec, discover_specs
 from engine.bench.blind.static_scan import run_static_scan
 
 SKILL_ROOT = Path(__file__).resolve().parents[3]
-REPO_ROOT = SKILL_ROOT.parents[1]
+# Layout-aware (monorepo skills/ vs standalone repo root); see engine/docs/build.py.
+REPO_ROOT = SKILL_ROOT.parents[1] if SKILL_ROOT.parent.name == "skills" else SKILL_ROOT
 SPECS_ROOT = SKILL_ROOT / "benchmarks" / "blind" / "specs"
 RESULTS_ROOT = SKILL_ROOT / "benchmarks" / "blind" / "results"
 # Dedicated MCP config for blind-bench kit arm. Absolute paths required

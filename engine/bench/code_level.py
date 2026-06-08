@@ -42,7 +42,8 @@ from pathlib import Path
 from typing import Any
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
-REPO_ROOT = SKILL_ROOT.parents[1]
+# Layout-aware (monorepo skills/ vs standalone repo root); see engine/docs/build.py.
+REPO_ROOT = SKILL_ROOT.parents[1] if SKILL_ROOT.parent.name == "skills" else SKILL_ROOT
 MAP_PATH = SKILL_ROOT / "benchmarks" / "spec_code_level_map.json"
 OUT_PATH = SKILL_ROOT / "benchmarks" / "code_level_score.json"
 
