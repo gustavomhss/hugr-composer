@@ -196,6 +196,12 @@ def add_webhook_sender(
         )
         files_modified.append(str(config_file))
 
+    # Step 10a: patch requirements (worker imports arq at module top-level)
+    requirements_file = project / "requirements.txt"
+    if requirements_file.exists():
+        _patch_requirements(requirements_file)
+        files_modified.append(str(requirements_file))
+
     # Step 10: register router
     routes_init = app_dir / "routes" / "__init__.py"
     if routes_init.exists():
@@ -310,6 +316,21 @@ def _patch_routes_init(routes_init: Path, import_line: str, include_line: str) -
         last_inc = max((i for i, ln in enumerate(lines) if "APIRouter()" in ln), default=0)
     lines.insert(last_inc + 1, include_line)
     routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
+
+
+def _patch_requirements(requirements_file: Path) -> None:
+    """Ensure ``arq`` is in ``requirements.txt``.
+
+    ``app/workers/webhook_worker.py`` imports ``arq`` at module top-level and
+    the next-steps tell the operator to run ``arq ...`` — so arq is a real
+    runtime dependency that must be declared. ``httpx`` and ``redis`` are
+    already in the base requirements. Idempotent.
+    """
+    src = requirements_file.read_text()
+    if "arq" in src:
+        return
+    trailing = "" if src.endswith("\n") else "\n"
+    requirements_file.write_text(src + trailing + "arq>=0.25.0\n")
 
 
 def _emit_project_test(project: Path, created: list[str]) -> None:

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_deployment_generate_config',
-    'description': 'Generate config.py with pydantic-settings, env parsing, and fail-fast validation.',
-    'tags': ['generator', 'infra'],
-    'entry': 'generate_config',
+    "name": "fastapi_deployment_generate_config",
+    "description": "Generate config.py with pydantic-settings, env parsing, and fail-fast validation.",
+    "tags": ["generator", "infra"],
+    "entry": "generate_config",
 }
 
 import textwrap
@@ -156,25 +156,47 @@ def generate_config(
             PRODUCTION = "production"
 
 
+        def _normalize_credential(value: str) -> str:
+            \"\"\"Canonicalise a credential for weak-value comparison.
+
+            Lower-cases and strips separators (spaces, ``-``, ``_``) so that
+            cosmetic variants of the same weak value collapse together --
+            e.g. ``change-me`` and ``change me`` both reduce to the same
+            canonical form as the bare ``changeme`` a careless operator
+            might type.
+            \"\"\"
+            return (
+                value.strip()
+                .lower()
+                .replace(" ", "")
+                .replace("-", "")
+                .replace("_", "")
+            )
+
+
         # Known-weak secret / password values that MUST NOT appear in a running
-        # settings object. Matched case-insensitively. The set is small because
-        # a real credential is indistinguishable from noise; its entropy is
-        # what defends you, not the dictionary below. This is a defence-in-
-        # depth catch for copy-paste accidents like leaving `changethis` from
-        # the .env.example template in place.
-        _WEAK_CREDENTIALS: frozenset[str] = frozenset({{
-            "",
-            "changethis",
-            "change-me",
-            "changeme",
-            "password",
-            "password123",
-            "admin",
-            "admin123",
-            "secret",
-            "12345678",
-            "qwertyui",
-        }})
+        # settings object. Compared after _normalize_credential(), so each
+        # entry below also covers its separator variants (``change-me`` here
+        # rejects ``changeme`` / ``change_me`` / ``change me`` too). The set is
+        # small because a real credential is indistinguishable from noise; its
+        # entropy is what defends you, not the dictionary below. This is a
+        # defence-in-depth catch for copy-paste accidents like leaving
+        # ``changethis`` from the .env.example template in place.
+        _WEAK_CREDENTIALS: frozenset[str] = frozenset(
+            _normalize_credential(_c)
+            for _c in (
+                "",
+                "changethis",
+                "change-me",
+                "password",
+                "password123",
+                "admin",
+                "admin123",
+                "secret",
+                "12345678",
+                "qwertyui",
+            )
+        )
 
         # Minimum entropy for SECRET_KEY. 32 bytes = 256 bits, the standard
         # for HMAC-SHA256 session signing.
@@ -262,7 +284,7 @@ def generate_config(
                 secret = self.SECRET_KEY or ""
                 if (
                     len(secret) < _SECRET_KEY_MIN_LEN
-                    or secret.strip().lower() in _WEAK_CREDENTIALS
+                    or _normalize_credential(secret) in _WEAK_CREDENTIALS
                 ):
                     raise ValueError(
                         "SECRET_KEY is empty, too short, or matches a known-weak "
@@ -283,7 +305,7 @@ def generate_config(
                             "FIRST_SUPERUSER_PASSWORD MUST be at least "
                             f"{{_SUPERUSER_PASSWORD_MIN_LEN}} characters."
                         )
-                    if password.strip().lower() in _WEAK_CREDENTIALS:
+                    if _normalize_credential(password) in _WEAK_CREDENTIALS:
                         raise ValueError(
                             "FIRST_SUPERUSER_PASSWORD matches a known-weak "
                             "value. Choose a real password (≥12 chars)."
@@ -306,7 +328,9 @@ def generate_config(
     file_path.write_text(content)
 
     files = [str(file_path)]
-    notes = ["Generated core/config.py with pydantic-settings, env parsing, and fail-fast instantiation."]
+    notes = [
+        "Generated core/config.py with pydantic-settings, env parsing, and fail-fast instantiation."
+    ]
     if with_db:
         notes.append("Database settings included with PostgresDsn builder.")
     if with_redis:
