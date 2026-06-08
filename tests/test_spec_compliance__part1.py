@@ -153,7 +153,10 @@ class TestTool005AuditLog:
         """INV-AL-02: PostgreSQL trigger blocks UPDATE/DELETE on audit_logs."""
         migration_files = list((self.project / "alembic" / "versions").glob("*.py"))
         assert migration_files, "INV-AL-02: No migration generated"
-        migration_text = migration_files[0].read_text()
+        # The scaffold always emits a no-op 0001_initial chain root alongside
+        # the audit migration, so search every migration for the trigger rather
+        # than assuming a single file / a fixed sort position.
+        migration_text = "\n".join(f.read_text() for f in migration_files)
         assert "trg_audit_log_immutable" in migration_text, (
             "INV-AL-02: immutability trigger not in migration"
         )
