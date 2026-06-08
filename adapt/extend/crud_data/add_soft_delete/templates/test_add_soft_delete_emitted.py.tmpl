@@ -1,37 +1,83 @@
-"""Emitted test for add_soft_delete: soft-delete via CRUDBase patch (P1-#14).
+"""Emitted test for add_soft_delete: spec-compliant soft-delete (TOOL-001 v2).
 
-HONESTY RULE (§5, F-06): Soft-delete is enforced at the CRUDBase layer
-(single source of truth). Models with an ``is_deleted`` column opt IN to
-soft-delete; models without (auth/infra) keep hard-delete (the per-model
-opt-out hook). These tests assert the patch is in place AND the per-model
-opt-out hook is preserved — F-04 clearance.
+HONESTY RULE (§5, F-06): Read exclusion of soft-deleted rows is enforced
+GLOBALLY by the ``do_orm_execute`` listener in
+``app/core/soft_delete_filter.py`` (INV-SD-01) — every SELECT against a
+``SoftDeleteMixin`` model is filtered with zero per-callsite changes. Models
+that do NOT inherit the mixin (auth/infra) keep hard-delete semantics (the
+per-model opt-out hook, F-04). ``CRUDBase.delete`` is patched so the default
+DELETE route soft-deletes; models without ``is_deleted`` fall through to a
+real SQL DELETE.
+
+These tests assert the global filter, the mixin, the CRUD helpers and the
+admin schema are all in place AND the per-model opt-out hook is preserved.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
+_ROOT = Path(__file__).parent.parent
+
 
 # ---------------------------------------------------------------------------
-# Positive: CRUDBase carries the soft-delete patch and rebinds the methods
+# Positive: global do_orm_execute filter is the single read-exclusion point
+# ---------------------------------------------------------------------------
+
+def test_global_do_orm_execute_filter_emitted() -> None:
+    """app/core/soft_delete_filter.py registers the do_orm_execute listener."""
+    filt = _ROOT / "app" / "core" / "soft_delete_filter.py"
+    assert filt.exists(), "app/core/soft_delete_filter.py missing in emitted project"
+    body = filt.read_text()
+    assert 'event.listens_for(Session, "do_orm_execute")' in body, (
+        "global filter must register a do_orm_execute Session listener (INV-SD-01)"
+    )
+    assert "with_loader_criteria" in body, (
+        "filter must use with_loader_criteria to inject is_deleted == False"
+    )
+    assert "is_deleted == False" in body, "filter predicate is_deleted == False missing"
+    assert 'execution_options.get("include_deleted")' in body, (
+        "filter must honour the include_deleted=True opt-out (INV-SD-01)"
+    )
+
+
+def test_filter_imported_in_main() -> None:
+    """main.py side-effect import activates the filter at startup."""
+    main = _ROOT / "app" / "main.py"
+    assert "soft_delete_filter" in main.read_text(), (
+        "app/main.py must import app.core.soft_delete_filter to activate the listener"
+    )
+
+
+def test_soft_delete_mixin_emitted() -> None:
+    """SoftDeleteMixin defines the three deletion columns."""
+    mixin = _ROOT / "app" / "models" / "mixins.py"
+    assert mixin.exists(), "app/models/mixins.py missing in emitted project"
+    body = mixin.read_text()
+    assert "class SoftDeleteMixin" in body
+    assert "is_deleted" in body and "deleted_at" in body and "deleted_by" in body
+    assert "DateTime(timezone=True)" in body, "deleted_at must be timezone-aware (INV-SD-02)"
+    assert 'server_default="false"' in body, "is_deleted needs server_default (INV-SD-05)"
+
+
+# ---------------------------------------------------------------------------
+# Positive: CRUDBase.delete soft-deletes (default DELETE route path)
 # ---------------------------------------------------------------------------
 
 def test_crudbase_carries_soft_delete_patch() -> None:
     """app/crud/base.py contains the SOFT_DELETE_PATCH_APPLIED fingerprint."""
-    crud_base = Path(__file__).parent.parent / "app" / "crud" / "base.py"
+    crud_base = _ROOT / "app" / "crud" / "base.py"
     assert crud_base.exists(), "app/crud/base.py missing in emitted project"
     body = crud_base.read_text()
     assert "SOFT_DELETE_PATCH_APPLIED" in body, (
         "CRUDBase patch fingerprint missing — soft-delete is inert"
     )
-    assert "CRUDBase.get = _sd_get" in body
-    assert "CRUDBase.get_multi = _sd_get_multi" in body
     assert "CRUDBase.delete = _sd_delete" in body
 
 
 def test_crudbase_delete_flips_flag_not_sql_delete() -> None:
     """Patched CRUDBase.delete sets is_deleted=True instead of issuing SQL DELETE."""
-    crud_base = Path(__file__).parent.parent / "app" / "crud" / "base.py"
+    crud_base = _ROOT / "app" / "crud" / "base.py"
     body = crud_base.read_text()
     assert "obj.is_deleted = True" in body, (
         "CRUDBase.delete must set obj.is_deleted = True for soft-delete-aware behaviour"
@@ -41,33 +87,23 @@ def test_crudbase_delete_flips_flag_not_sql_delete() -> None:
     )
 
 
-def test_crudbase_reads_filter_soft_deleted() -> None:
-    """get() and get_multi() filter is_deleted == False when the column is present."""
-    crud_base = Path(__file__).parent.parent / "app" / "crud" / "base.py"
-    body = crud_base.read_text()
-    assert body.count("is_deleted == False") >= 2, (
-        "get() and get_multi() must each filter is_deleted == False"
-    )
-
-
 # ---------------------------------------------------------------------------
 # Negative: per-model opt-out (F-04) + orphan UoW shim absent (P1-#14)
 # ---------------------------------------------------------------------------
 
 def test_per_model_opt_out_via_hasattr_guard() -> None:
-    """The CRUDBase patch must guard with hasattr(self.model, 'is_deleted').
+    """The CRUDBase patch must guard with hasattr(obj, 'is_deleted').
 
     This is the per-model opt-out hook (F-04): a model without the column
     falls through to hard-delete. Required so auth/infra tables (sessions,
     tokens) keep hard-delete semantics for PII/rotation correctness.
     """
-    crud_base = Path(__file__).parent.parent / "app" / "crud" / "base.py"
+    crud_base = _ROOT / "app" / "crud" / "base.py"
     body = crud_base.read_text()
-    assert body.count('hasattr(self.model, "is_deleted")') >= 2, (
-        "Both reads must check hasattr(self.model, 'is_deleted') so models "
-        "without the column keep hard-delete (F-04 per-model opt-out)"
+    assert 'hasattr(obj, "is_deleted")' in body, (
+        "delete must check hasattr(obj, 'is_deleted') so models without the "
+        "column keep hard-delete (F-04 per-model opt-out)"
     )
-    # The hard-delete fallback in _sd_delete:
     assert "await session.delete(obj)" in body, (
         "Hard-delete fallback must remain for models that opt out of soft-delete"
     )
@@ -75,7 +111,7 @@ def test_per_model_opt_out_via_hasattr_guard() -> None:
 
 def test_no_orphan_uow_shim_emitted() -> None:
     """P1-#14: app/soft_delete.py orphan UoW shim must NOT be emitted."""
-    orphan = Path(__file__).parent.parent / "app" / "soft_delete.py"
+    orphan = _ROOT / "app" / "soft_delete.py"
     assert not orphan.exists(), (
         "app/soft_delete.py is dead code (no caller imports it) — must not be emitted"
     )
@@ -83,10 +119,9 @@ def test_no_orphan_uow_shim_emitted() -> None:
 
 def test_no_uow_primitive_copied() -> None:
     """P1-#14: UnitOfWork primitive must NOT be copied — only the orphan glue used it."""
-    root = Path(__file__).parent.parent
-    uow = root / "core" / "venous" / "data" / "UnitOfWork" / "UnitOfWork.py"
+    uow = _ROOT / "core" / "venous" / "data" / "UnitOfWork" / "UnitOfWork.py"
     adapter = (
-        root / "core" / "venous" / "_adapters" / "fastapi" / "UnitOfWorkAdapter.py"
+        _ROOT / "core" / "venous" / "_adapters" / "fastapi" / "UnitOfWorkAdapter.py"
     )
     assert not uow.exists(), "UnitOfWork primitive must not be copied (orphan)"
     assert not adapter.exists(), "UnitOfWorkAdapter must not be copied (orphan)"
