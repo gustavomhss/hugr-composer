@@ -1,0 +1,28 @@
+
+
+# ---------------------------------------------------------------------------
+# SOFT_DELETE_SCHEMA_APPLIED — added by add_soft_delete tool.
+# ---------------------------------------------------------------------------
+# Admin-only deletion schemas for $MODEL. ${MODEL}Public is intentionally NOT
+# modified — it never exposes is_deleted / deleted_at / deleted_by (INV-SD-08).
+# ${MODEL}DeletedPublic extends it for the superuser-only /deleted/ endpoint.
+import uuid as _sd_schema_uuid
+from datetime import datetime as _sd_schema_datetime
+
+from pydantic import BaseModel as _SDBaseModel, ConfigDict as _SDConfigDict
+
+
+class ${MODEL}DeletedPublic(${MODEL}Public):
+    """Extended schema for the admin /deleted/ endpoint only."""
+
+    is_deleted: bool
+    deleted_at: _sd_schema_datetime
+    deleted_by: _sd_schema_uuid.UUID | None = None
+
+
+class ${MODEL}sDeletedPublic(_SDBaseModel):
+    """Paginated list of soft-deleted $MODEL rows."""
+
+    model_config = _SDConfigDict(from_attributes=True)
+    data: list[${MODEL}DeletedPublic]
+    count: int

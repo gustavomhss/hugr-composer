@@ -1,0 +1,44 @@
+"""SoftDeleteMixin — reusable soft-delete columns (added by add_soft_delete tool).
+
+Adds ``is_deleted``, ``deleted_at`` and ``deleted_by`` to any SQLAlchemy 2.0
+declarative model via multiple inheritance. The global ``do_orm_execute``
+listener in ``app/core/soft_delete_filter.py`` keys off this class so every
+SELECT against a mixed-in model transparently excludes soft-deleted rows.
+"""
+
+from __future__ import annotations
+
+import uuid
+from datetime import datetime
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Uuid
+from sqlalchemy.orm import Mapped, declared_attr, mapped_column
+
+
+class SoftDeleteMixin:
+    """Mix-in that injects soft-delete columns into a model.
+
+    Inheriting models gain:
+      - ``is_deleted``: bool (DB ``server_default="false"``, NOT NULL — instant
+        metadata-only ALTER on PostgreSQL 11+).
+      - ``deleted_at``: ``datetime | None`` (timezone-aware).
+      - ``deleted_by``: ``uuid.UUID | None`` (FK to ``users.id``, SET NULL).
+    """
+
+    @declared_attr
+    def is_deleted(cls) -> Mapped[bool]:
+        return mapped_column(
+            Boolean, default=False, nullable=False, server_default="false"
+        )
+
+    @declared_attr
+    def deleted_at(cls) -> Mapped[datetime | None]:
+        return mapped_column(DateTime(timezone=True), nullable=True, default=None)
+
+    @declared_attr
+    def deleted_by(cls) -> Mapped[uuid.UUID | None]:
+        return mapped_column(
+            Uuid,
+            ForeignKey("users.id", ondelete="SET NULL"),
+            nullable=True,
+        )
