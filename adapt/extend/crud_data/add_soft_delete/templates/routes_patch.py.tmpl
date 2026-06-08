@@ -15,20 +15,20 @@ from app.crud.$STEM import (
     restore as _sd_restore,
 )
 from app.schemas.$STEM import (
-    ${MODEL}DeletedPublic as _SD${MODEL}DeletedPublic,  # noqa: F401
-    ${MODEL}sDeletedPublic as _SD${MODEL}sDeletedPublic,
+    ${MODEL}DeletedPublic,  # noqa: F401
+    ${MODEL}sDeletedPublic,
 )
 
 
-@router.get("/deleted/", response_model=_SD${MODEL}sDeletedPublic)
+@router.get("/deleted/", response_model=${MODEL}sDeletedPublic)
 async def list_deleted_${STEM}(
     session: SessionDep,
     current_user: CurrentSuperuser,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=1000),
-) -> _SD${MODEL}sDeletedPublic:
+) -> ${MODEL}sDeletedPublic:
     """List soft-deleted $MODEL rows. Superuser only."""
-    return _SD${MODEL}sDeletedPublic(
+    return ${MODEL}sDeletedPublic(
         **await _sd_list_deleted(session, skip=skip, limit=limit)
     )
 
