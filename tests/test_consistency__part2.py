@@ -130,7 +130,7 @@ def _collect_response_model_names(app_dir: Path) -> list[tuple[str, str, Path]]:
     return results
 
 
-def test_3_schema_consistency(project_dir: Path) -> tuple[bool, str]:
+def check_3_schema_consistency(project_dir: Path) -> tuple[bool, str]:
     """Test 3: Pydantic schema hygiene.
 
     Returns:
@@ -349,7 +349,7 @@ def _decorator_has_depends(decorator: ast.Call) -> bool:
     return False
 
 
-def test_4_route_consistency(project_dir: Path) -> tuple[bool, str]:
+def check_4_route_consistency(project_dir: Path) -> tuple[bool, str]:
     """Test 4: Route registration sanity checks.
 
     Returns:

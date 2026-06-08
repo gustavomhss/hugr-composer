@@ -7,11 +7,13 @@ Test 2: Tools write nothing outside project_dir (sandbox containment)
 Test 3: Generated project is self-contained (survives relocation)
 Test 4: Golden snapshot regression guard (file count, LOC, routes, models, migrations)
 
+This is a **script-runner** (same convention as ``tests/test_boot.py``): the
+check functions return ``(ok, message)`` tuples and are driven by the
+``run_all_tests()`` runner below — they are NOT pytest tests, so they are named
+``check_*`` rather than ``test_*`` to keep pytest from collecting them.
+
 Run standalone:
     PYTHONPATH=. python3 tests/test_determinism.py
-
-Run via pytest:
-    PYTHONPATH=. pytest tests/test_determinism.py -v
 
 Exit code 0  → all 4 tests pass
 Exit code 1  → one or more tests failed (details printed)
@@ -53,11 +55,11 @@ _SNAPSHOT_PATH = _SKILL_ROOT / "tests" / "fixtures" / "golden_snapshot.json"
 
 # 5 tools used for determinism / containment / relocation tests
 _TOOLS_5: list[tuple[str, str, str]] = [
-    ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete",      "add_soft_delete"),
-    ("add_rbac",        "adapt.extend.auth_access.add_rbac",           "add_rbac"),
-    ("add_audit_log",   "adapt.extend.crud_data.add_audit_log",        "add_audit_log"),
+    ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete", "add_soft_delete"),
+    ("add_rbac", "adapt.extend.auth_access.add_rbac", "add_rbac"),
+    ("add_audit_log", "adapt.extend.crud_data.add_audit_log", "add_audit_log"),
     ("add_cache_layer", "adapt.extend.infrastructure.add_cache_layer", "add_cache_layer"),
-    ("add_search",      "adapt.extend.crud_data.add_search",           "add_search"),
+    ("add_search", "adapt.extend.crud_data.add_search", "add_search"),
 ]
 
 # 3 tools for the relocation test
@@ -66,7 +68,7 @@ _TOOLS_3: list[tuple[str, str, str]] = _TOOLS_5[:3]
 # 2 tools for the golden snapshot test
 _TOOLS_SNAP: list[tuple[str, str, str]] = [
     ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete", "add_soft_delete"),
-    ("add_rbac",        "adapt.extend.auth_access.add_rbac",      "add_rbac"),
+    ("add_rbac", "adapt.extend.auth_access.add_rbac", "add_rbac"),
 ]
 
 # ---------------------------------------------------------------------------
@@ -128,7 +130,7 @@ def _collect_routes(project_dir: Path) -> list[str]:
     Returns:
         Deduplicated, sorted list of route strings.
     """
-    _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}
+    _HTTP_METHODS = {"get", "post", "put", "patch", "delete", "head", "options"}  # noqa: N806
     routes: set[str] = set()
     for py_file in sorted(project_dir.rglob("*.py")):
         if any(part in _EXCLUDE_DIR_PARTS for part in py_file.parts):
@@ -183,10 +185,7 @@ def _collect_models(project_dir: Path) -> list[str]:
                     base_names.append(base.id)
                 elif isinstance(base, ast.Attribute):
                     base_names.append(base.attr)
-            if any(
-                b in {"Base", "DeclarativeBase"} or b.endswith("Mixin")
-                for b in base_names
-            ):
+            if any(b in {"Base", "DeclarativeBase"} or b.endswith("Mixin") for b in base_names):
                 models.add(node.name)
     return sorted(models)
 
@@ -203,11 +202,7 @@ def _collect_migrations(project_dir: Path) -> list[str]:
     versions_dir = project_dir / "alembic" / "versions"
     if not versions_dir.exists():
         return []
-    return sorted(
-        f.name
-        for f in versions_dir.glob("*.py")
-        if f.name != "__init__.py"
-    )
+    return sorted(f.name for f in versions_dir.glob("*.py") if f.name != "__init__.py")
 
 
 def _count_loc(project_dir: Path) -> int:
@@ -223,7 +218,7 @@ def _count_loc(project_dir: Path) -> int:
     for py_file in project_dir.rglob("*.py"):
         if any(part in _EXCLUDE_DIR_PARTS for part in py_file.parts):
             continue
-        try:
+        try:  # noqa: SIM105
             total += len(py_file.read_text(encoding="utf-8").splitlines())
         except OSError:
             pass
@@ -234,7 +229,8 @@ def _count_loc(project_dir: Path) -> int:
 # Test 1 — Determinism: same inputs → identical file-by-file output
 # ---------------------------------------------------------------------------
 
-def test_1_determinism(tmp_dir: Path) -> tuple[bool, str]:
+
+def check_1_determinism(tmp_dir: Path) -> tuple[bool, str]:
     """Test 1: Identical inputs produce byte-for-byte identical output.
 
     Generates two projects (A and B) with exactly the same name and applies
@@ -295,24 +291,22 @@ def test_1_determinism(tmp_dir: Path) -> tuple[bool, str]:
             failures.append(f"CONTENT DIFFERS: {rel}\n{diff_excerpt}")
         except UnicodeDecodeError:
             failures.append(
-                f"BINARY CONTENT DIFFERS: {rel} "
-                f"(A={len(bytes_a)} bytes, B={len(bytes_b)} bytes)"
+                f"BINARY CONTENT DIFFERS: {rel} (A={len(bytes_a)} bytes, B={len(bytes_b)} bytes)"
             )
 
     if failures:
         detail = "\n".join(failures)
         return False, f"Determinism failures ({len(failures)} file(s) differ):\n{detail}"
 
-    return True, (
-        f"Deterministic: {len(files_a)} files across A and B are byte-for-byte identical"
-    )
+    return True, (f"Deterministic: {len(files_a)} files across A and B are byte-for-byte identical")
 
 
 # ---------------------------------------------------------------------------
 # Test 2 — Sandbox containment: no writes outside project_dir
 # ---------------------------------------------------------------------------
 
-def test_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
+
+def check_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
     """Test 2: Tools write nothing outside the project_dir boundary.
 
     Strategy:
@@ -352,21 +346,16 @@ def test_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
     # -- HOME snapshot (top-level files only, non-recursive) -----------------
     home_path = Path.home()
     try:
-        home_before: set[str] = {
-            str(p) for p in home_path.iterdir() if p.is_file()
-        }
+        home_before: set[str] = {str(p) for p in home_path.iterdir() if p.is_file()}
     except OSError:
         home_before = set()
 
     # -- Generate project and apply tools ------------------------------------
-    project_dir = create_fixture_project(
-        name="sandbox_test", tmp_dir=parent_probe
-    )
+    project_dir = create_fixture_project(name="sandbox_test", tmp_dir=parent_probe)
     # Snapshot the parent (minus project_dir itself) before tools run
     try:
         parent_before: set[str] = {
-            str(p) for p in parent_probe.iterdir()
-            if not Path(p).is_relative_to(project_dir)
+            str(p) for p in parent_probe.iterdir() if not Path(p).is_relative_to(project_dir)
         }
     except OSError:
         parent_before = set()
@@ -391,15 +380,12 @@ def test_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
             )
         canary_mtime_after = canary_file.stat().st_mtime
         if canary_mtime_after != canary_mtime_before:
-            failures.append(
-                f"Canary file mtime changed (file was touched): {canary_file}"
-            )
+            failures.append(f"Canary file mtime changed (file was touched): {canary_file}")
 
     # Check 2: no new entries in parent_probe outside project_dir
     try:
         parent_after: set[str] = {
-            str(p) for p in parent_probe.iterdir()
-            if not Path(p).is_relative_to(project_dir)
+            str(p) for p in parent_probe.iterdir() if not Path(p).is_relative_to(project_dir)
         }
     except OSError:
         parent_after = set()
@@ -414,9 +400,7 @@ def test_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
 
     # Check 3: no new top-level files in HOME
     try:
-        home_after: set[str] = {
-            str(p) for p in home_path.iterdir() if p.is_file()
-        }
+        home_after: set[str] = {str(p) for p in home_path.iterdir() if p.is_file()}
     except OSError:
         home_after = set()
 
@@ -424,24 +408,21 @@ def test_2_sandbox_containment(tmp_dir: Path) -> tuple[bool, str]:
     if new_in_home:
         failures.append(
             f"New files appeared in HOME ({home_path}) "
-            f"({len(new_in_home)} file(s)):\n"
-            + "\n".join(f"  {p}" for p in sorted(new_in_home))
+            f"({len(new_in_home)} file(s)):\n" + "\n".join(f"  {p}" for p in sorted(new_in_home))
         )
 
     if failures:
         return False, "Sandbox violation(s):\n" + "\n".join(failures)
 
-    return True, (
-        "Sandbox contained: canary untouched, "
-        "no new files in project parent dir or HOME"
-    )
+    return True, ("Sandbox contained: canary untouched, no new files in project parent dir or HOME")
 
 
 # ---------------------------------------------------------------------------
 # Test 3 — Relocation: no hardcoded absolute paths
 # ---------------------------------------------------------------------------
 
-def test_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
+
+def check_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
     """Test 3: Generated project survives relocation (no hardcoded paths).
 
     Steps:
@@ -482,15 +463,13 @@ def test_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
             continue
         if original_str in content:
             failures.append(
-                f"Hardcoded original path found in: "
-                f"{candidate.relative_to(relocated_dir)}"
+                f"Hardcoded original path found in: {candidate.relative_to(relocated_dir)}"
             )
 
     if failures:
         return False, (
             "Absolute path(s) baked into project files "
-            f"({len(failures)} file(s)):\n"
-            + "\n".join(f"  {f}" for f in failures)
+            f"({len(failures)} file(s)):\n" + "\n".join(f"  {f}" for f in failures)
         )
 
     # -- Try importing app.main from the relocated directory ------------------
@@ -501,9 +480,7 @@ def test_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
     # Insert relocated_dir into sys.path temporarily
     sys.path.insert(0, str(relocated_dir))
     try:
-        spec = importlib.util.spec_from_file_location(
-            "_relocated_app_main", str(main_py)
-        )
+        spec = importlib.util.spec_from_file_location("_relocated_app_main", str(main_py))
         if spec is None or spec.loader is None:
             return False, f"Could not create module spec for {main_py}"
         module = importlib.util.module_from_spec(spec)
@@ -514,9 +491,7 @@ def test_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
         # Light sanity-check: app should be a FastAPI instance
         app_type = type(app).__name__
         if app_type not in {"FastAPI", "Starlette"}:
-            return False, (
-                f"app/main.py 'app' is {app_type!r}, expected FastAPI"
-            )
+            return False, (f"app/main.py 'app' is {app_type!r}, expected FastAPI")
     except Exception as exc:  # noqa: BLE001
         return False, f"app/main.py failed to import after relocation: {exc}"
     finally:
@@ -536,6 +511,7 @@ def test_3_relocation(tmp_dir: Path) -> tuple[bool, str]:
 # Test 4 — Regression snapshot
 # ---------------------------------------------------------------------------
 
+
 def _build_snapshot(project_dir: Path) -> dict:
     """Build a regression snapshot from a generated project.
 
@@ -547,7 +523,8 @@ def _build_snapshot(project_dir: Path) -> dict:
         routes, models, migrations.
     """
     all_files = [
-        p for p in project_dir.rglob("*")
+        p
+        for p in project_dir.rglob("*")
         if p.is_file()
         and not any(part in _EXCLUDE_DIR_PARTS for part in p.parts)
         and p.suffix not in _EXCLUDE_SUFFIXES
@@ -564,7 +541,7 @@ def _build_snapshot(project_dir: Path) -> dict:
     }
 
 
-def test_4_regression_snapshot(tmp_dir: Path) -> tuple[bool, str]:
+def check_4_regression_snapshot(tmp_dir: Path) -> tuple[bool, str]:
     """Test 4: Golden snapshot regression guard.
 
     On the FIRST run (no snapshot file found): generates the project,
@@ -597,9 +574,7 @@ def test_4_regression_snapshot(tmp_dir: Path) -> tuple[bool, str]:
     # -- First run: create golden snapshot -----------------------------------
     if not _SNAPSHOT_PATH.exists():
         _SNAPSHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
-        _SNAPSHOT_PATH.write_text(
-            json.dumps(current, indent=2, sort_keys=True), encoding="utf-8"
-        )
+        _SNAPSHOT_PATH.write_text(json.dumps(current, indent=2, sort_keys=True), encoding="utf-8")
         return True, (
             f"Golden snapshot CREATED at {_SNAPSHOT_PATH}\n"
             f"  file_count={current['file_count']}, "
@@ -614,29 +589,21 @@ def test_4_regression_snapshot(tmp_dir: Path) -> tuple[bool, str]:
     golden: dict = json.loads(_SNAPSHOT_PATH.read_text(encoding="utf-8"))
     regressions: list[str] = []
 
-    _SCALAR_KEYS = ["file_count", "python_file_count", "total_loc"]
+    _SCALAR_KEYS = ["file_count", "python_file_count", "total_loc"]  # noqa: N806
     for key in _SCALAR_KEYS:
         if current.get(key) != golden.get(key):
-            regressions.append(
-                f"{key}: expected {golden.get(key)}, got {current.get(key)}"
-            )
+            regressions.append(f"{key}: expected {golden.get(key)}, got {current.get(key)}")
 
-    _LIST_KEYS = ["routes", "models", "migrations"]
+    _LIST_KEYS = ["routes", "models", "migrations"]  # noqa: N806
     for key in _LIST_KEYS:
         cur_set = set(current.get(key, []))
         gold_set = set(golden.get(key, []))
         added = cur_set - gold_set
         removed = gold_set - cur_set
         if added:
-            regressions.append(
-                f"{key} ADDED ({len(added)}): "
-                + ", ".join(sorted(added))
-            )
+            regressions.append(f"{key} ADDED ({len(added)}): " + ", ".join(sorted(added)))
         if removed:
-            regressions.append(
-                f"{key} REMOVED ({len(removed)}): "
-                + ", ".join(sorted(removed))
-            )
+            regressions.append(f"{key} REMOVED ({len(removed)}): " + ", ".join(sorted(removed)))
 
     if regressions:
         detail = "\n  ".join(regressions)
@@ -660,10 +627,10 @@ def test_4_regression_snapshot(tmp_dir: Path) -> tuple[bool, str]:
 # ---------------------------------------------------------------------------
 
 _TESTS = [
-    ("Determinism (same inputs → identical output)", test_1_determinism),
-    ("Sandbox containment (no writes outside project_dir)", test_2_sandbox_containment),
-    ("Relocation (no hardcoded absolute paths)", test_3_relocation),
-    ("Regression snapshot (golden file comparison)", test_4_regression_snapshot),
+    ("Determinism (same inputs → identical output)", check_1_determinism),
+    ("Sandbox containment (no writes outside project_dir)", check_2_sandbox_containment),
+    ("Relocation (no hardcoded absolute paths)", check_3_relocation),
+    ("Regression snapshot (golden file comparison)", check_4_regression_snapshot),
 ]
 
 

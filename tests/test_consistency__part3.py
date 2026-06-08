@@ -23,16 +23,16 @@ from pathlib import Path
 # this module (they are owned by part1/part2). They are only referenced by the
 # standalone ``run_all_tests`` runner below via ``_TESTS``.
 from tests.test_consistency__part1 import (  # noqa: E402
-    test_1_no_import_cycles as _run_test_1,
+    check_1_no_import_cycles as _run_test_1,
 )
 from tests.test_consistency__part1 import (
-    test_2_model_consistency as _run_test_2,
+    check_2_model_consistency as _run_test_2,
 )
 from tests.test_consistency__part2 import (  # noqa: E402
-    test_3_schema_consistency as _run_test_3,
+    check_3_schema_consistency as _run_test_3,
 )
 from tests.test_consistency__part2 import (
-    test_4_route_consistency as _run_test_4,
+    check_4_route_consistency as _run_test_4,
 )
 from tests.test_consistency__shared import (  # noqa: E402
     _build_10_tool_project,
@@ -122,7 +122,7 @@ def _is_downgrade_pass_only(source: str) -> bool:
     return False
 
 
-def test_5_migration_chain(project_dir: Path) -> tuple[bool, str]:
+def check_5_migration_chain(project_dir: Path) -> tuple[bool, str]:
     """Test 5: Alembic migration chain integrity.
 
     Checks:
@@ -214,7 +214,7 @@ _ENV_EXAMPLE_KEY_RE = re.compile(r"^([A-Z_][A-Z0-9_]*)=", re.MULTILINE)
 _MODULE_LEVEL_VAR_RE = re.compile(r"^([A-Z_][A-Z0-9_]*)\s*(?::\s*\S+\s*)?=", re.MULTILINE)
 
 
-def test_6_config_consistency(project_dir: Path) -> tuple[bool, str]:
+def check_6_config_consistency(project_dir: Path) -> tuple[bool, str]:
     """Test 6: Config/env-var coverage.
 
     Checks:
@@ -304,8 +304,8 @@ _TESTS = [
     ("Model consistency", _run_test_2),
     ("Schema consistency", _run_test_3),
     ("Route consistency", _run_test_4),
-    ("Migration chain", test_5_migration_chain),
-    ("Config consistency", test_6_config_consistency),
+    ("Migration chain", check_5_migration_chain),
+    ("Config consistency", check_6_config_consistency),
 ]
 
 
