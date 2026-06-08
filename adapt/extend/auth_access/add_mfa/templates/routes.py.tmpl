@@ -15,6 +15,13 @@ a valid TOTP code.
 INV-MFA-05: ``/disable`` requires a fresh TOTP ``code`` — a stolen session
 alone cannot turn MFA off.
 
+INV-MFA-06: brute-force throttling is DURABLE. ``/challenge`` loads the
+``MFADevice`` row, calls ``check_not_locked`` (raises 429 while locked),
+verifies, then ``record_failure`` / ``reset`` mutates the row's
+``failed_attempts`` + ``locked_until`` columns and persists them in the same
+transaction. There is NO per-worker in-memory counter, so an attacker cannot
+spread guesses across processes to bypass the limit.
+
 ⚠ MFA IS NOT ENFORCED on login until you wire the pending-token step into
   the login flow (add_mfa patches login.py when it exists; otherwise copy
   app/api/routes/_mfa_example.py) and persist MFA state on the user model.
@@ -23,11 +30,17 @@ alone cannot turn MFA off.
 from __future__ import annotations
 
 import secrets
+import uuid
 
-from fastapi import APIRouter, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser
+from app.core.mfa.crypto import decrypt_secret
+from app.core.mfa.rate_limit import check_not_locked, record_failure, reset
+from app.core.session import get_session
+from app.crud.mfa import get_device
 from app.mfa import get_verifier, verify_code
 
 router = APIRouter(prefix="/auth/mfa", tags=["mfa"])
@@ -96,28 +109,51 @@ async def mfa_verify_enrollment(
 
 
 @router.post("/challenge")
-async def mfa_challenge(body: _ChallengeBody, request: Request) -> dict:
+async def mfa_challenge(
+    body: _ChallengeBody,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
     """Exchange a password-verified ``pending_token`` + TOTP code for full auth.
 
     INV-MFA-03/04: this is the ONLY endpoint that accepts a pending_token.
-    The caller supplies the user's stored ``last_step`` and persists the
-    returned value to defeat replay. On success the login flow issues the
-    real access token.
+    INV-MFA-06: throttling is DURABLE — the ``MFADevice`` row is loaded, the
+    lockout is checked (429), and ``failed_attempts`` / ``locked_until`` are
+    mutated and committed in the same transaction. No per-worker counter, so
+    spreading guesses across processes does NOT bypass the limit.
     """
-    secret = _resolve_pending_secret(request, body.pending_token)
+    user_id = _resolve_pending_user_id(request, body.pending_token)
+    device = await get_device(session, user_id)
+    if device is None or not device.mfa_enabled:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="invalid or expired pending_token",
+        )
+
+    # Durable brute-force gate — read from the persisted row (INV-MFA-06).
+    check_not_locked(device)
+
+    secret = decrypt_secret(device.secret_enc)
     verifier = get_verifier(request.app)
     try:
         new_step = await verify_code(
             verifier,
             secret=secret,
             code=body.code,
-            last_step=body.last_step,
+            last_step=device.last_step,
         )
     except Exception as exc:  # noqa: BLE001 — surface as 401, never 500
+        record_failure(device)
+        await session.commit()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid or replayed TOTP code",
         ) from exc
+
+    # Success: advance anti-replay step and clear the durable failure counter.
+    device.last_step = new_step
+    reset(device)
+    await session.commit()
     return {"status": "ok", "last_step": new_step}
 
 
@@ -154,12 +190,14 @@ async def mfa_disable(
     return {"status": "disabled", "note": "Clear user MFA state to finalise."}
 
 
-def _resolve_pending_secret(request: Request, pending_token: str) -> bytes:
-    """Validate the mfa_pending token and return the user's TOTP secret.
+def _resolve_pending_user_id(request: Request, pending_token: str) -> uuid.UUID:
+    """Validate the mfa_pending token and return the owning user's id.
 
     This is a wiring seam: replace the body with a real decode of the
-    pending_token (verifying purpose == MFA_PENDING_PURPOSE) and a DB lookup
-    of the user's decrypted secret. The placeholder fails closed.
+    pending_token (verifying purpose == MFA_PENDING_PURPOSE) and return the
+    ``sub`` user id. The MFADevice row (encrypted secret + durable lockout
+    columns) is then loaded from the DB by the caller. The placeholder fails
+    closed.
     """
     if not pending_token:
         raise HTTPException(
@@ -167,10 +205,10 @@ def _resolve_pending_secret(request: Request, pending_token: str) -> bytes:
             detail="missing pending_token",
         )
     user = getattr(request.state, "mfa_pending_user", None)
-    secret = getattr(user, "totp_secret", None) if user is not None else None
-    if not secret:
+    user_id = getattr(user, "id", None) if user is not None else None
+    if user_id is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="invalid or expired pending_token",
         )
-    return secret
+    return user_id if isinstance(user_id, uuid.UUID) else uuid.UUID(str(user_id))

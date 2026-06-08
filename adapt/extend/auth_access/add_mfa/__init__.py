@@ -11,7 +11,8 @@ CONTRACT §B1.0 + §B1.0.1 pattern (mirrors `add_sms_otp` / `add_graceful_shutdo
      MFARecoveryCode (single-use via ``used_at``).
    - ``app/core/mfa/crypto.py`` — Fernet encrypt/decrypt of TOTP secrets.
    - ``app/core/mfa/totp.py`` — pyotp-backed constant-time verification.
-   - ``app/core/mfa/rate_limit.py`` — brute-force 429 limiter.
+   - ``app/core/mfa/rate_limit.py`` — durable brute-force 429 limiter (no
+     module-level state; throttles on MFADevice.failed_attempts/locked_until).
    - ``app/crud/mfa.py`` — atomic single-use recovery-code consumption.
    - ``app/api/routes/mfa.py`` — mounted ``/auth/mfa`` router with the
      pending-token (``mfa_pending``) challenge flow.
@@ -92,6 +93,7 @@ def add_mfa(inp: ToolInput) -> ToolResult:
         Prereq.CONFIG_SETTINGS,
         Prereq.REQUIREMENTS_TXT,
         Prereq.ROUTES_INIT,
+        Prereq.SESSION_DEP,
         Prereq.ALEMBIC_VERSIONS,
         auto_scaffold=not inp.dry_run,
     )
@@ -234,7 +236,8 @@ def add_mfa(inp: ToolInput) -> ToolResult:
             "MFARecoveryCode (single-use via used_at).",
             "Wrote app/core/mfa/crypto.py — Fernet encrypt/decrypt of TOTP secrets.",
             "Wrote app/core/mfa/totp.py — pyotp-backed constant-time verify.",
-            "Wrote app/core/mfa/rate_limit.py — brute-force 429 limiter.",
+            "Wrote app/core/mfa/rate_limit.py — durable brute-force 429 limiter "
+            "(failed_attempts + locked_until on MFADevice; no per-worker state).",
             "Wrote app/crud/mfa.py — atomic single-use recovery-code consumption.",
             "Wrote app/api/routes/mfa.py — mounted /auth/mfa router "
             "(enroll / verify-enrollment / challenge / disable) with the "
