@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "7d498d78",
-  "generated_at": "2026-06-08T16:19:12+00:00",
+  "kit_commit": "7016a06d",
+  "generated_at": "2026-06-08T16:56:55+00:00",
   "verbs": [
     "add",
     "generate",
@@ -1116,8 +1116,8 @@
       "domain": "data",
       "skill": "SKILL-001-fastapi-production",
       "bundle": "crud_data",
-      "synopsis": "Inject is_deleted + deleted_at columns into domain models, patch the shared CRUDBase class so get/ge",
-      "when_to_call": "Inject is_deleted + deleted_at columns into domain models, patch the shared CRUDBase class so get/get_multi/delete are soft-delete-aware in place, and emit an Alembic migration per affected table.",
+      "synopsis": "Add spec-compliant soft-delete: a SoftDeleteMixin (is_deleted, deleted_at, deleted_by), a global do_",
+      "when_to_call": "Add spec-compliant soft-delete: a SoftDeleteMixin (is_deleted, deleted_at, deleted_by), a global do_orm_execute query filter, soft_delete/restore/hard_delete CRUD helpers, admin deletion schemas and routes, and an Alembic migration per affected table.",
       "when_not_to_call": "",
       "tags": [
         "soft-delete"
@@ -12003,5 +12003,5 @@
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "0302572a9a122acf1ed189106fe834ecfa6690f2cb9dfdff53dd7067a532f717"
+  "stable_hash": "347e674fbe28efe1a700565d3d159de6d94b9625ea085bbc07ee5070e09b85b0"
 }

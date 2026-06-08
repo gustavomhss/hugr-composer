@@ -1,0 +1,89 @@
+
+
+# ---------------------------------------------------------------------------
+# SOFT_DELETE_CRUD_APPLIED — added by add_soft_delete tool.
+# ---------------------------------------------------------------------------
+# Soft-delete CRUD helpers for $MODEL. The global do_orm_execute filter
+# (app/core/soft_delete_filter.py) excludes soft-deleted rows from default
+# SELECTs, so admin/restore queries below opt back in via the
+# ``include_deleted=True`` execution option.
+import uuid as _sd_uuid
+from datetime import datetime as _sd_datetime, timezone as _sd_timezone
+
+from sqlalchemy import func as _sd_func, select as _sd_select
+from sqlalchemy.ext.asyncio import AsyncSession as _SDAsyncSession
+
+from app.models.$STEM import $MODEL as _SDModel
+
+
+async def soft_delete(
+    session: _SDAsyncSession,
+    item_id: _sd_uuid.UUID,
+    *,
+    deleted_by: _sd_uuid.UUID | None = None,
+) -> _SDModel | None:
+    """Soft-delete a $MODEL: set is_deleted=True, deleted_at=now(UTC), deleted_by."""
+    stmt = _sd_select(_SDModel).where(
+        _SDModel.id == item_id, _SDModel.is_deleted == False  # noqa: E712
+    )
+    obj = (await session.execute(stmt)).scalar_one_or_none()
+    if obj is None:
+        return None
+    obj.is_deleted = True
+    obj.deleted_at = _sd_datetime.now(_sd_timezone.utc)
+    if deleted_by is not None:
+        obj.deleted_by = deleted_by
+    await session.flush()
+    return obj
+
+
+async def restore(
+    session: _SDAsyncSession, item_id: _sd_uuid.UUID
+) -> _SDModel | None:
+    """Restore a soft-deleted $MODEL — atomically clears all three columns."""
+    stmt = (
+        _sd_select(_SDModel)
+        .where(_SDModel.id == item_id, _SDModel.is_deleted == True)  # noqa: E712
+        .execution_options(include_deleted=True)
+    )
+    obj = (await session.execute(stmt)).scalar_one_or_none()
+    if obj is None:
+        return None
+    obj.is_deleted = False
+    obj.deleted_at = None
+    obj.deleted_by = None
+    await session.flush()
+    return obj
+
+
+async def hard_delete(
+    session: _SDAsyncSession, item_id: _sd_uuid.UUID
+) -> _SDModel | None:
+    """Permanently remove a $MODEL row. Superuser-only. Bypasses soft-delete."""
+    stmt = (
+        _sd_select(_SDModel)
+        .where(_SDModel.id == item_id)
+        .execution_options(include_deleted=True)
+    )
+    obj = (await session.execute(stmt)).scalar_one_or_none()
+    if obj is None:
+        return None
+    await session.delete(obj)
+    await session.flush()
+    return obj
+
+
+async def list_deleted(
+    session: _SDAsyncSession, *, skip: int = 0, limit: int = 20
+) -> dict:
+    """List soft-deleted $MODEL rows with pagination (admin only)."""
+    base = (
+        _sd_select(_SDModel)
+        .where(_SDModel.is_deleted == True)  # noqa: E712
+        .execution_options(include_deleted=True)
+    )
+    count_stmt = _sd_select(_sd_func.count()).select_from(base.subquery())
+    total = (await session.execute(count_stmt)).scalar_one()
+    stmt = base.order_by(_SDModel.deleted_at.desc()).offset(skip).limit(limit)
+    result = await session.execute(stmt)
+    return {"data": list(result.scalars().all()), "count": total}
