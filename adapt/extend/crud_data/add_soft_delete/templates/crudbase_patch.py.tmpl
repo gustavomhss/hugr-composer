@@ -2,38 +2,13 @@
 # ---------------------------------------------------------------------------
 # SOFT_DELETE_PATCH_APPLIED — added by add_soft_delete tool.
 # ---------------------------------------------------------------------------
-# Single source of truth: CRUDBase.get / get_multi / delete become
-# soft-delete-aware in place. When the bound model has an ``is_deleted``
-# column, reads exclude soft-deleted rows and ``delete()`` flips the flag
-# (and ``deleted_at`` if present) instead of physically removing the row.
-# Models without ``is_deleted`` keep the original hard-delete behaviour, so
-# auth / infra tables stay untouched.
+# Read exclusion of soft-deleted rows is handled GLOBALLY by the
+# do_orm_execute listener in app/core/soft_delete_filter.py (INV-SD-01), so
+# CRUDBase.get / get_multi need no per-query is_deleted clause. We only
+# override delete() so the default DELETE route flips is_deleted=True instead
+# of issuing a SQL DELETE (INV-SD-03). Models without is_deleted (auth/infra)
+# fall through to the original hard-delete behaviour.
 from datetime import datetime as _sd_datetime, timezone as _sd_timezone
-
-from sqlalchemy import func as _sd_func, select as _sd_select
-
-
-async def _sd_get(self, session, id):
-    """Soft-delete-aware ``get`` — returns ``None`` for soft-deleted rows."""
-    stmt = _sd_select(self.model).where(self.model.id == id)
-    if hasattr(self.model, "is_deleted"):
-        stmt = stmt.where(self.model.is_deleted == False)  # noqa: E712
-    result = await session.execute(stmt)
-    return result.scalar_one_or_none()
-
-
-async def _sd_get_multi(self, session, *, skip=0, limit=20, owner_id=None):
-    """Soft-delete-aware ``get_multi`` — excludes soft-deleted rows."""
-    stmt = _sd_select(self.model)
-    if hasattr(self.model, "is_deleted"):
-        stmt = stmt.where(self.model.is_deleted == False)  # noqa: E712
-    if owner_id is not None and hasattr(self.model, "owner_id"):
-        stmt = stmt.where(self.model.owner_id == owner_id)
-    count_stmt = _sd_select(_sd_func.count()).select_from(stmt.subquery())
-    total = (await session.execute(count_stmt)).scalar_one()
-    stmt = stmt.order_by(self.model.created_at.desc()).offset(skip).limit(limit)
-    result = await session.execute(stmt)
-    return {"data": list(result.scalars().all()), "count": total}
 
 
 async def _sd_delete(self, session, id):
@@ -43,7 +18,7 @@ async def _sd_delete(self, session, id):
     ``deleted_at`` if present) instead of issuing a SQL DELETE.
     For models without it: falls back to the original hard-delete.
     """
-    obj = await _sd_get(self, session, id)
+    obj = await self.get(session, id)
     if obj is None:
         return None
     if hasattr(obj, "is_deleted"):
@@ -57,6 +32,4 @@ async def _sd_delete(self, session, id):
     return obj
 
 
-CRUDBase.get = _sd_get
-CRUDBase.get_multi = _sd_get_multi
 CRUDBase.delete = _sd_delete

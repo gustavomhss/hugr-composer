@@ -1,0 +1,38 @@
+"""Global soft-delete query filter (added by add_soft_delete tool).
+
+Registers a ``do_orm_execute`` listener on ``Session`` so that every SELECT
+against a :class:`SoftDeleteMixin` model automatically injects
+``WHERE is_deleted = false``. Import this module once at application startup
+(it is wired into ``app/main.py`` by the tool) to activate the filter.
+
+Admin / restore queries opt out via the ``include_deleted=True`` execution
+option, e.g. ``select(Item).execution_options(include_deleted=True)``.
+"""
+
+from __future__ import annotations
+
+from sqlalchemy import event
+from sqlalchemy.orm import Session, with_loader_criteria
+
+from app.models.mixins import SoftDeleteMixin
+
+
+@event.listens_for(Session, "do_orm_execute")
+def _enforce_soft_delete_filter(execute_state) -> None:
+    """Inject ``is_deleted == False`` into every SELECT on a SoftDeleteMixin model.
+
+    Skipped for non-SELECT statements and for any statement carrying the
+    ``include_deleted=True`` execution option.
+    """
+    if not execute_state.is_select:
+        return
+    if execute_state.execution_options.get("include_deleted"):
+        return
+
+    execute_state.statement = execute_state.statement.options(
+        with_loader_criteria(
+            SoftDeleteMixin,
+            lambda cls: cls.is_deleted == False,  # noqa: E712
+            include_aliases=True,
+        )
+    )

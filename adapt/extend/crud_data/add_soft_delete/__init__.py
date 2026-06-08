@@ -1,12 +1,25 @@
 """TOOL-001: add_soft_delete — real soft-delete for FastAPI/SQLAlchemy.
 
-Discovers domain models, injects ``is_deleted`` + ``deleted_at`` columns,
-patches the shared ``CRUDBase`` in ``app/crud/base.py`` (single source of
-truth — P1-#14) so ``get/get_multi/delete`` are soft-delete-aware in place,
-and emits an Alembic migration per affected table. Per-model opt-out hook
-(F-04): a model without ``is_deleted`` falls through to hard-delete, so
-auth/infra tables keep hard-delete semantics. Idempotent via the
-``SOFT_DELETE_PATCH_APPLIED`` fingerprint.
+Implements the SPEC v2 design (specs/TOOL-001-add_soft_delete.md):
+
+  * Emits ``app/models/mixins.py::SoftDeleteMixin`` (is_deleted, deleted_at,
+    deleted_by) and makes each domain model inherit it.
+  * Emits ``app/core/soft_delete_filter.py`` — a global ``do_orm_execute``
+    listener using ``with_loader_criteria`` so every SELECT against a
+    SoftDeleteMixin model transparently excludes soft-deleted rows
+    (INV-SD-01); wired into ``app/main.py`` as a side-effect import.
+  * Adds ``soft_delete`` / ``restore`` / ``hard_delete`` / ``list_deleted``
+    helpers to ``app/crud/<model>.py`` — restore atomically clears all three
+    deletion columns (INV-SD-04); soft_delete uses ``flush`` not ``commit``.
+  * Adds the admin-only ``<Model>DeletedPublic`` / ``<Model>sDeletedPublic``
+    schemas to ``app/schemas/<model>.py``; ``<Model>Public`` is never
+    modified, so the default API contract stays clean (INV-SD-08).
+  * Patches ``CRUDBase.delete`` so the default DELETE route soft-deletes,
+    adds management routes, and emits an Alembic migration per table.
+
+Per-model opt-out (F-04): a model without ``is_deleted`` keeps hard-delete.
+Idempotent via the ``SOFT_DELETE_PATCH_APPLIED`` fingerprint in
+``app/crud/base.py``.
 """
 
 from __future__ import annotations
@@ -17,6 +30,7 @@ import time
 from pathlib import Path
 
 from adapt._base import (
+    patch_add_import,
     patch_append_module_block,
     patch_append_router_endpoint,
     render,
@@ -30,9 +44,10 @@ _HERE = Path(__file__).parent
 MCP_TOOL = {
     "name": "fastapi_data_add_soft_delete",
     "description": (
-        "Inject is_deleted + deleted_at columns into domain models, patch the "
-        "shared CRUDBase class so get/get_multi/delete are soft-delete-aware "
-        "in place, and emit an Alembic migration per affected table."
+        "Add spec-compliant soft-delete: a SoftDeleteMixin (is_deleted, "
+        "deleted_at, deleted_by), a global do_orm_execute query filter, "
+        "soft_delete/restore/hard_delete CRUD helpers, admin deletion schemas "
+        "and routes, and an Alembic migration per affected table."
     ),
     "tags": ["extend", "crud_data"],
     "entry": "add_soft_delete",
@@ -45,6 +60,13 @@ _PATCH_FINGERPRINT = "SOFT_DELETE_PATCH_APPLIED"
 # Fingerprint for the soft-delete management endpoints appended to each
 # domain model's route file (restore / permanent-delete / list-deleted).
 _ROUTES_FINGERPRINT = "SOFT_DELETE_ROUTES_APPLIED"
+
+# Fingerprint for the CRUD helpers (soft_delete/restore/hard_delete/list_deleted)
+# appended to each domain model's ``app/crud/<model>.py``.
+_CRUD_FINGERPRINT = "SOFT_DELETE_CRUD_APPLIED"
+
+# Fingerprint for the admin deletion schemas appended to ``app/schemas/<model>.py``.
+_SCHEMA_FINGERPRINT = "SOFT_DELETE_SCHEMA_APPLIED"
 
 
 def add_soft_delete(inp: ToolInput) -> ToolResult:
@@ -91,10 +113,13 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="success",
             notes=[
-                "[dry_run] Would inject is_deleted + deleted_at into models: "
-                + ", ".join(model_names),
-                "[dry_run] Would patch CRUDBase in app/crud/base.py so get/get_multi/delete are soft-delete-aware.",
-                "[dry_run] Would generate Alembic migration for each model.",
+                "[dry_run] Would make models inherit SoftDeleteMixin "
+                "(is_deleted, deleted_at, deleted_by): " + ", ".join(model_names),
+                "[dry_run] Would emit app/models/mixins.py + app/core/soft_delete_filter.py "
+                "(global do_orm_execute filter) and wire it into app/main.py.",
+                "[dry_run] Would add soft_delete/restore/hard_delete/list_deleted crud helpers, "
+                "admin schemas, management routes, and patch CRUDBase.delete.",
+                "[dry_run] Would generate an Alembic migration for each model.",
             ],
             next_steps=["Re-run without dry_run=True to apply."],
             execution_time_ms=_elapsed_ms(start),
@@ -105,12 +130,28 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
     patched_models: list[str] = []
     versions_dir = project / "alembic" / "versions"
 
+    # Global, project-wide artefacts (emitted once regardless of model count):
+    # the SoftDeleteMixin and the do_orm_execute query filter, plus the
+    # side-effect import that activates the filter at startup.
+    _emit_mixin(app_dir, files_created)
+    _emit_filter(app_dir, files_created)
+    if _wire_filter_into_main(app_dir):
+        files_modified.append(str(app_dir / "main.py"))
+
     routes_dir = app_dir / "api" / "routes"
+    crud_dir = app_dir / "crud"
+    schemas_dir = app_dir / "schemas"
     for stem, pascal in model_pairs:
         model_file = app_dir / "models" / f"{stem}.py"
         if model_file.exists() and _patch_model(model_file, pascal):
             files_modified.append(str(model_file))
             patched_models.append(pascal)
+        crud_file = crud_dir / f"{stem}.py"
+        if crud_file.exists() and _patch_crud(crud_file, stem, pascal):
+            files_modified.append(str(crud_file))
+        schema_file = schemas_dir / f"{stem}.py"
+        if schema_file.exists() and _patch_schema(schema_file, stem, pascal):
+            files_modified.append(str(schema_file))
         route_file = routes_dir / f"{stem}.py"
         if route_file.exists() and _patch_routes(route_file, stem, pascal):
             files_modified.append(str(route_file))
@@ -148,20 +189,28 @@ def add_soft_delete(inp: ToolInput) -> ToolResult:
         files_created=files_created,
         files_modified=files_modified,
         notes=[
-            f"Injected is_deleted + deleted_at columns into models: {model_summary}.",
-            "Patched app/crud/base.py: CRUDBase.get/get_multi/delete are now soft-delete-aware.",
-            "  - get()/get_multi() filter out is_deleted=True rows.",
-            "  - delete() flips is_deleted/deleted_at instead of issuing SQL DELETE.",
-            "  - Models without is_deleted (auth/infra) keep original hard-delete behaviour.",
+            f"Models now inherit SoftDeleteMixin (is_deleted, deleted_at, deleted_by): {model_summary}.",
+            "Emitted app/models/mixins.py::SoftDeleteMixin.",
+            "Emitted app/core/soft_delete_filter.py — a global do_orm_execute "
+            "listener with with_loader_criteria so EVERY SELECT excludes "
+            "soft-deleted rows (INV-SD-01); wired into app/main.py.",
+            "Added crud helpers per model: soft_delete (sets is_deleted/deleted_at/"
+            "deleted_by + flush), restore (clears all 3 columns), hard_delete, "
+            "list_deleted (include_deleted=True).",
+            "Added admin schemas <Model>DeletedPublic / <Model>sDeletedPublic; "
+            "<Model>Public is intentionally NOT modified and does NOT expose the "
+            "deletion columns (INV-SD-08).",
+            "Patched app/crud/base.py: CRUDBase.delete now soft-deletes instead "
+            "of issuing SQL DELETE. Models without is_deleted keep hard-delete.",
             "Added management routes per model: GET /deleted/, POST /{id}/restore, "
-            "DELETE /{id}/permanent (auth-guarded, owner-scoped).",
+            "DELETE /{id}/permanent (superuser-gated).",
             "Alembic migration generated for each patched model.",
         ],
         next_steps=[
             "alembic upgrade head",
-            "In routes: keep using the existing crud.delete/get/get_multi entry points — they now soft-delete automatically.",
-            "Soft-deleted rows are excluded from get_multi() list/get responses.",
-            "To hard-delete, issue a direct SQL DELETE or add a dedicated purge endpoint.",
+            "Reads exclude soft-deleted rows automatically via the global filter; "
+            "the default DELETE route now soft-deletes.",
+            "Pass execution_options(include_deleted=True) for admin/restore queries.",
         ],
         execution_time_ms=_elapsed_ms(start),
     )
@@ -175,6 +224,21 @@ def _patch_routes(route_file: Path, stem: str, pascal: str) -> bool:
     via the ``SOFT_DELETE_ROUTES_APPLIED`` fingerprint. Returns ``True`` when
     the block is appended, ``False`` when it was already present.
     """
+    if _ROUTES_FINGERPRINT in route_file.read_text():
+        return False
+
+    # Ensure the names referenced by the appended handlers are importable.
+    src = route_file.read_text()
+    if not re.search(r"^import uuid\b", src, flags=re.MULTILINE):
+        route_file.write_text(_insert_after_imports(src, "import uuid\n"))
+    patch_add_import(route_file, module="fastapi", name="HTTPException")
+    patch_add_import(route_file, module="fastapi", name="Query")
+    patch_add_import(route_file, module="fastapi", name="status")
+    patch_add_import(route_file, module="app.api.deps", name="CurrentSuperuser")
+    patch_add_import(route_file, module="app.schemas.message", name="Message")
+    # restore route's response_model is the model's base public schema.
+    patch_add_import(route_file, module=f"app.schemas.{stem}", name=f"{pascal}Public")
+
     block = render(
         _HERE,
         "routes_patch.py.tmpl",
@@ -233,64 +297,127 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
 
 
 def _patch_model(model_file: Path, model_name: str) -> bool:
-    """Inject ``is_deleted`` and ``deleted_at`` columns into the model class."""
+    """Make the model inherit ``SoftDeleteMixin`` (which adds the 3 columns).
+
+    The deletion columns live on :class:`SoftDeleteMixin` (emitted to
+    ``app/models/mixins.py``) so the global ``do_orm_execute`` listener can key
+    off that single base class via ``with_loader_criteria``. We rewrite the
+    target class's bases to ``class <Model>(SoftDeleteMixin, Base):`` and add
+    the mixin import. Idempotent: a no-op once the mixin is already a base.
+    """
     src = model_file.read_text()
-    if "is_deleted" in src:
+    if "SoftDeleteMixin" in src or "is_deleted" in src:
         return False
 
-    src = _ensure_sa_imports(src, {"Boolean", "DateTime"})
-    if "from datetime import datetime" not in src and "import datetime" not in src:
-        src = _insert_after_future(src, "from datetime import datetime, timezone\n")
-    elif "timezone" not in src:
-        src = src.replace(
-            "from datetime import datetime",
-            "from datetime import datetime, timezone",
-        )
+    # Insert ``from app.models.mixins import SoftDeleteMixin`` after the Base import.
+    if "from app.models.mixins import SoftDeleteMixin" not in src:
+        base_import = re.search(r"^from app\.models\.base import .+$", src, flags=re.MULTILINE)
+        if base_import:
+            pos = base_import.end()
+            src = src[:pos] + "\nfrom app.models.mixins import SoftDeleteMixin" + src[pos:]
+        else:
+            src = _insert_after_future(src, "from app.models.mixins import SoftDeleteMixin\n")
 
-    new_cols = (
-        "\n"
-        "    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)\n"
-        "    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)\n"
-    )
+    # Rewrite the class bases: ``class Model(Base)`` -> ``class Model(SoftDeleteMixin, Base)``.
+    pattern = re.compile(rf"^(class {re.escape(model_name)}\s*\()([^)]*)\)", re.MULTILINE)
 
-    src_lines = src.splitlines()
-    last_class_line = -1
-    in_class = False
-    for i, line in enumerate(src_lines):
-        if re.match(rf"^class {re.escape(model_name)}\b", line):
-            in_class = True
-        if in_class and line.startswith("    ") and line.strip():
-            last_class_line = i
+    def _add_mixin(m: re.Match) -> str:
+        bases = m.group(2).strip()
+        if not bases:
+            new_bases = "SoftDeleteMixin"
+        elif "SoftDeleteMixin" in bases:
+            new_bases = bases
+        else:
+            new_bases = "SoftDeleteMixin, " + bases
+        return f"{m.group(1)}{new_bases})"
 
-    if last_class_line == -1:
-        src = src.rstrip() + new_cols
-    else:
-        src_lines.insert(last_class_line + 1, new_cols.rstrip())
-        src = "\n".join(src_lines) + "\n"
+    new_src, n = pattern.subn(_add_mixin, src)
+    if n == 0:
+        return False
 
-    model_file.write_text(src)
+    model_file.write_text(new_src)
     return True
 
 
-def _ensure_sa_imports(src: str, names: set[str]) -> str:
-    """Ensure each name in *names* is present in the sqlalchemy imports."""
-    try:
-        already: set[str] = set()
-        for node in ast.walk(ast.parse(src)):
-            if isinstance(node, ast.ImportFrom) and node.module == "sqlalchemy":
-                already |= {alias.name for alias in node.names}
-        missing = names - already
-    except SyntaxError:
-        missing = names
-    if not missing:
-        return src
-    insert = "from sqlalchemy import " + ", ".join(sorted(missing)) + "\n"
-    anchor = re.search(r"^from sqlalchemy import ", src, flags=re.MULTILINE) or re.search(
-        r"^from sqlalchemy\.orm ", src, flags=re.MULTILINE
+def _emit_mixin(app_dir: Path, created: list[str]) -> None:
+    """Emit ``app/models/mixins.py`` with the SoftDeleteMixin (once)."""
+    dest = app_dir / "models" / "mixins.py"
+    if dest.exists() and "SoftDeleteMixin" in dest.read_text():
+        return
+    render_to(_HERE, "mixin.py.tmpl", dest=dest, substitutions={})
+    created.append(str(dest))
+
+
+def _emit_filter(app_dir: Path, created: list[str]) -> None:
+    """Emit ``app/core/soft_delete_filter.py`` with the do_orm_execute listener."""
+    dest = app_dir / "core" / "soft_delete_filter.py"
+    if dest.exists() and "do_orm_execute" in dest.read_text():
+        return
+    render_to(_HERE, "soft_delete_filter.py.tmpl", dest=dest, substitutions={})
+    created.append(str(dest))
+
+
+def _wire_filter_into_main(app_dir: Path) -> bool:
+    """Add the side-effect import of the filter module to ``app/main.py``.
+
+    Returns ``True`` when ``main.py`` was modified, ``False`` if the import was
+    already present or ``main.py`` is missing.
+    """
+    main_file = app_dir / "main.py"
+    if not main_file.exists():
+        return False
+    src = main_file.read_text()
+    if "soft_delete_filter" in src:
+        return False
+    # Side-effect import (noqa: registers the do_orm_execute listener at import).
+    import_line = (
+        "import app.core.soft_delete_filter  # noqa: F401  (registers soft-delete filter)\n"
     )
-    if anchor:
-        return src[: anchor.start()] + insert + src[anchor.start() :]
-    return insert + src
+    new_src = _insert_after_imports(src, import_line)
+    main_file.write_text(new_src)
+    return True
+
+
+def _insert_after_imports(src: str, line_to_insert: str) -> str:
+    """Insert *line_to_insert* after the last top-level import in *src*."""
+    try:
+        tree = ast.parse(src)
+    except SyntaxError:
+        return line_to_insert + src
+    last_import_line = 0
+    for node in tree.body:
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            end = getattr(node, "end_lineno", node.lineno)
+            if end and end > last_import_line:
+                last_import_line = end
+    lines = src.splitlines(keepends=True)
+    if last_import_line == 0:
+        return line_to_insert + src
+    before = "".join(lines[:last_import_line])
+    after = "".join(lines[last_import_line:])
+    if not before.endswith("\n"):
+        before += "\n"
+    return before + line_to_insert + after
+
+
+def _patch_crud(crud_file: Path, stem: str, pascal: str) -> bool:
+    """Append soft_delete / restore / hard_delete / list_deleted to crud/<stem>.py."""
+    block = render(_HERE, "crud_patch.py.tmpl", {"STEM": stem, "MODEL": pascal})
+    return patch_append_module_block(crud_file, block=block, fingerprint=_CRUD_FINGERPRINT)
+
+
+def _patch_schema(schema_file: Path, stem: str, pascal: str) -> bool:
+    """Append <Model>DeletedPublic / <Model>sDeletedPublic to schemas/<stem>.py.
+
+    ``<Model>Public`` is never modified, so the default API contract keeps
+    excluding the deletion columns (INV-SD-08).
+    """
+    src = schema_file.read_text()
+    if f"{pascal}Public" not in src:
+        # No base public schema to extend — skip rather than emit a broken class.
+        return False
+    block = render(_HERE, "schema_patch.py.tmpl", {"STEM": stem, "MODEL": pascal})
+    return patch_append_module_block(schema_file, block=block, fingerprint=_SCHEMA_FINGERPRINT)
 
 
 def _insert_after_future(src: str, line_to_insert: str) -> str:
