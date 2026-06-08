@@ -5,6 +5,9 @@
 # ---------------------------------------------------------------------------
 from sqlalchemy import select as _mt_select  # noqa: E402
 
+from app.api.middleware.tenant import (  # noqa: E402
+    reject_if_tenant_inactive as _mt_reject_if_inactive,
+)
 from app.core.tenant_context import set_current_tenant as _mt_set_tenant  # noqa: E402
 from app.models.tenant import Tenant as _MTTenant  # noqa: E402
 
@@ -19,6 +22,9 @@ async def resolve_tenant(session, user: "User", request: "Request") -> None:
             tenant, else ``403`` (no cross-tenant access by knowing a slug);
           - superuser: header slug may name ANY active tenant -> switches
             context to it (admin acting within a tenant).
+      * The resolved tenant MUST be ``active``; a ``suspended``/``archived``
+        tenant is rejected with ``403`` before the route handler runs
+        (INV-MT-05), via ``reject_if_tenant_inactive``.
       * No tenant + no header -> tenant-less context. The global filter
         FAILS CLOSED, so tenant-scoped reads return nothing.
 
@@ -28,8 +34,9 @@ async def resolve_tenant(session, user: "User", request: "Request") -> None:
         request: The incoming request (for the X-Tenant-ID header).
 
     Raises:
-        HTTPException 403: header names a tenant the user may not access.
-        HTTPException 400: header names an unknown/inactive tenant.
+        HTTPException 403: header names a tenant the user may not access,
+            or the bound tenant is suspended/archived (INV-MT-05).
+        HTTPException 400: header names an unknown tenant.
     """
     header_slug = request.headers.get("X-Tenant-ID")
 
@@ -41,14 +48,24 @@ async def resolve_tenant(session, user: "User", request: "Request") -> None:
         )
         return (await session.execute(stmt)).scalar_one_or_none()
 
+    async def _lookup_by_id(tenant_id):
+        stmt = (
+            _mt_select(_MTTenant)
+            .where(_MTTenant.id == tenant_id)
+            .execution_options(skip_tenant_filter=True)
+        )
+        return (await session.execute(stmt)).scalar_one_or_none()
+
     # Superuser may switch into any active tenant named by the header.
     if user.is_superuser and header_slug:
         tenant = await _lookup(header_slug)
-        if tenant is None or tenant.status != "active":
+        if tenant is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Unknown or inactive tenant",
             )
+        # INV-MT-05: a suspended/archived tenant never receives handlers.
+        _mt_reject_if_inactive(tenant)
         _mt_set_tenant(tenant.id)
         return
 
@@ -63,6 +80,13 @@ async def resolve_tenant(session, user: "User", request: "Request") -> None:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="X-Tenant-ID does not match your tenant membership",
                 )
+        else:
+            tenant = await _lookup_by_id(user.tenant_id)
+        # INV-MT-05: reject the request if the bound tenant is not active,
+        # so a suspended/archived tenant's users keep no access. A missing
+        # tenant row (FK should prevent this) fails closed to tenant-less.
+        if tenant is not None:
+            _mt_reject_if_inactive(tenant)
         _mt_set_tenant(user.tenant_id)
         return
 
