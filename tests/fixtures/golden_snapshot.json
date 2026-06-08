@@ -1,33 +1,29 @@
 {
-  "file_count": 75,
+  "file_count": 95,
   "migrations": [
-    "0001_initial_schema.py",
-    "0012_add_rbac.py",
-    "softdel_items.py"
+    "0001_initial.py",
+    "0002_baseline_schema.py",
+    "soft_delete_items.py"
   ],
   "models": [
     "Base",
     "Item",
-    "Permission",
-    "Role",
-    "RolePermission",
-    "User",
-    "UserRole"
+    "User"
   ],
-  "python_file_count": 64,
+  "python_file_count": 72,
   "routes": [
     "DELETE:/me",
-    "DELETE:/users/{user_id}/roles/{role_id}",
     "DELETE:/{id}",
-    "DELETE:/{item_id}",
-    "DELETE:/{item_id}/permanent",
+    "DELETE:/{id}/permanent",
     "DELETE:/{user_id}",
     "GET:/",
+    "GET:/admin-only",
     "GET:/deleted/",
     "GET:/healthz",
     "GET:/me",
     "GET:/readyz",
     "GET:/startupz",
+    "GET:/user-area",
     "GET:/{id}",
     "GET:/{user_id}",
     "PATCH:/me",
@@ -38,12 +34,9 @@
     "POST:/login/access-token",
     "POST:/login/test-token",
     "POST:/password-recovery/{email}",
-    "POST:/permissions",
     "POST:/reset-password",
-    "POST:/roles",
     "POST:/signup",
-    "POST:/users/{user_id}/roles",
-    "POST:/{item_id}/restore"
+    "POST:/{id}/restore"
   ],
-  "total_loc": 4860
+  "total_loc": 5299
 }

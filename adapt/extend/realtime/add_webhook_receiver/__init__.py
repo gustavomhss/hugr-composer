@@ -119,6 +119,11 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
 
     _emit_project_test(project, files_created)
 
+    files_modified: list[str] = []
+    env_example = project / ".env.example"
+    if env_example.exists() and _patch_env_example(env_example):
+        files_modified.append(str(env_example))
+
     for path_str in files_created:
         p = Path(path_str)
         if p.suffix == ".py" and p.is_file():
@@ -134,6 +139,7 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
     return ToolResult(
         status="success",
         files_created=files_created,
+        files_modified=files_modified,
         notes=[
             "Shipped primitives: SignatureVerifier, IdempotentConsumer (+ Inbox/Outbox siblings), AuditEvent.",
             "Shipped adapter: WebhookReceiverAdapter.",
@@ -146,6 +152,31 @@ def add_webhook_receiver(inp: ToolInput) -> ToolResult:
         ],
         execution_time_ms=_elapsed_ms(start),
     )
+
+
+def _patch_env_example(env_example: Path) -> bool:
+    """Document the env vars the webhook glue reads. Returns True if patched.
+
+    ``app/webhook_receiver.py`` reads ``WEBHOOK_HMAC_KEY`` / ``WEBHOOK_KEY_ID``
+    / ``WEBHOOK_PATH`` via ``os.getenv``; surfacing them in ``.env.example``
+    keeps generated config self-consistent.
+    """
+    src = env_example.read_text()
+    if "WEBHOOK_HMAC_KEY" in src:
+        return False
+    trailing = "" if src.endswith("\n") else "\n"
+    block = (
+        "\n"
+        "# --- Webhook receiver (add_webhook_receiver) ---\n"
+        "# HMAC key used to verify inbound webhook signatures (set a real value).\n"
+        "WEBHOOK_HMAC_KEY=\n"
+        "# Key identifier advertised to senders (default: 'default').\n"
+        "WEBHOOK_KEY_ID=default\n"
+        "# Path the inbound webhook endpoint is mounted at.\n"
+        "WEBHOOK_PATH=/webhooks/in\n"
+    )
+    env_example.write_text(src + trailing + block)
+    return True
 
 
 def _emit_project_test(project: Path, created: list[str]) -> None:

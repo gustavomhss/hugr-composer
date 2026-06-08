@@ -239,6 +239,14 @@ def _collect_routes(app_dir: Path) -> list[dict]:
         if not route_dir.exists():
             continue
         for py_file in _collect_py_files(route_dir, exclude_dirs={"__pycache__"}):
+            # Skip underscore-prefixed reference/example modules (e.g.
+            # ``_mfa_example.py``). By Python convention these are private and
+            # the generated ``app/routes/__init__.py`` never imports/mounts
+            # them — they are copy-paste references explicitly marked "remove
+            # before prod", so their handlers are dead code, not live routes.
+            # Scanning them produces false "missing Depends()" failures.
+            if py_file.name.startswith("_") and py_file.name != "__init__.py":
+                continue
             try:
                 tree = _parse_file(py_file)
             except SyntaxError:
