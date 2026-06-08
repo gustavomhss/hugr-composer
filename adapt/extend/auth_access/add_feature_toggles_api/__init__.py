@@ -44,6 +44,47 @@ def _glue_body() -> str:
     return load_template(_HERE, "glue.py.tmpl").template
 
 
+def _router_body() -> str:
+    # Externalized to templates/feature_toggles_router.py.tmpl; no substitutions.
+    return load_template(_HERE, "feature_toggles_router.py.tmpl").template
+
+
+def _patch_routes_init(routes_init: Path) -> bool:
+    """Register the feature-toggles router in ``app/routes/__init__.py``.
+
+    Idempotent: returns ``True`` when the registry is modified, ``False`` when
+    the import line is already present. Mirrors ``add_rbac._patch_routes_init``.
+    """
+    src = routes_init.read_text()
+    import_line = "from app.api.routes.feature_toggles import router as feature_toggles_router"
+    include_line = "api_router.include_router(feature_toggles_router)"
+    if import_line in src:
+        return False
+    lines = src.splitlines()
+    last_app_import_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("from app."):
+            last_app_import_idx = idx
+    if last_app_import_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_app_import_idx = idx - 1
+                break
+    lines.insert(last_app_import_idx + 1, import_line)
+    last_include_idx = -1
+    for idx, line in enumerate(lines):
+        if line.startswith("api_router.include_router"):
+            last_include_idx = idx
+    if last_include_idx == -1:
+        for idx, line in enumerate(lines):
+            if "api_router" in line and "APIRouter()" in line:
+                last_include_idx = idx
+                break
+    lines.insert(last_include_idx + 1, include_line)
+    routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
+    return True
+
+
 def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     project = Path(inp.project_dir)
@@ -58,6 +99,7 @@ def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
         inp.project_dir,
         Prereq.CONFIG_SETTINGS,
         Prereq.REQUIREMENTS_TXT,
+        Prereq.ROUTES_INIT,
         auto_scaffold=not inp.dry_run,
     )
     if prereq_errors:
@@ -102,6 +144,20 @@ def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
     glue_file.write_text(_glue_body())
     files_created.append(str(glue_file))
 
+    # Emit a real, mounted feature-toggles CRUD + evaluate router and register
+    # it in the project's route registry (mirrors add_rbac).
+    files_modified: list[str] = []
+    routes_dir = app_dir / "api" / "routes"
+    routes_dir.mkdir(parents=True, exist_ok=True)
+    router_file = routes_dir / "feature_toggles.py"
+    if not router_file.exists():
+        router_file.write_text(_router_body())
+        files_created.append(str(router_file))
+
+    routes_init = app_dir / "routes" / "__init__.py"
+    if routes_init.exists() and _patch_routes_init(routes_init):
+        files_modified.append(str(routes_init))
+
     for path_str in files_created:
         p = Path(path_str)
         if p.suffix == ".py" and p.is_file():
@@ -117,16 +173,19 @@ def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
     return ToolResult(
         status="success",
         files_created=files_created,
-        files_modified=[],
+        files_modified=files_modified,
         notes=[
             "Shipped primitive: core.venous.flags.FeatureToggle (off-by-default registry).",
             "Shipped adapter: FeatureToggleAdapter (install + is_active dependency).",
             "Wrote app/feature_toggles.py — call install_feature_toggles(app) from main.py.",
+            "Wrote app/api/routes/feature_toggles.py — a mounted /feature-toggles CRUD + "
+            "evaluate router registered in app/routes/__init__.py.",
         ],
         next_steps=[
             "Call install_feature_toggles(app) after FastAPI() construction.",
             "Gate routes with dependencies=[Depends(is_active('your_flag'))].",
-            "Register your own FeatureToggle subclasses on app.state.toggles.",
+            "Manage toggles at runtime via the /feature-toggles API "
+            "(superuser-gated mutations, authenticated reads + evaluate).",
         ],
         execution_time_ms=_elapsed_ms(start),
     )

@@ -14,6 +14,7 @@ Usage::
     async for event in pubsub.subscribe("items"):
         yield event
 """
+
 from __future__ import annotations
 
 import logging
@@ -46,6 +47,7 @@ def _build() -> PubSub:
             )
         else:
             from core.venous._adapters.redis import RedisPubSubBackend
+
             return RedisPubSubBackend(redis_url)
     return InMemoryPubSub()
 
@@ -68,3 +70,28 @@ def get_pubsub_manager() -> PubSub:
 async def publish(topic: str, payload: Any) -> None:
     """Shortcut — ``get_pubsub().publish(topic, payload)``."""
     await get_pubsub().publish(topic, payload)
+
+
+class PubSubManager:
+    """Thin object facade over the process-wide :class:`PubSub` motor.
+
+    Exists so callers can hold a manager instance rather than reaching for
+    the module-level singleton. Both methods delegate to the active backend
+    selected by :func:`get_pubsub` (in-memory or Redis), so subscriptions
+    fan out correctly across workers when ``REDIS_URL`` is set.
+    """
+
+    def __init__(self, backend: PubSub | None = None) -> None:
+        self._backend = backend or get_pubsub()
+
+    @property
+    def backend(self) -> PubSub:
+        return self._backend
+
+    async def publish(self, topic: str, payload: Any) -> None:
+        """Publish *payload* to *topic* via the active backend."""
+        await self._backend.publish(topic, payload)
+
+    def subscribe(self, topic: str):
+        """Return an async iterator of events on *topic* (delegates to motor)."""
+        return self._backend.subscribe(topic)
