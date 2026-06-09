@@ -13,16 +13,27 @@ Holds the constants + dataclass + helpers every phase module needs:
 
 Per WP-16 §3 + invariant I12: ``_common`` is the only module imported by
 every ``phase*`` module; phase modules never import each other.
+
+M3.1 consumer flip: the ``Rule`` dataclass + the ``_exists`` / ``_grep_count``
+path helpers are no longer defined here — they are lifted into the shared
+platform framework ``hugr_core.audit`` (the vocabulary-free §B audit harness)
+and RE-EXPORTED below so the 16 phase/``r_*`` predicate modules keep their
+``from ._common import Rule, _exists, _grep_count`` imports UNCHANGED. The §B
+RULES + predicates stay skill-side; only the generic harness moves. Behavior-
+preserving: ``_exists`` is wrapped to pass ``rel_to=REPO_ROOT`` so the printed
+``ok: <relpath>`` text stays byte-identical to the pre-lift local helper.
+The semver regex + the ``SKILL_ROOT``/``REPO_ROOT`` anchors stay skill-side.
 """
 
 from __future__ import annotations
 
-import subprocess
-from collections.abc import Callable
-from dataclasses import dataclass
 from pathlib import Path
 
+from hugr_core.audit import Rule, exists
+from hugr_core.audit import grep_count as _grep_count
 from hugr_core.layout import resolve_roots
+
+__all__ = ["Rule", "REPO_ROOT", "SKILL_ROOT", "_SEMVER_RE", "_exists", "_grep_count"]
 
 # The two filesystem anchors every rule resolves against — SKILL_ROOT (the dir
 # holding engine/) and REPO_ROOT (the git repo root) — now provided by the
@@ -51,26 +62,11 @@ _SEMVER_RE = (
 )
 
 
-@dataclass(frozen=True)
-class Rule:
-    item: str  # "B0.5"
-    phase: int  # 0..7
-    description: str  # short human label
-    check: Callable[[], tuple[bool, str]]  # -> (ok, message)
-
-
 def _exists(path: Path, *, min_bytes: int = 0) -> tuple[bool, str]:
-    if not path.exists():
-        return False, f"missing: {path}"
-    if min_bytes and path.stat().st_size < min_bytes:
-        return False, f"too small ({path.stat().st_size}B < {min_bytes}B): {path}"
-    return True, f"ok: {path.relative_to(REPO_ROOT)}"
+    """Skill-side wrapper over ``hugr_core.audit.exists``.
 
-
-def _grep_count(pattern: str, paths: list[Path]) -> int:
-    cmd = ["grep", "-rlE", pattern, *[str(p) for p in paths]]
-    try:
-        out = subprocess.run(cmd, capture_output=True, text=True, check=False)
-        return len([line for line in out.stdout.splitlines() if line])
-    except FileNotFoundError:
-        return 0
+    The lifted helper is path-agnostic (no skill globals); we bind
+    ``rel_to=REPO_ROOT`` here so the printed ``ok: <relpath>`` text stays
+    byte-identical to the pre-lift local helper.
+    """
+    return exists(path, min_bytes=min_bytes, rel_to=REPO_ROOT)

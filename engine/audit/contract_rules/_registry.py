@@ -8,16 +8,18 @@ Assembles the ``RULES: list[Rule]`` literal in the CONTRACT.md order
 in CONTRACT.md order — NOT assembled from per-phase lists (WP-16 §6 +
 F-08 anti-drift).
 
-Also hosts ``main()`` — the ``argparse``-driven CLI that powers
-``python -m engine.audit.contract_check``. Moved here verbatim from the
-pre-split monolith so per-rule output text + exit codes are byte-
-identical to pre-split (WP-16 §11 byte-equivalence gate).
+Also hosts ``main()`` — the CLI that powers
+``python -m engine.audit.contract_check``. M3.1 consumer flip: the
+``argparse`` + per-rule print + summary + exit-code loop is lifted into the
+shared platform harness ``hugr_core.audit.run``; ``main()`` now just hands
+the hand-written ``RULES`` literal to it. Behavior-preserving — the harness
+reproduces the pre-split per-rule output text, the ✓/✗ line format, the
+``— ALL GREEN`` summary, and the exit codes byte-identically (WP-16 §11).
 """
 
 from __future__ import annotations
 
-import argparse
-import sys
+import hugr_core.audit
 
 from ._common import Rule
 from .phase0_identity import (
@@ -121,7 +123,7 @@ RULES: list[Rule] = [
     Rule(
         "B0.14",
         0,
-        "write schemas declare extra=\"forbid\" + no bare-Any fields (P5)",
+        'write schemas declare extra="forbid" + no bare-Any fields (P5)',
         _r_write_schemas_strict,
     ),
     Rule(
@@ -206,40 +208,4 @@ RULES: list[Rule] = [
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="CONTRACT.md machine enforcer.")
-    parser.add_argument("--item", type=str, default=None, help="Run only this §B item (e.g. B1.1).")
-    parser.add_argument(
-        "--phase", type=int, default=None, help="Run all items in a phase (e.g. --phase 0)."
-    )
-    parser.add_argument("--quiet", action="store_true")
-    args = parser.parse_args()
-
-    selected = RULES
-    if args.item:
-        selected = [r for r in RULES if r.item == args.item]
-    elif args.phase is not None:
-        selected = [r for r in RULES if r.phase == args.phase]
-
-    if not selected:
-        print(f"No rules matched (item={args.item}, phase={args.phase}).", file=sys.stderr)
-        return 2
-
-    total = len(selected)
-    failed = 0
-    for rule in selected:
-        try:
-            ok, msg = rule.check()
-        except Exception as exc:  # noqa: BLE001
-            ok, msg = False, f"rule raised: {exc}"
-        tag = "✓" if ok else "✗"
-        if not args.quiet or not ok:
-            print(f"  {tag}  {rule.item:>6}  {rule.description:<52}  {msg}")
-        if not ok:
-            failed += 1
-
-    passed = total - failed
-    print(
-        f"\n{passed}/{total} contract items satisfied"
-        + (" — ALL GREEN" if failed == 0 else f" — {failed} VIOLATIONS")
-    )
-    return 0 if failed == 0 else 1
+    return hugr_core.audit.run(RULES, success_marker="ALL GREEN")
