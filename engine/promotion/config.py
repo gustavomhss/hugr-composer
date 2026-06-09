@@ -8,11 +8,21 @@ decision, not a core change.
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 from hugr_core.promotion import PromotionConfig
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
+
+# Layout-aware CONTRACT.md resolution (mirrors the old promote.py): in the
+# Arsenal monorepo the skill lived under `skills/SKILL-001-…/`, so CONTRACT.md
+# was two levels up; in this standalone repo the skill root IS the repo root.
+_CONTRACT_PATH = (
+    SKILL_ROOT.parents[1] / "CONTRACT.md"
+    if SKILL_ROOT.parent.name == "skills"
+    else SKILL_ROOT / "CONTRACT.md"
+)
 
 # Registered primitives may not import these (CONTRACT §B1.0.1) — skill-owned.
 _FRAMEWORK_MODULES = frozenset(
@@ -77,4 +87,10 @@ def build_config() -> PromotionConfig:
         framework_modules=_FRAMEWORK_MODULES,
         implicit_framework_tokens=_IMPLICIT_FRAMEWORK_TOKENS,
         quarantine_namespace_map=_QUARANTINE_NAMESPACE_MAP,
+        # Executor (M2.5) fields — the lite-ratification CONTRACT.md and the
+        # post-flight catalog-rebuild + contract-audit subprocess argvs.
+        contract_path=_CONTRACT_PATH,
+        catalog_rebuild_cmd=[sys.executable, "-m", "engine.index.manifest", "build"],
+        contract_check_cmd=[sys.executable, "-m", "engine.audit.contract_check"],
+        contract_check_success_marker="ALL GREEN",
     )
