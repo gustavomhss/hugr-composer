@@ -26,41 +26,95 @@ import hashlib
 import json
 from typing import Any
 
-from sqlalchemy import event, func, inspect, select
-from sqlalchemy.orm import Session
-
 from app.core.audit_context import get_audit_context
 from app.models.audit_log import AuditLog
+from sqlalchemy import event, func, select, text
+from sqlalchemy.orm import Session
+
+# Per-engine cache key for the "audit_logs table is present" result. Stored as an
+# attribute on the Engine object itself (NOT module-level state — B0.12: a module
+# global would drift per-worker). The Engine object is the natural per-engine
+# lifetime, and unlike ``engine.info`` (which does NOT exist on Engine — only on
+# Connection/Session) a plain attribute on the Engine actually persists.
+_AUDIT_TABLE_PRESENT_ATTR = "_hugr_audit_table_present"
+
 
 def _audit_table_exists(session: Session) -> bool:
     """Best-effort: does the audit_logs table exist on this session's bind?
 
-    Cached per engine on ``engine.info`` (NOT module-level state — B0.12: a
-    module global would drift per-worker). Returns False (skip auditing) if the
-    bind can't be resolved or inspection fails, so a missing table never crashes
-    a host write.
+    Probed NON-DESTRUCTIVELY inside the session's own live transaction and cached
+    per engine. Returns False (skip auditing) if the bind can't be resolved or
+    the probe fails, so a missing table never crashes a host write.
+
+    CRITICAL (the StaleDataError fix): this runs inside ``before_flush``, while
+    the session already holds uncommitted host INSERT/UPDATE rows in its current
+    transaction. The previous implementation used ``inspect(bind).has_table()``,
+    whose dialect probe opens and then ROLLS BACK its own transaction on the
+    shared connection — discarding those pending host writes. A later flush would
+    then ``UPDATE ... WHERE id=?`` a row that no longer exists in the DB and
+    raise ``StaleDataError`` ("0 rows matched"). We instead run a cheap
+    ``SELECT 1 FROM audit_logs`` guarded by a SAVEPOINT (``begin_nested``): on a
+    missing table only the savepoint is rolled back, the outer transaction (and
+    every pending host write) is untouched.
     """
     try:
         bind = session.get_bind()
     except Exception:
+        # pragma: B0.16-recoverable: no resolvable bind => no DB to audit
+        #   against; skip auditing for THIS flush (returns False below). Not a
+        #   security swallow: the host write is unaffected and the next flush
+        #   re-probes. No row is silently dropped — there is no row to write.
         return False
     engine = getattr(bind, "engine", bind)
-    # engine.info is a dict bound to the engine's own lifetime — the sanctioned
-    # place for a per-engine cache. Probe once per engine, then stop.
-    info = getattr(engine, "info", None)
-    if info is not None and info.get("_hugr_audit_table_present"):
+    # Probe once per engine, then stop: a positive result is cached directly on
+    # the Engine object (per-engine lifetime, survives across flushes).
+    if getattr(engine, _AUDIT_TABLE_PRESENT_ATTR, False):
         return True
     try:
-        present = inspect(bind).has_table(AuditLog.__tablename__)
+        conn = session.connection()
     except Exception:
-        # Inspection itself failed (e.g. mid-transaction); don't cache, don't crash.
+        # pragma: B0.16-recoverable: cannot acquire the live connection mid-flush;
+        #   skip auditing this flush rather than crash the host write. Re-probed
+        #   next flush; same non-silent rationale as the get_bind() guard above.
         return False
-    # Only cache the positive result: a table absent now may be created later on
-    # the same engine (e.g. create_all after an early flush), so keep re-probing
-    # until it appears, then stop probing.
-    if present and info is not None:
-        info["_hugr_audit_table_present"] = True
-    return present
+    # no_autoflush: we are inside before_flush; a stray autoflush here would
+    # re-enter the listener on half-built rows. A SAVEPOINT isolates the probe so
+    # a missing-table error never poisons the outer transaction's pending writes.
+    savepoint = conn.begin_nested()
+    try:
+        with session.no_autoflush:
+            conn.execute(select(1).select_from(text(AuditLog.__tablename__)).limit(1))
+    except Exception:
+        # Table absent (or unprobeable) right now. Roll back ONLY the savepoint —
+        # the outer transaction and its pending host rows are preserved. Don't
+        # cache: the table may be created later on the same engine (e.g.
+        # create_all after an early flush), so keep re-probing until it appears.
+        try:
+            savepoint.rollback()
+        except Exception:
+            # pragma: B0.16-recoverable: savepoint already auto-released by the
+            #   failed statement on some drivers; nothing left to roll back. The
+            #   outer transaction is intact either way — best-effort cleanup, not
+            #   a swallowed security check.
+            pass
+        return False
+    # Present: release the savepoint and cache the positive result on the engine.
+    try:
+        savepoint.commit()
+    except Exception:
+        # pragma: B0.16-recoverable: releasing a SAVEPOINT after a successful probe
+        #   cannot lose data; on the rare driver that auto-released it, the RELEASE
+        #   is a no-op. Auditing still proceeds (returns True) — nothing swallowed.
+        pass
+    try:
+        setattr(engine, _AUDIT_TABLE_PRESENT_ATTR, True)
+    except Exception:
+        # pragma: B0.16-recoverable: some Engine proxies reject attribute
+        #   assignment; degrade to re-probing each flush (still correct, just not
+        #   cached). The audit row is still written — caching is an optimisation,
+        #   not a security control.
+        pass
+    return True
 
 
 def _compute_entry_hash(entry: AuditLog) -> str:
