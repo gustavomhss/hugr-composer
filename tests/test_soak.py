@@ -43,9 +43,17 @@ for k in list(os.environ):
 # request. With 10 concurrent tasks on one loop, p50 ≈ 80-120ms is expected.
 # These SLOs are calibrated to detect REGRESSIONS (memory leak, handler hang,
 # error accumulation), not to benchmark raw framework performance.
-SLO_P50_MS = 200
-SLO_P95_MS = 500
-SLO_P99_MS = 1000
+#
+# LATENCY SLOs are env-tunable. The tight defaults (200/500/1000ms) enforce the
+# aspirational SLA on an idle/dev box. On a shared CI runner under heavy CPU
+# contention (load ~200), absolute latency is environment-dependent and would
+# flake; CI overrides these with generous values that still catch a pathological
+# multi-x blowup. The FUNCTIONAL gate below (error rate, throughput/min-requests)
+# is STRICT and NOT tunable — a latency knob must never let a 5xx or a stalled
+# event loop slip through.
+SLO_P50_MS = int(os.environ.get("HUGR_SOAK_P50_MS", "200"))
+SLO_P95_MS = int(os.environ.get("HUGR_SOAK_P95_MS", "500"))
+SLO_P99_MS = int(os.environ.get("HUGR_SOAK_P99_MS", "1000"))
 SLO_ERROR_RATE = 0.01
 
 MODELS = {
@@ -54,27 +62,27 @@ MODELS = {
 }
 
 SOAK_TOOLS: list[tuple[str, str]] = [
-    ("add_soft_delete",       "adapt.extend.crud_data.add_soft_delete"),
+    ("add_soft_delete", "adapt.extend.crud_data.add_soft_delete"),
     ("add_cursor_pagination", "adapt.extend.crud_data.add_cursor_pagination"),
-    ("add_bulk_operations",   "adapt.extend.crud_data.add_bulk_operations"),
-    ("add_data_export",       "adapt.extend.crud_data.add_data_export"),
-    ("add_file_upload",       "adapt.extend.crud_data.add_file_upload"),
-    ("add_circuit_breaker",   "adapt.extend.infrastructure.add_circuit_breaker"),
-    ("add_outbox_pattern",    "adapt.extend.infrastructure.add_outbox_pattern"),
-    ("add_saga",              "adapt.extend.infrastructure.add_saga"),
-    ("add_email_templates",   "adapt.extend.infrastructure.add_email_templates"),
-    ("add_api_versioning",    "adapt.extend.api_design.add_api_versioning"),
-    ("add_batch_endpoint",    "adapt.extend.api_design.add_batch_endpoint"),
-    ("add_graphql",           "adapt.extend.api_design.add_graphql"),
-    ("add_contract_tests",    "adapt.extend.testing_tools.add_contract_tests"),
-    ("add_factory",           "adapt.extend.testing_tools.add_factory"),
-    ("add_load_profile",      "adapt.extend.testing_tools.add_load_profile"),
+    ("add_bulk_operations", "adapt.extend.crud_data.add_bulk_operations"),
+    ("add_data_export", "adapt.extend.crud_data.add_data_export"),
+    ("add_file_upload", "adapt.extend.crud_data.add_file_upload"),
+    ("add_circuit_breaker", "adapt.extend.infrastructure.add_circuit_breaker"),
+    ("add_outbox_pattern", "adapt.extend.infrastructure.add_outbox_pattern"),
+    ("add_saga", "adapt.extend.infrastructure.add_saga"),
+    ("add_email_templates", "adapt.extend.infrastructure.add_email_templates"),
+    ("add_api_versioning", "adapt.extend.api_design.add_api_versioning"),
+    ("add_batch_endpoint", "adapt.extend.api_design.add_batch_endpoint"),
+    ("add_graphql", "adapt.extend.api_design.add_graphql"),
+    ("add_contract_tests", "adapt.extend.testing_tools.add_contract_tests"),
+    ("add_factory", "adapt.extend.testing_tools.add_factory"),
+    ("add_load_profile", "adapt.extend.testing_tools.add_load_profile"),
 ]
 
 
 def _generate_project(tmp_dir: Path) -> Path:
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
+    from tests.common.fixture_factory import create_fixture_project
 
     project_dir = create_fixture_project(
         name="soak_project",
@@ -98,14 +106,14 @@ def _generate_project(tmp_dir: Path) -> Path:
         sqlite_db = project_dir / "soak.db"
         db_file.write_text(
             '"""Database engine — patched for soak test (SQLite)."""\n\n'
-            'from sqlalchemy.ext.asyncio import create_async_engine\n\n'
+            "from sqlalchemy.ext.asyncio import create_async_engine\n\n"
             f'engine = create_async_engine("sqlite+aiosqlite:///{sqlite_db}",'
-            ' echo=False, future=True)\n\n'
-            'async def init_db() -> None:\n'
-            '    from app.models.base import Base\n'
-            '    import app.models\n'
-            '    async with engine.begin() as conn:\n'
-            '        await conn.run_sync(Base.metadata.create_all)\n'
+            " echo=False, future=True)\n\n"
+            "async def init_db() -> None:\n"
+            "    from app.models.base import Base\n"
+            "    import app.models\n"
+            "    async with engine.begin() as conn:\n"
+            "        await conn.run_sync(Base.metadata.create_all)\n"
         )
 
     # Patch IdempotencyMiddleware to no-op (no Redis)
@@ -113,12 +121,12 @@ def _generate_project(tmp_dir: Path) -> Path:
     if idem_file.exists():
         idem_file.write_text(
             '"""Idempotency middleware — soak test stub (no Redis)."""\n\n'
-            'from starlette.middleware.base import BaseHTTPMiddleware\n'
-            'from starlette.requests import Request\n'
-            'from starlette.responses import Response\n\n'
-            'class IdempotencyMiddleware(BaseHTTPMiddleware):\n'
-            '    async def dispatch(self, request: Request, call_next) -> Response:\n'
-            '        return await call_next(request)\n'
+            "from starlette.middleware.base import BaseHTTPMiddleware\n"
+            "from starlette.requests import Request\n"
+            "from starlette.responses import Response\n\n"
+            "class IdempotencyMiddleware(BaseHTTPMiddleware):\n"
+            "    async def dispatch(self, request: Request, call_next) -> Response:\n"
+            "        return await call_next(request)\n"
         )
 
     return project_dir
@@ -187,10 +195,10 @@ def main() -> int:
     parser.add_argument("--concurrency", type=int, default=10)
     args = parser.parse_args()
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"SOAK TEST — {args.duration}s at {args.concurrency} concurrent clients")
-    print(f"(ASGI in-process transport — no Docker, no subprocess)")
-    print(f"{'='*70}\n")
+    print("(ASGI in-process transport — no Docker, no subprocess)")
+    print(f"{'=' * 70}\n")
 
     # 1. Generate project
     print("[1/3] Generating project with tools...")
@@ -223,11 +231,16 @@ def main() -> int:
     rps = total / elapsed if elapsed else 0
 
     print(f"\n  Requests:    {total:,} ({rps:.0f} req/s)")
-    print(f"  Errors:      {errs} ({error_rate*100:.2f}%)")
+    print(f"  Errors:      {errs} ({error_rate * 100:.2f}%)")
     print(f"  Latency p50: {p50:.1f}ms")
     print(f"  Latency p95: {p95:.1f}ms")
     print(f"  Latency p99: {p99:.1f}ms")
     print(f"  Status codes: {result['status_codes']}")
+
+    # STRICT functional floor (NOT env-tunable): even a fully saturated runner
+    # must sustain at least 1 req/s/client. A stalled event loop or hung handler
+    # would crater throughput below this — the latency knob must never mask it.
+    min_requests = args.duration * args.concurrency
 
     failures = []
     if p50 > SLO_P50_MS:
@@ -237,18 +250,25 @@ def main() -> int:
     if p99 > SLO_P99_MS:
         failures.append(f"p99 {p99:.0f}ms > SLO {SLO_P99_MS}ms")
     if error_rate > SLO_ERROR_RATE:
-        failures.append(f"error rate {error_rate*100:.1f}% > SLO {SLO_ERROR_RATE*100:.0f}%")
+        failures.append(f"error rate {error_rate * 100:.1f}% > SLO {SLO_ERROR_RATE * 100:.0f}%")
+    if total < min_requests:
+        failures.append(
+            f"throughput {total} req < floor {min_requests} "
+            f"({args.concurrency} clients x {args.duration}s x 1 req/s)"
+        )
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     if failures:
         print(f"SOAK TEST: FAILED — {len(failures)} SLO violation(s)")
         for f in failures:
             print(f"  - {f}")
     else:
-        print(f"SOAK TEST: PASSED — all SLOs met")
-        print(f"  {total:,} requests over {elapsed:.0f}s, {rps:.0f} req/s, "
-              f"p99={p99:.0f}ms, {errs} errors")
-    print(f"{'='*70}\n")
+        print("SOAK TEST: PASSED — all SLOs met")
+        print(
+            f"  {total:,} requests over {elapsed:.0f}s, {rps:.0f} req/s, "
+            f"p99={p99:.0f}ms, {errs} errors"
+        )
+    print(f"{'=' * 70}\n")
 
     return 1 if failures else 0
 
