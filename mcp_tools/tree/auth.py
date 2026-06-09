@@ -1,4 +1,4 @@
-"""`fastapi_auth` — the auth-domain tree dispatcher (POC, tree variant).
+"""`fastapi_auth` — the auth-domain tree dispatcher (M3.2 pilot).
 
 ONE MCP tool that routes to 15 legacy slice tools + 8 primitives under
 the `auth` domain. The Claude agent chooses granularity by `action`:
@@ -11,26 +11,30 @@ the `auth` domain. The Claude agent chooses granularity by `action`:
 
 See `/docs/research/DUAL_INDEX_DESIGN.md` §4 (revised tree variant).
 
-POC scope rules
-  - No change to the 15 legacy `fastapi_add_*` tools — they remain
-    registered. This dispatcher INDIRECTS to them by importing the
-    underlying module and calling its entry function.
-  - Same envelope as tier-1 tools: {ok, what_happened, result,
-    next_steps, elapsed_ms}.
-  - Failure in an underlying slice is surfaced, not swallowed.
+M3.2 PILOT: this module is now pure DATA + one
+``make_dispatcher(DomainTreeConfig(...))`` call. The branch logic, envelope,
+slice routing (dispatch_via_toolinput, F-001 drop-extras), and the
+non-destructive primitive copy (F-002/F-003) all live in
+``hugr_core.dispatch`` — the generic engine shared by every domain. The data
+tables (SLICES / PRIMITIVES / BUNDLE_SLICES / MCP_TOOL) are unchanged, so the
+public contract is byte-identical to the pre-extraction dispatcher.
 """
 
 from __future__ import annotations
 
-import shutil
-import time
 from pathlib import Path
 from typing import Any
+
+from hugr_core.dispatch import DomainTreeConfig, make_dispatcher
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 VENOUS_AUTH = SKILL_ROOT / "core" / "venous" / "auth"
 ADAPTERS_FASTAPI = SKILL_ROOT / "core" / "venous" / "_adapters" / "fastapi"
 ADAPT_ROOT = SKILL_ROOT / "adapt" / "extend" / "auth_access"
+
+# Single adapt package every auth slice lives under (auth's single-pkg style:
+# slices carry no per-slice `pkg`; the dispatcher falls back to default_pkg).
+AUTH_PKG = "adapt.extend.auth_access"
 
 
 # ---------------------------------------------------------------------------
@@ -117,137 +121,6 @@ BUNDLE_SLICES: tuple[str, ...] = (
 
 
 # ---------------------------------------------------------------------------
-# Shared envelope (same shape as tier-1 meta tools)
-# ---------------------------------------------------------------------------
-
-
-def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: float) -> dict:
-    return {
-        "ok": ok,
-        "what_happened": what,
-        "result": result,
-        "next_steps": next_steps[:5],
-        "elapsed_ms": int((time.perf_counter() - t0) * 1000),
-    }
-
-
-# ---------------------------------------------------------------------------
-# Slice routing — import + call the legacy fastapi_add_<slice> tool
-# ---------------------------------------------------------------------------
-
-
-def _call_slice(slice_name: str, **kwargs) -> dict:
-    """Route to the underlying `adapt/extend/auth_access/<module>` tool.
-
-    Thin wrapper over :func:`mcp_tools._tree_dispatch.dispatch_via_toolinput`
-    — the shared helper that does the canonical
-    ``dispatcher kwargs → ToolInput → slice entry → dict`` translation.
-    Closes Codex 3 F-001: every `mcp_tools/tree/*.py` dispatcher MUST go
-    through this helper so the public contract stays uniform.
-    """
-    from mcp_tools._tree_dispatch import dispatch_via_toolinput
-
-    meta = SLICES[slice_name]
-    return dispatch_via_toolinput(
-        module_path=f"adapt.extend.auth_access.{meta['mod']}",
-        entry_name=meta["mod"],
-        slice_name=slice_name,
-        **kwargs,
-    )
-
-
-# ---------------------------------------------------------------------------
-# Primitive routing — copy the primitive dir into the target project
-# ---------------------------------------------------------------------------
-
-
-def _is_non_empty(p: Path) -> bool:
-    """Return True if *p* exists, is a directory, and has at least one child."""
-    return p.is_dir() and any(p.iterdir())
-
-
-def _copy_primitive(name: str, output_dir: str, *, force: bool = False) -> dict:
-    """Copy core/venous/auth/<Name>/ into <output_dir>/core/venous/auth/<Name>/.
-
-    Follows ADR 0002 (copy-in distribution). Skips _t0_report.json + _evidence/
-    (per .gitignore). Also copies the matching fastapi adapter under
-    _adapters/fastapi/ if one exists.
-
-    F-002 (Codex 3): default non-destructive. When ``force=False`` and the
-    target directory exists with content, return ``status="skipped"`` instead
-    of wiping the user's customizations. Pass ``force=True`` to opt back into
-    the legacy overwrite behaviour (and emit a ``warnings`` hint).
-
-    F-003 (Codex 3): copy target is ``<output_dir>/core/venous/<ns>/<Name>/``
-    (NO ``app/`` prefix) so the emitted import path
-    ``from core.venous.<ns>.<Name>.<Name> import <Name>`` resolves —
-    matching ``generators.scaffold_venous.copy_primitive`` and
-    ``mcp_tools.compose._primitive_import_line``.
-    """
-    if name not in PRIMITIVES:
-        raise ValueError(
-            f"unknown primitive {name!r} in domain auth. Available: {sorted(PRIMITIVES)}"
-        )
-    src = VENOUS_AUTH / name
-    if not src.is_dir():
-        raise FileNotFoundError(f"primitive source missing: {src}")
-    target = Path(output_dir) / "core" / "venous" / "auth" / name
-    warnings: list[str] = []
-    if _is_non_empty(target) and not force:
-        return {
-            "primitive": name,
-            "status": "skipped",
-            "reason": (
-                f"target exists and is non-empty: {target.relative_to(output_dir)}. "
-                "Pass params={'force': True} to overwrite (destructive)."
-            ),
-            "files_created": [],
-            "target": str(target.relative_to(output_dir)),
-        }
-    if target.exists() and force:
-        warnings.append(
-            f"force=True: removed existing {target.relative_to(output_dir)} "
-            "before copy (user customisations lost)."
-        )
-        shutil.rmtree(target)
-    shutil.copytree(
-        src,
-        target,
-        ignore=shutil.ignore_patterns(
-            "__pycache__",
-            "_t0_report.json",
-            "_evidence",
-            "*.pyc",
-        ),
-    )
-    files_created = sorted(str(p.relative_to(output_dir)) for p in target.rglob("*") if p.is_file())
-    # Matching adapter (if any)
-    adapter_name = f"{name}Adapter.py"
-    adapter_src = ADAPTERS_FASTAPI / adapter_name
-    if adapter_src.exists():
-        adapter_target = Path(output_dir) / "core" / "venous" / "_adapters" / "fastapi"
-        adapter_target.mkdir(parents=True, exist_ok=True)
-        shutil.copy(adapter_src, adapter_target / adapter_name)
-        files_created.append(str((adapter_target / adapter_name).relative_to(output_dir)))
-        # adapter test (if present)
-        test_src = ADAPTERS_FASTAPI / f"test_{adapter_name}"
-        if test_src.exists():
-            shutil.copy(test_src, adapter_target / f"test_{adapter_name}")
-            files_created.append(
-                str((adapter_target / f"test_{adapter_name}").relative_to(output_dir))
-            )
-    result = {
-        "primitive": name,
-        "status": "copied",
-        "files_created": files_created,
-        "target": str(target.relative_to(output_dir)),
-    }
-    if warnings:
-        result["warnings"] = warnings
-    return result
-
-
-# ---------------------------------------------------------------------------
 # Top-level dispatcher
 # ---------------------------------------------------------------------------
 
@@ -284,179 +157,44 @@ MCP_TOOL = {
 }
 
 
-def fastapi_auth(action: str, params: dict | None = None) -> dict:
-    """See MCP_TOOL description.
+def _toolinput_factory(**kwargs):
+    """Lazily import adapt.contracts.ToolInput (keeps action='list' pydantic-free)."""
+    from adapt.contracts import ToolInput
 
-    Signature note: `params` is a polymorphic dict whose expected keys
-    depend on `action`. FastMCP doesn't support **kwargs in tool
-    signatures, so a single `params` dict is the uniform contract.
-    Every action documents its required / optional keys in the `list`
-    action's response (usage_examples).
-    """
-    t0 = time.perf_counter()
-    params = params or {}
+    return ToolInput(**kwargs)
 
-    if action == "list":
-        return _envelope(
-            ok=True,
-            what="auth domain tree (1 bundle + 15 slices + 8 primitives)",
-            result={
-                "domain": "auth",
-                "bundle": {
-                    "description": (
-                        "Install the curated production auth stack: "
-                        f"{len(BUNDLE_SLICES)} slices composed in order."
-                    ),
-                    "slices_installed": list(BUNDLE_SLICES),
-                    "required_params": {"output_dir": "str"},
-                },
-                "slices": {
-                    name: {"description": meta["desc"]} for name, meta in sorted(SLICES.items())
-                },
-                "primitives": {
-                    name: {"purpose": purpose} for name, purpose in sorted(PRIMITIVES.items())
-                },
-                "usage_examples": [
-                    "fastapi_auth(action='bundle', params={'output_dir':'/tmp/my-app'})",
-                    "fastapi_auth(action='add_oauth2', params={'output_dir':'/tmp/my-app','providers':['google']})",
-                    "fastapi_auth(action='primitive', params={'name':'SessionStore','output_dir':'/tmp/my-app'})",
-                ],
-            },
-            next_steps=[
-                "action='bundle' → install everything for a new project.",
-                "action='<slice>' → install one slice for an existing project.",
-                "action='primitive' + name=X → copy one Lego surgically.",
-            ],
-            t0=t0,
-        )
 
-    if action == "bundle":
-        output_dir = params.get("output_dir")
-        if not output_dir:
-            return _envelope(
-                ok=False,
-                what="bundle requires output_dir",
-                result={},
-                next_steps=["Pass output_dir='/path/to/project'."],
-                t0=t0,
-            )
-        installed: list[dict] = []
-        errors: list[str] = []
-        for slice_name in BUNDLE_SLICES:
-            try:
-                res = _call_slice(slice_name, **{**params, "output_dir": output_dir})
-                installed.append({"slice": slice_name, "result": res})
-            except Exception as exc:  # noqa: BLE001
-                errors.append(f"{slice_name}: {exc}")
-        ok = not errors
-        return _envelope(
-            ok=ok,
-            what=f"bundle: {len(installed)}/{len(BUNDLE_SLICES)} slices installed"
-            + (f"; {len(errors)} failure(s)" if errors else ""),
-            result={"installed": installed, "errors": errors},
-            next_steps=(
-                [
-                    "Bundle complete. Boot: `uvicorn app.main:app`, then POST /auth/login.",
-                    "For advanced flows (social, passkey, DPoP), call the individual add_* slices.",
-                    "Call fastapi_meta_audit() to verify the contract.",
-                ]
-                if ok
-                else ["Fix errors above. Retry failing slices individually via action=<slice>."]
-            ),
-            t0=t0,
-        )
+_CONFIG = DomainTreeConfig(
+    domain="auth",
+    tool_name="fastapi_auth",
+    tool_meta=MCP_TOOL,
+    slices=SLICES,
+    primitives=PRIMITIVES,
+    bundle_slices=BUNDLE_SLICES,
+    list_summary="auth domain tree (1 bundle + 15 slices + 8 primitives)",
+    venous_dir=VENOUS_AUTH,
+    adapters_dir=ADAPTERS_FASTAPI,
+    default_pkg=AUTH_PKG,  # auth single-pkg: slices carry no per-slice `pkg`
+    toolinput_factory=_toolinput_factory,
+    bundle_success_next_steps=(
+        "Bundle complete. Boot: `uvicorn app.main:app`, then POST /auth/login.",
+        "For advanced flows (social, passkey, DPoP), call the individual add_* slices.",
+        "Call fastapi_meta_audit() to verify the contract.",
+    ),
+    slice_success_next_steps=(
+        "Boot the emitted app + hit the new endpoints to verify.",
+        "Additional auth features? call fastapi_auth(action='list') for more slices.",
+        "Need a primitive surgically? fastapi_auth(action='primitive', name=...).",
+    ),
+    primitive_missing_args_next_steps=(
+        "Example: fastapi_auth(action='primitive', name='SessionStore', output_dir='/tmp/app').",
+        "Call fastapi_auth(action='list') to see available primitive names.",
+    ),
+    list_usage_examples=(
+        "fastapi_auth(action='bundle', params={'output_dir':'/tmp/my-app'})",
+        "fastapi_auth(action='add_oauth2', params={'output_dir':'/tmp/my-app','providers':['google']})",
+        "fastapi_auth(action='primitive', params={'name':'SessionStore','output_dir':'/tmp/my-app'})",
+    ),
+)
 
-    if action == "primitive":
-        name = params.get("name")
-        output_dir = params.get("output_dir")
-        force = bool(params.get("force", False))
-        if not name or not output_dir:
-            return _envelope(
-                ok=False,
-                what="primitive action requires name + output_dir",
-                result={},
-                next_steps=[
-                    "Example: fastapi_auth(action='primitive', name='SessionStore', output_dir='/tmp/app').",
-                    "Call fastapi_auth(action='list') to see available primitive names.",
-                ],
-                t0=t0,
-            )
-        try:
-            res = _copy_primitive(name, output_dir, force=force)
-        except (ValueError, FileNotFoundError) as exc:
-            return _envelope(
-                ok=False,
-                what=str(exc),
-                result={},
-                next_steps=["Call fastapi_auth(action='list') for valid primitive names."],
-                t0=t0,
-            )
-        skipped = res.get("status") == "skipped"
-        return _envelope(
-            ok=True,
-            what=(
-                f"primitive {name} skipped (target exists; pass force=True)"
-                if skipped
-                else f"primitive {name} copied into {output_dir}"
-            ),
-            result=res,
-            next_steps=(
-                [
-                    res["reason"],
-                    "Re-run with params={'force': True} to overwrite the existing target.",
-                ]
-                if skipped
-                else [
-                    f"Import in your handler: from core.venous.auth.{name}.{name} import {name}",
-                    f"Call fastapi_meta_describe(name='{name}') for Protocol + invariants.",
-                ]
-            ),
-            t0=t0,
-        )
-
-    if action in SLICES:
-        output_dir = params.get("output_dir")
-        if not output_dir:
-            return _envelope(
-                ok=False,
-                what=f"slice {action!r} requires output_dir in params",
-                result={},
-                next_steps=["Pass params={'output_dir':'/path/to/project', ...}."],
-                t0=t0,
-            )
-        try:
-            res = _call_slice(action, **params)
-        except Exception as exc:  # noqa: BLE001
-            return _envelope(
-                ok=False,
-                what=f"slice {action!r} failed: {exc}",
-                result={},
-                next_steps=[
-                    f"Check params for {action!r}. "
-                    f"Call fastapi_meta_describe(name='fastapi_{SLICES[action]['mod']}') for the schema."
-                ],
-                t0=t0,
-            )
-        return _envelope(
-            ok=True,
-            what=f"slice {action} installed",
-            result=res if isinstance(res, dict) else {"raw": repr(res)[:500]},
-            next_steps=[
-                "Boot the emitted app + hit the new endpoints to verify.",
-                "Additional auth features? call fastapi_auth(action='list') for more slices.",
-                "Need a primitive surgically? fastapi_auth(action='primitive', name=...).",
-            ],
-            t0=t0,
-        )
-
-    valid = ["list", "bundle", "primitive"] + sorted(SLICES)
-    return _envelope(
-        ok=False,
-        what=f"unknown action {action!r}",
-        result={"valid_actions": valid},
-        next_steps=[
-            "Call fastapi_auth(action='list') to see the full tree.",
-            f"Did you mean one of: {', '.join(valid[:5])}, ...?",
-        ],
-        t0=t0,
-    )
+fastapi_auth = make_dispatcher(_CONFIG)
