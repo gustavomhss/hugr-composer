@@ -112,20 +112,45 @@ def test_execution_time_recorded() -> None:
 
 
 def test_is_deleted_column_injected_into_model() -> None:
-    """BUG C regression: is_deleted column must be present in the model file after tool runs.
+    """SPEC-v2: the model gains soft-delete columns by inheriting SoftDeleteMixin.
 
-    The old implementation returned status='success' but never added is_deleted
-    to any model. The fix actually injects the column.
+    Re-anchored from the OLD design (a literal ``is_deleted``/``deleted_at``
+    column block injected into every model file). SPEC-v2 (#19) instead emits
+    ``app/models/mixins.py::SoftDeleteMixin`` carrying the three deletion
+    columns and rewrites each domain model's bases to inherit it, so the global
+    ``do_orm_execute`` listener can key off that single mixin class. We assert
+    the real shipped behaviour: the model imports + inherits the mixin, and the
+    mixin actually declares all three deletion columns. This still fails if
+    soft-delete is inert (no mixin emitted, model bases not rewritten).
     """
-    p = create_fixture_project(name="sd_bugc_model_col")
+    p = create_fixture_project(name="sd_v2_model_col")
     add_soft_delete(ToolInput(project_dir=str(p)))
+
     model_file = p / "app" / "models" / "item.py"
     assert model_file.exists(), "Model file item.py not found"
-    content = model_file.read_text()
-    assert "is_deleted" in content, (
-        "is_deleted column NOT found in model — soft-delete is still inert (BUG C regression)"
+    model_src = model_file.read_text()
+    assert "from app.models.mixins import SoftDeleteMixin" in model_src, (
+        "Model must import SoftDeleteMixin — soft-delete is inert otherwise."
     )
-    assert "deleted_at" in content, "deleted_at column NOT found in model"
+    # The Item class must actually inherit the mixin (not just import it).
+    tree = ast.parse(model_src)
+    item_cls = next(
+        (n for n in ast.walk(tree) if isinstance(n, ast.ClassDef) and n.name == "Item"),
+        None,
+    )
+    assert item_cls is not None, "Item class not found in model file"
+    base_names = {b.id for b in item_cls.bases if isinstance(b, ast.Name)}
+    assert "SoftDeleteMixin" in base_names, (
+        "Item must inherit SoftDeleteMixin so it gains the deletion columns."
+    )
+
+    # The deletion columns live on the emitted mixin (single source of truth).
+    mixin_file = p / "app" / "models" / "mixins.py"
+    assert mixin_file.exists(), "app/models/mixins.py not emitted — columns have no home."
+    mixin_src = mixin_file.read_text()
+    assert "class SoftDeleteMixin" in mixin_src, "SoftDeleteMixin class not emitted."
+    for col in ("is_deleted", "deleted_at", "deleted_by"):
+        assert col in mixin_src, f"{col} column NOT defined on SoftDeleteMixin."
 
 
 def test_migration_added_for_is_deleted() -> None:
@@ -143,8 +168,18 @@ def test_migration_added_for_is_deleted() -> None:
 
 
 def test_crudbase_patched_with_fingerprint() -> None:
-    """P1-#14: app/crud/base.py must carry the SOFT_DELETE_PATCH_APPLIED fingerprint."""
-    p = create_fixture_project(name="sd_p1_14_fingerprint")
+    """SPEC-v2: app/crud/base.py carries the fingerprint and re-points DELETE to soft-delete.
+
+    Re-anchored from the OLD design (CRUDBase.get / get_multi / delete all
+    reassigned to ``_sd_*`` callables that filtered ``is_deleted`` per query).
+    SPEC-v2 (#19) moves read exclusion to the GLOBAL ``do_orm_execute`` filter,
+    so CRUDBase.get / get_multi need NO per-query clause and are no longer
+    patched; only ``CRUDBase.delete`` is overridden so the default DELETE route
+    soft-deletes instead of issuing SQL DELETE (INV-SD-03). We assert the
+    fingerprint + the real ``CRUDBase.delete`` reassignment, and that the read
+    methods are deliberately NOT reassigned (would shadow the global filter).
+    """
+    p = create_fixture_project(name="sd_v2_fingerprint")
     add_soft_delete(ToolInput(project_dir=str(p)))
     crud_base = p / "app" / "crud" / "base.py"
     assert crud_base.exists(), "crud/base.py missing in scaffolded project"
@@ -152,28 +187,74 @@ def test_crudbase_patched_with_fingerprint() -> None:
     assert "SOFT_DELETE_PATCH_APPLIED" in content, (
         "CRUDBase patch fingerprint missing — soft-delete patch was not applied to crud/base.py."
     )
-    # The three method reassignments must be present.
-    assert "CRUDBase.get = _sd_get" in content
-    assert "CRUDBase.get_multi = _sd_get_multi" in content
-    assert "CRUDBase.delete = _sd_delete" in content
+    # delete() is re-pointed at the soft-delete-aware callable.
+    assert "CRUDBase.delete = _sd_delete" in content, (
+        "CRUDBase.delete must be reassigned to the soft-delete-aware override."
+    )
+    # Reads are filtered GLOBALLY (do_orm_execute), so they must NOT be reassigned
+    # here — doing so would duplicate/shadow the global filter.
+    assert "CRUDBase.get = " not in content, (
+        "CRUDBase.get must NOT be reassigned — reads are filtered by the global "
+        "do_orm_execute listener under SPEC-v2."
+    )
+    assert "CRUDBase.get_multi = " not in content, (
+        "CRUDBase.get_multi must NOT be reassigned — reads are filtered globally."
+    )
 
 
 def test_crudbase_methods_soft_delete_aware() -> None:
-    """P1-#14: the patched CRUDBase methods filter is_deleted and flip the flag on delete."""
-    p = create_fixture_project(name="sd_p1_14_methods")
-    add_soft_delete(ToolInput(project_dir=str(p)))
-    content = (p / "app" / "crud" / "base.py").read_text()
+    """SPEC-v2: reads are filtered by the global do_orm_execute listener; delete flips the flag.
 
-    # get and get_multi must guard with hasattr(is_deleted) and filter when present.
-    assert content.count("is_deleted == False") >= 2, (
-        "get() and get_multi() must each filter is_deleted == False."
+    Re-anchored from the OLD design (per-query ``is_deleted == False`` clauses
+    inside patched ``CRUDBase.get`` / ``get_multi`` guarded by
+    ``hasattr(self.model, "is_deleted")``). SPEC-v2 (#19) implements read
+    exclusion ONCE, globally, via the ``do_orm_execute`` SQLAlchemy listener
+    using ``with_loader_criteria`` against ``SoftDeleteMixin`` (INV-SD-01); the
+    listener is wired into ``app/main.py``. ``CRUDBase.delete`` still flips
+    ``is_deleted=True`` instead of issuing SQL DELETE, behind a ``hasattr``
+    guard so non-soft-delete models keep hard-delete (INV-SD-03). This still
+    fails if either half of the mechanism is broken.
+    """
+    p = create_fixture_project(name="sd_v2_methods")
+    add_soft_delete(ToolInput(project_dir=str(p)))
+    app_dir = p / "app"
+
+    # --- Global read exclusion (replaces the per-query get/get_multi clauses). ---
+    filter_file = app_dir / "core" / "soft_delete_filter.py"
+    assert filter_file.exists(), "app/core/soft_delete_filter.py not emitted."
+    filter_src = filter_file.read_text()
+    assert "do_orm_execute" in filter_src, (
+        "Global filter must register a do_orm_execute listener (INV-SD-01)."
     )
-    assert content.count('hasattr(self.model, "is_deleted")') >= 2, (
-        "Both reads must check hasattr(self.model, 'is_deleted') so non-soft-delete models keep working."
+    assert "with_loader_criteria" in filter_src, (
+        "Global filter must use with_loader_criteria to inject the predicate."
     )
-    # delete must flip the flag (not call session.delete on soft-delete models).
+    assert "SoftDeleteMixin" in filter_src, (
+        "Global filter must key off SoftDeleteMixin so every mixed-in model is filtered."
+    )
+    assert "is_deleted == False" in filter_src, (
+        "Global filter must inject the is_deleted == False predicate."
+    )
+    assert "include_deleted" in filter_src, (
+        "Global filter must honour the include_deleted execution option opt-out."
+    )
+    # The listener must actually be activated at startup.
+    main_src = (app_dir / "main.py").read_text()
+    assert "soft_delete_filter" in main_src, (
+        "soft_delete_filter must be imported in main.py to register the listener."
+    )
+
+    # --- delete() flips the flag instead of hard-deleting soft-delete models. ---
+    content = (app_dir / "crud" / "base.py").read_text()
     assert "obj.is_deleted = True" in content, (
         "CRUDBase.delete must set obj.is_deleted = True for soft-delete-aware behaviour."
+    )
+    assert 'hasattr(obj, "is_deleted")' in content, (
+        "CRUDBase.delete must guard on hasattr(obj, 'is_deleted') so non-soft-delete "
+        "models keep hard-delete."
+    )
+    assert "await session.delete(obj)" in content, (
+        "CRUDBase.delete must still hard-delete models without is_deleted."
     )
 
 
@@ -215,17 +296,59 @@ def test_model_file_still_parses_after_injection() -> None:
 
 
 def test_soft_delete_works_on_multiword_model() -> None:
-    """Multiword model must get is_deleted injected without breaking discovery."""
+    """SPEC-v2: soft-delete works end-to-end for a multi-word model name.
+
+    Re-anchored from the OLD design (assert a literal ``is_deleted`` injected
+    into the model file). SPEC-v2 (#19) gives the multi-word model soft-delete
+    via mixin inheritance + per-model crud helpers + an Alembic migration for
+    the correctly-pluralized table. We prove the FULL machinery is wired for
+    ``VaccineLot`` (snake stem ``vaccinelot``, table ``vaccinelots``), so this
+    still fails if multi-word discovery or any soft-delete artefact breaks.
+    """
     p = create_fixture_project(
-        name="sd_bugc_multiword",
+        name="sd_v2_multiword",
         models={"VaccineLot": {"name": "str", "description": "str"}},
     )
     result = add_soft_delete(ToolInput(project_dir=str(p)))
     assert result.status == "success", f"Expected success for VaccineLot, got: {result.status}"
+
+    # 1. Model inherits the mixin (the new way columns are added).
     model_file = p / "app" / "models" / "vaccinelot.py"
     assert model_file.exists(), "vaccinelot.py model file not found"
-    content = model_file.read_text()
-    assert "is_deleted" in content, "is_deleted not injected into VaccineLot model"
+    model_src = model_file.read_text()
+    assert "from app.models.mixins import SoftDeleteMixin" in model_src, (
+        "Multi-word model must import SoftDeleteMixin."
+    )
+    tree = ast.parse(model_src)
+    cls = next(
+        (n for n in ast.walk(tree) if isinstance(n, ast.ClassDef) and n.name == "VaccineLot"),
+        None,
+    )
+    assert cls is not None, "VaccineLot class not found"
+    base_names = {b.id for b in cls.bases if isinstance(b, ast.Name)}
+    assert "SoftDeleteMixin" in base_names, (
+        "VaccineLot must inherit SoftDeleteMixin — soft-delete inert for multi-word model otherwise."
+    )
+
+    # 2. Per-model CRUD helpers were appended for the multi-word model.
+    crud_src = (p / "app" / "crud" / "vaccinelot.py").read_text()
+    assert "async def soft_delete(" in crud_src, "soft_delete helper missing for VaccineLot."
+    assert "async def restore(" in crud_src, "restore helper missing for VaccineLot."
+    assert "obj.is_deleted = True" in crud_src, "VaccineLot soft_delete must flip is_deleted."
+
+    # 3. Admin schema generated with the multi-word PascalCase name.
+    schema_src = (p / "app" / "schemas" / "vaccinelot.py").read_text()
+    assert "class VaccineLotDeletedPublic" in schema_src, (
+        "Admin VaccineLotDeletedPublic schema missing for multi-word model."
+    )
+
+    # 4. Migration generated for the correctly-pluralized multi-word table.
+    versions = p / "alembic" / "versions"
+    migs = list(versions.glob("*soft_delete_vaccinelots*"))
+    assert migs, "No soft_delete migration for the vaccinelots table (multi-word pluralization)."
+    mig_src = migs[0].read_text()
+    assert '"vaccinelots"' in mig_src, "Migration must target the vaccinelots table."
+    assert "is_deleted" in mig_src, "Migration must add the is_deleted column."
 
 
 def test_migration_is_valid_python() -> None:
@@ -240,16 +363,23 @@ def test_migration_is_valid_python() -> None:
 
 
 def test_crudbase_imports_added_idempotently() -> None:
-    """Running twice must not duplicate the CRUDBase patch block."""
-    p = create_fixture_project(name="sd_p1_14_idempotent_patch")
+    """SPEC-v2: running twice must not duplicate the CRUDBase soft-delete patch.
+
+    Re-anchored: the OLD design counted ``CRUDBase.get = _sd_get`` (a read
+    reassignment removed in #19). SPEC-v2 only re-points ``CRUDBase.delete``;
+    idempotency is driven by the ``SOFT_DELETE_PATCH_APPLIED`` fingerprint. We
+    assert both the fingerprint and the ``CRUDBase.delete`` reassignment appear
+    exactly once after two runs (the second run is a no_op).
+    """
+    p = create_fixture_project(name="sd_v2_idempotent_patch")
     add_soft_delete(ToolInput(project_dir=str(p)))
     add_soft_delete(ToolInput(project_dir=str(p)))
     content = (p / "app" / "crud" / "base.py").read_text()
     assert content.count("SOFT_DELETE_PATCH_APPLIED") == 1, (
         "CRUDBase patch must be applied at most once."
     )
-    assert content.count("CRUDBase.get = _sd_get") == 1, (
-        "CRUDBase.get reassignment must not be duplicated."
+    assert content.count("CRUDBase.delete = _sd_delete") == 1, (
+        "CRUDBase.delete reassignment must not be duplicated."
     )
 
 
