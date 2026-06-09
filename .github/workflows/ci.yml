@@ -270,6 +270,109 @@ jobs:
           assert full >= 170, f'expected >=170 after activating all bundles, got {full}'
           "
 
+  # --- Engine machinery: the full engine/tests/ suite (ALWAYS-ON) -----------
+  # GOVERNANCE: engine/tests/ is dev-time engine machinery (contract rules, the
+  # capability trees, *_notes_invariants, manifest/compose/find, blind harness).
+  # The `changes` detector treats engine/** as LIGHT and skips the heavy app
+  # suites for engine-only PRs — so WITHOUT this always-on job an engine/tests/
+  # regression on an engine-only change would sail through ungated. This job is
+  # the engine safety net for that whole tree (866 tests). Pure-logic + loadfile
+  # → xdist-safe.
+  engine-tests:
+    name: engine tests (engine/tests/)
+    needs: setup
+    runs-on: [self-hosted, macos, local]
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: engine/tests suite
+        env: { PYTHONPATH: . }
+        run: "${VENV}/bin/python -m pytest engine/tests/ -q --tb=short -n 4 --dist loadfile"
+
+  # --- Generated-output quality gate (HEAVY; pytest-collectable) -------------
+  # Exercises the EMITTED app + generators: spec-compliance, generated-quality,
+  # security-of-generated-code, bandit/deps, full-integration, http-smoke,
+  # lint-of-generated, alembic chain, FK regression, concurrent, stress,
+  # perf-baseline. Heavy family → skipped on engine/docs-only PRs. Several are
+  # slow (~3-6m each) → generous timeout; -n 4 mirrors unit/boot CPU budget.
+  quality:
+    name: quality (generated-output suites)
+    needs: [setup, changes]
+    if: needs.changes.outputs.heavy == 'true'
+    runs-on: [self-hosted, macos, local]
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: Generated-output quality suites
+        env: { PYTHONPATH: . }
+        run: |
+          set -euo pipefail
+          "${VENV}/bin/python" -m pytest \
+            tests/test_spec_compliance.py \
+            tests/test_generated_quality.py \
+            tests/test_security_generated.py \
+            tests/test_bandit_deps.py \
+            tests/test_full_integration.py \
+            tests/test_http_smoke.py \
+            tests/test_lint_generated.py \
+            tests/test_alembic_chain_root.py \
+            tests/test_fk_regression.py \
+            tests/test_concurrent.py \
+            tests/test_stress.py \
+            tests/test_performance_baseline.py \
+            -q --tb=short -n 4 --dist loadfile
+
+  # --- Generated-output quality gate (HEAVY; script-runners) -----------------
+  # These tests are standalone runners (have main(), collect 0 under pytest), so
+  # they must run as `python tests/<f>.py`, not via pytest. test_consistency
+  # needs PYTHONPATH=. (imports the `tests` package). test_soak is a ~5m soak.
+  quality-scripts:
+    name: quality (script-runners)
+    needs: [setup, changes]
+    if: needs.changes.outputs.heavy == 'true'
+    runs-on: [self-hosted, macos, local]
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: Consistency / determinism / soak / edge-cases runners
+        env: { PYTHONPATH: . }
+        run: |
+          set -euo pipefail
+          "${VENV}/bin/python" tests/test_consistency.py
+          "${VENV}/bin/python" tests/test_determinism.py
+          "${VENV}/bin/python" tests/test_soak.py
+          "${VENV}/bin/python" tests/test_edge_cases.py
+
+  # --- Nightly-only extras (schedule event) ---------------------------------
+  # NOT on the PR gate by design (documented, not silently dropped):
+  #   - test_cross_composition.py: builds C(n,2) full-stack fixture projects
+  #     (a fresh build+boot per pair). It NEVER fails, but its combinatorial
+  #     build time can exceed 15min under a loaded shared runner — too slow/
+  #     flaky-on-time for the PR critical path. Runs nightly with a wide budget.
+  # KNOWN GAP (tracked, not gated anywhere yet):
+  #   - test_realworld_ecommerce.py is a script-runner that needs a dedicated
+  #     Postgres fixture (exits 2 without one). It is NOT yet wired here pending
+  #     a verified PG fixture for it; do not assume it is covered.
+  nightly-extras:
+    name: nightly extras (cross-composition)
+    needs: setup
+    if: github.event_name == 'schedule'
+    runs-on: [self-hosted, macos, local]
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Link shared venv into checkout
+        run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
+      - name: Cross-composition (combinatorial full-stack builds)
+        env: { PYTHONPATH: . }
+        run: "${VENV}/bin/python -m pytest tests/test_cross_composition.py -q --tb=short -n 4 --dist loadfile"
+
   # --- Postgres-backed: pg e2e + behavior scenarios -------------------------
   postgres-behavior:
     name: postgres + behavior
