@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "7016a06d",
-  "generated_at": "2026-06-08T16:56:55+00:00",
+  "kit_commit": "6f030856",
+  "generated_at": "2026-06-09T14:01:56+00:00",
   "verbs": [
     "add",
     "generate",
@@ -107,7 +107,7 @@
         },
         {
           "name": "crud_data",
-          "tool_count": 20,
+          "tool_count": 21,
           "tags": [
             "data",
             "persistence"
@@ -1063,6 +1063,28 @@
       "test_paths": [],
       "primitives_used": [
         "TransactionalOutbox"
+      ],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_data_add_read_model_projection",
+      "legacy_name": null,
+      "verb": "add",
+      "domain": "data",
+      "skill": "SKILL-001-fastapi-production",
+      "bundle": "crud_data",
+      "synopsis": "Copy the MaterializedView primitive and the MaterializedViewAdapter into the project, then wire a \u22642",
+      "when_to_call": "Copy the MaterializedView primitive and the MaterializedViewAdapter into the project, then wire a \u226420-line app/projections.py caller that builds a CQRS read model over the event store (query side).",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "adapt/extend/crud_data/add_read_model_projection/__init__.py",
+      "test_paths": [],
+      "primitives_used": [
+        "MaterializedView"
       ],
       "example_input": null,
       "example_output": null
@@ -11995,13 +12017,13 @@
     }
   ],
   "counts": {
-    "tools_total": 201,
-    "tools_local": 201,
+    "tools_total": 202,
+    "tools_local": 202,
     "tools_federated": 0,
     "primitives": 299,
     "recipes": 392,
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "347e674fbe28efe1a700565d3d159de6d94b9625ea085bbc07ee5070e09b85b0"
+  "stable_hash": "2e2a89699c65dcd6b669effadcb08c5c7532fb8504f0eb2a5ac830bee9899d78"
 }

@@ -1,0 +1,107 @@
+"""Emitted test for add_read_model_projection: CQRS read-model scaffold.
+
+HONESTY RULE: the MaterializedView read model is EVENTUALLY CONSISTENT /
+bounded-stale w.r.t. the event store — NOT linearizable, NOT real-time, NOT
+exactly-once, and NOT auto-syncing (rebuild is manual). This test asserts the
+wiring exists AND that neither the glue nor the read-model engine overclaims
+those properties (mirrors test_no_orphan_event_shim_emitted's negative stance).
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+_OVERCLAIM_TOKENS = ("real-time", "exactly-once", "linearizable", "auto-sync")
+
+
+# ---------------------------------------------------------------------------
+# Positive: glue file exists and wires the adapter
+# ---------------------------------------------------------------------------
+
+def test_projections_glue_wires_adapter() -> None:
+    """app/projections.py imports the FastAPI adapter and exposes install_projections."""
+    glue = Path(__file__).parent.parent / "app" / "projections.py"
+    assert glue.exists(), "app/projections.py was not emitted"
+    body = glue.read_text()
+    assert (
+        "from core.venous._adapters.fastapi.MaterializedViewAdapter import install"
+        in body
+    ), "glue must import MaterializedViewAdapter.install"
+    assert "def install_projections(" in body, "glue must expose install_projections(app)"
+    assert "app.state.event_store" in body, "glue must consume app.state.event_store"
+
+
+def test_projection_primitive_copied() -> None:
+    """MaterializedView primitive is present in the project."""
+    root = Path(__file__).parent.parent
+    mv = root / "core" / "venous" / "data" / "MaterializedView" / "MaterializedView.py"
+    assert mv.exists(), "MaterializedView primitive missing"
+
+
+def test_projection_adapter_copied() -> None:
+    """FastAPI adapter is present and exposes install()."""
+    adapter = (
+        Path(__file__).parent.parent
+        / "core"
+        / "venous"
+        / "_adapters"
+        / "fastapi"
+        / "MaterializedViewAdapter.py"
+    )
+    assert adapter.exists(), "MaterializedViewAdapter missing"
+    assert "def install(" in adapter.read_text(), "adapter must expose install(app)"
+
+
+# ---------------------------------------------------------------------------
+# Real behaviour: register a handler, rebuild from a fake store, query a row
+# ---------------------------------------------------------------------------
+
+def test_projection_real_behaviour() -> None:
+    """Register a handler, replay a fake store, and read the projected row."""
+    import sys
+
+    root = Path(__file__).parent.parent
+    sys.path.insert(0, str(root))
+    from core.venous._adapters.fastapi.MaterializedViewAdapter import (
+        make_view,
+        rebuild_from_store,
+    )
+
+    view = make_view("orders")
+
+    @view.on("created")
+    def _on_created(rows, event):  # noqa: ANN001, ANN202
+        rows[event["aggregate_id"]] = {"id": event["aggregate_id"], "status": "created"}
+
+    class _FakeStore:
+        def load(self, aggregate_id):  # noqa: ANN001, ANN202
+            return [{"type": "created"}] if aggregate_id == "ord-1" else []
+
+    applied = rebuild_from_store(view, _FakeStore(), ["ord-1"])
+    assert applied == 1
+    rows = list(view.query(None))
+    assert rows == [{"id": "ord-1", "status": "created"}]
+    # Idempotent re-replay applies nothing new (at-least-once + dedupe).
+    assert rebuild_from_store(view, _FakeStore(), ["ord-1"]) == 0
+
+
+# ---------------------------------------------------------------------------
+# Negative: no overclaim tokens; no orphan shim
+# ---------------------------------------------------------------------------
+
+def test_glue_does_not_overclaim() -> None:
+    """The emitted glue must not promise real-time/exactly-once/linearizable/auto-sync."""
+    glue = (Path(__file__).parent.parent / "app" / "projections.py").read_text().lower()
+    for tok in _OVERCLAIM_TOKENS:
+        assert tok not in glue, f"glue overclaims projection semantics: {tok!r}"
+
+
+def test_no_orphan_projection_shim_emitted() -> None:
+    """No legacy projector/projection shim files outside the adapter wiring."""
+    root = Path(__file__).parent.parent
+    bad_paths = [
+        root / "app" / "projector.py",
+        root / "app" / "projections" / "projector_shim.py",
+    ]
+    for p in bad_paths:
+        assert not p.exists(), f"Unexpected shim file emitted: {p}"

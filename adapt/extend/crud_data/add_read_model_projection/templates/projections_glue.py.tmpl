@@ -1,0 +1,38 @@
+"""Wire CQRS read-model projections into the FastAPI app.
+
+Delegates to the MaterializedView primitive + FastAPI adapter copied under
+`core/venous/` by the `add_read_model_projection` tool. Re-emitted idempotently.
+
+Register your projection handlers below with `view.on(event_type)`; rows are
+keyed by `aggregate_id` (per-aggregate-grain). Reads are eventually consistent /
+bounded-stale; rebuild is manual via POST /projections/{view}/rebuild.
+"""
+
+from __future__ import annotations
+
+from fastapi import FastAPI
+
+from app.api.deps import get_current_superuser
+from app.core.config import settings
+from core.venous._adapters.fastapi.MaterializedViewAdapter import install, make_view
+
+
+def install_projections(app: FastAPI) -> None:
+    """Attach a superuser-gated read model + /projections router.
+
+    Consumes `app.state.event_store` (set by install_event_store) as the
+    rebuild source. Durable (SQL-backed) when PROJECTIONS_DURABLE is set;
+    otherwise an in-memory view that does NOT persist across restarts.
+    """
+    view = make_view("default")
+    # Example handler — replace with your real projection logic:
+    #   @view.on("created")
+    #   def _on_created(rows, event):
+    #       rows[event["aggregate_id"]] = {"id": event["aggregate_id"], ...}
+    durable = getattr(settings, "PROJECTIONS_DURABLE", False)
+    views = {"default": view}
+    if durable:
+        from app.projection_store import wrap_durable
+
+        views = {name: wrap_durable(v) for name, v in views.items()}
+    install(app, store=app.state.event_store, auth_dependency=get_current_superuser, views=views)

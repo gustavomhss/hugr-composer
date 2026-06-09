@@ -31,14 +31,14 @@ surfaces are MCP-registered and JIT-discoverable via
 |---|---:|---|
 | Slice tools under `adapt/extend/` | 100 | `find adapt/extend -name 'add_*.py' ! -name 'test_*' \| wc -l` |
 | Total tools in `adapt/` (all verbs + categories) | 127 | `find adapt -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
-| FastAPI adapters (`core/venous/_adapters/fastapi/`) | 17 | `find core/venous/_adapters/fastapi -maxdepth 1 -name '*Adapter.py' ! -name 'test_*' \| wc -l` |
+| FastAPI adapters (`core/venous/_adapters/fastapi/`) | 18 | `find core/venous/_adapters/fastapi -maxdepth 1 -name '*Adapter.py' ! -name 'test_*' \| wc -l` |
 | Generator files (`generators/`) | 60 | `find generators -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
-| MCP-registered tools (catalog) | 201 | `jq '.tools \| length' engine/index/catalog.json` |
-| agent-visible surface (catalog + tier-1 + tree) | 217 | 201 catalog + 7 tier-1 + 9 tree dispatchers |
+| MCP-registered tools (catalog) | 202 | `jq '.tools \| length' engine/index/catalog.json` |
+| agent-visible surface (catalog + tier-1 + tree) | 218 | 202 catalog + 7 tier-1 + 9 tree dispatchers |
 | Production primitives (registered) | 124 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
 | Production primitive directories | 124 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_staging*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
 | Staged primitives (PascalCase, promotable) | 175 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
-| Quarantined primitives (rejected by extraction gate) | 42 | `find core/venous/_staging/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
+| Quarantined primitives (rejected by extraction gate) | 41 | `find core/venous/_staging/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Provider adapters (`_adapters/{redis,stripe}/`) | 2 | `find core/venous/_adapters -maxdepth 2 -name '*Adapter.py' ! -path '*fastapi*' ! -name 'test_*' \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
 | Contract items green | 37/37 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |

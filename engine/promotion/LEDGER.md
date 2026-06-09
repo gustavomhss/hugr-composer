@@ -1,6 +1,6 @@
 # Promotion Ledger
 
-**Generated:** 2026-06-06T14:30:43+00:00 · **Classifier:** v1.0 · **Total:** 218 (176 staged + 42 quarantined)
+**Generated:** 2026-06-09T14:01:14+00:00 · **Classifier:** v1.0 · **Total:** 217 (176 staged + 41 quarantined)
 
 > **How to use this ledger.** Each entry proposes a path to
 > functionality. Tick the checkbox to mark it approved; un-ticked =
@@ -16,139 +16,139 @@
 | promote_as_adapter | 0 | Review + approve individually; executor ships each. |
 | promote_as_primitive | 0 | Ratify §B1.8 (for lite) → review + approve. |
 | fill_and_promote | 0 | Fill REPLACE_ME + invariant tests; reclassify. |
-| extract_motor_pair | 118 | Refactoring sprint — ~2-4h per item. |
+| extract_motor_pair | 117 | Refactoring sprint — ~2-4h per item. |
 | needs_review | 0 | Adjudicate manually; reclassify. |
 | redundant | 0 | Leave in place, or opt-in delete for cleanup. |
 | needs_caller | 100 | No action. Revisit when a caller appears. |
 
-## Extract motor+adapter pair (re-factor required) — 118 primitive(s)
+## Extract motor+adapter pair (re-factor required) — 117 primitive(s)
 
 Framework-coupled with no motor registered. Cannot be promoted as-is (§B1.0.1 bars framework imports in registered primitives). Required work per item: split into (framework-free motor primitive under `core/venous/<ns>/<Motor>/`) + (FastAPI adapter under `_adapters/fastapi/<Motor>Adapter.py`). ~2-4h per item depending on complexity. No one-shot command — this is a refactoring sprint, not an executor call.
 
-### 1. [ ] `MFADevice` (auth)
-
-  - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
-  - **State:** REPLACE_ME=7 · loc=31 · tla=n · concurrency=n · mutable=n · tests=y · score=6996
-  - **Signals:** `generator_ref`: `adapt/extend/auth_access/add_mfa.py`
-
-### 2. [ ] `MFARecoveryCode` (auth)
-
-  - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
-  - **State:** REPLACE_ME=7 · loc=21 · tla=n · concurrency=n · mutable=n · tests=y · score=3728
-  - **Signals:** `generator_ref`: `adapt/extend/auth_access/add_mfa.py`
-
-### 3. [ ] `OAuthAccount` (auth)
+### 1. [ ] `OAuthAccount` (auth)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=35 · tla=n · concurrency=n · mutable=n · tests=y · score=8632
   - **Signals:** `generator_ref`: `adapt/extend/auth_access/add_oauth2_provider.py`
 
-### 4. [ ] `Event` (data)
+### 2. [ ] `Event` (data)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=25 · tla=n · concurrency=n · mutable=n · tests=y · score=4908
   - **Signals:** `benchmark_ref`: `benchmarks/specs/mid/03_event_sourced_orders.md`
 
-### 5. [ ] `DeprecationMiddleware` (api)
+### 3. [ ] `DeprecationMiddleware` (api)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Deprecation`.
   - **State:** REPLACE_ME=7 · loc=28 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=8384
   - **Signals:** _No signals._
 
-### 6. [ ] `DeprecationMiddleware` (api)
+### 4. [ ] `DeprecationMiddleware` (api)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Deprecation`.
   - **State:** REPLACE_ME=7 · loc=28 · tla=n · concurrency=n · mutable=n · tests=y · score=8384
   - **Signals:** _No signals._
 
-### 7. [ ] `GitHubVerifier` (api)
+### 5. [ ] `GitHubVerifier` (api)
 
   - **Rationale:** Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=5 · loc=42 · tla=n · concurrency=n · mutable=n · tests=y · score=28144
   - **Signals:** _No signals._
 
-### 8. [ ] `InternalVerifier` (api)
+### 6. [ ] `InternalVerifier` (api)
 
   - **Rationale:** Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=5 · loc=68 · tla=n · concurrency=n · mutable=n · tests=y · score=175744
   - **Signals:** _No signals._
 
-### 9. [ ] `ReadReplicaSession` (api)
+### 7. [ ] `ReadReplicaSession` (api)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=26 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=7264
   - **Signals:** _No signals._
 
-### 10. [ ] `ReadReplicaSession` (api)
+### 8. [ ] `ReadReplicaSession` (api)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=26 · tla=n · concurrency=n · mutable=n · tests=y · score=7264
   - **Signals:** _No signals._
 
-### 11. [ ] `StripeVerifier` (api)
+### 9. [ ] `StripeVerifier` (api)
 
   - **Rationale:** Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=5 · loc=41 · tla=n · concurrency=n · mutable=n · tests=y · score=35140
   - **Signals:** _No signals._
 
-### 12. [ ] `UserPresence` (api)
+### 10. [ ] `UserPresence` (api)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=21 · tla=n · concurrency=n · mutable=n · tests=y · score=4044
   - **Signals:** _No signals._
 
-### 13. [ ] `VersionResolverMiddleware` (api)
+### 11. [ ] `VersionResolverMiddleware` (api)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `VersionResolver`.
   - **State:** REPLACE_ME=7 · loc=48 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=75000
   - **Signals:** _No signals._
 
-### 14. [ ] `VersionResolverMiddleware` (api)
+### 12. [ ] `VersionResolverMiddleware` (api)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `VersionResolver`.
   - **State:** REPLACE_ME=7 · loc=48 · tla=n · concurrency=n · mutable=n · tests=y · score=75000
   - **Signals:** _No signals._
 
-### 15. [ ] `WebhookDelivery` (api)
+### 13. [ ] `WebhookDelivery` (api)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=37 · tla=n · concurrency=n · mutable=n · tests=y · score=7516
   - **Signals:** _No signals._
 
-### 16. [ ] `WebhookEndpoint` (api)
+### 14. [ ] `WebhookEndpoint` (api)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Webhook`.
   - **State:** REPLACE_ME=7 · loc=35 · tla=n · concurrency=n · mutable=n · tests=y · score=7948
   - **Signals:** _No signals._
 
-### 17. [ ] `APIKey` (auth)
+### 15. [ ] `APIKey` (auth)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=38 · tla=n · concurrency=n · mutable=n · tests=y · score=9420
   - **Signals:** _No signals._
 
-### 18. [ ] `CedarAuthzMiddleware` (auth)
+### 16. [ ] `CedarAuthzMiddleware` (auth)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `CedarAuthz`.
   - **State:** REPLACE_ME=7 · loc=72 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=167700
   - **Signals:** _No signals._
 
-### 19. [ ] `CedarEngine` (auth)
+### 17. [ ] `CedarEngine` (auth)
 
   - **Rationale:** Framework-coupled (starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=71 · tla=n · concurrency=n · mutable=y · tests=y · score=176520
   - **Signals:** _No signals._
 
-### 20. [ ] `FeatureFlag` (auth)
+### 18. [ ] `FeatureFlag` (auth)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=39 · tla=n · concurrency=n · mutable=n · tests=y · score=11324
   - **Signals:** _No signals._
 
-### 21. [ ] `FeatureFlagAudit` (auth)
+### 19. [ ] `FeatureFlagAudit` (auth)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=26 · tla=n · concurrency=n · mutable=n · tests=y · score=5472
+  - **Signals:** _No signals._
+
+### 20. [ ] `MFADevice` (auth)
+
+  - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
+  - **State:** REPLACE_ME=7 · loc=31 · tla=n · concurrency=n · mutable=n · tests=y · score=6996
+  - **Signals:** _No signals._
+
+### 21. [ ] `MFARecoveryCode` (auth)
+
+  - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
+  - **State:** REPLACE_ME=7 · loc=21 · tla=n · concurrency=n · mutable=n · tests=y · score=3728
   - **Signals:** _No signals._
 
 ### 22. [ ] `OPAMiddleware` (auth)
@@ -283,451 +283,445 @@ Framework-coupled with no motor registered. Cannot be promoted as-is (§B1.0.1 b
   - **State:** REPLACE_ME=7 · loc=92 · tla=n · concurrency=n · mutable=n · tests=y · score=200580
   - **Signals:** _No signals._
 
-### 44. [ ] `Projector` (data)
-
-  - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
-  - **State:** REPLACE_ME=7 · loc=78 · tla=n · concurrency=n · mutable=y · tests=y · quarantined · score=112600
-  - **Signals:** _No signals._
-
-### 45. [ ] `SoftDeleteMixin` (data)
+### 44. [ ] `SoftDeleteMixin` (data)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=28 · tla=n · concurrency=n · mutable=n · tests=y · score=12612
   - **Signals:** _No signals._
 
-### 46. [ ] `VersioningService` (data)
+### 45. [ ] `VersioningService` (data)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Versioning`.
   - **State:** REPLACE_ME=7 · loc=200 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=2873280
   - **Signals:** _No signals._
 
-### 47. [ ] `VersioningService` (data)
+### 46. [ ] `VersioningService` (data)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Versioning`.
   - **State:** REPLACE_ME=7 · loc=200 · tla=n · concurrency=n · mutable=n · tests=y · score=2873280
   - **Signals:** _No signals._
 
-### 48. [ ] `DataSeeder` (extras)
+### 47. [ ] `DataSeeder` (extras)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=73 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=110064
   - **Signals:** _No signals._
 
-### 49. [ ] `DataSeeder` (extras)
+### 48. [ ] `DataSeeder` (extras)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=73 · tla=n · concurrency=n · mutable=n · tests=y · score=110064
   - **Signals:** _No signals._
 
-### 50. [ ] `SchemaEnforcerMiddleware` (extras)
+### 49. [ ] `SchemaEnforcerMiddleware` (extras)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `SchemaEnforcer`.
   - **State:** REPLACE_ME=7 · loc=44 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=27520
   - **Signals:** _No signals._
 
-### 51. [ ] `SchemaEnforcerMiddleware` (extras)
+### 50. [ ] `SchemaEnforcerMiddleware` (extras)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `SchemaEnforcer`.
   - **State:** REPLACE_ME=7 · loc=44 · tla=n · concurrency=n · mutable=n · tests=y · score=27520
   - **Signals:** _No signals._
 
-### 52. [ ] `AdaptiveThrottleMiddleware` (resiliency)
+### 51. [ ] `AdaptiveThrottleMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `AdaptiveThrottle`.
   - **State:** REPLACE_ME=7 · loc=37 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=21408
   - **Signals:** _No signals._
 
-### 53. [ ] `AdaptiveThrottleMiddleware` (resiliency)
+### 52. [ ] `AdaptiveThrottleMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `AdaptiveThrottle`.
   - **State:** REPLACE_ME=7 · loc=37 · tla=n · concurrency=n · mutable=n · tests=y · score=21408
   - **Signals:** _No signals._
 
-### 54. [ ] `AdminAuthBackend` (resiliency)
+### 53. [ ] `AdminAuthBackend` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `AdminAuth`.
   - **State:** REPLACE_ME=7 · loc=73 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=181296
   - **Signals:** _No signals._
 
-### 55. [ ] `AdminAuthBackend` (resiliency)
+### 54. [ ] `AdminAuthBackend` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `AdminAuth`.
   - **State:** REPLACE_ME=7 · loc=73 · tla=n · concurrency=n · mutable=n · tests=y · score=181296
   - **Signals:** _No signals._
 
-### 56. [ ] `AnomalyMiddleware` (resiliency)
+### 55. [ ] `AnomalyMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Anomaly`.
   - **State:** REPLACE_ME=7 · loc=35 · tla=n · concurrency=y · mutable=n · tests=y · quarantined · score=29760
   - **Signals:** _No signals._
 
-### 57. [ ] `AnomalyMiddleware` (resiliency)
+### 56. [ ] `AnomalyMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Anomaly`.
   - **State:** REPLACE_ME=7 · loc=35 · tla=n · concurrency=y · mutable=n · tests=y · score=29760
   - **Signals:** _No signals._
 
-### 58. [ ] `CORSConfigMiddleware` (resiliency)
+### 57. [ ] `CORSConfigMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `CORSConfig`.
   - **State:** REPLACE_ME=7 · loc=29 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=10128
   - **Signals:** _No signals._
 
-### 59. [ ] `CORSConfigMiddleware` (resiliency)
+### 58. [ ] `CORSConfigMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `CORSConfig`.
   - **State:** REPLACE_ME=7 · loc=29 · tla=n · concurrency=n · mutable=n · tests=y · score=10128
   - **Signals:** _No signals._
 
-### 60. [ ] `CSRFMiddleware` (resiliency)
+### 59. [ ] `CSRFMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `CSRF`.
   - **State:** REPLACE_ME=7 · loc=78 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=135072
   - **Signals:** _No signals._
 
-### 61. [ ] `CSRFMiddleware` (resiliency)
+### 60. [ ] `CSRFMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `CSRF`.
   - **State:** REPLACE_ME=7 · loc=78 · tla=n · concurrency=n · mutable=n · tests=y · score=135072
   - **Signals:** _No signals._
 
-### 62. [ ] `CSRFProtection` (resiliency)
+### 61. [ ] `CSRFProtection` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=92 · tla=n · concurrency=n · mutable=n · tests=y · score=269920
   - **Signals:** _No signals._
 
-### 63. [ ] `ChaosMiddleware` (resiliency)
+### 62. [ ] `ChaosMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Chaos`.
   - **State:** REPLACE_ME=7 · loc=39 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=10992
   - **Signals:** _No signals._
 
-### 64. [ ] `ChaosMiddleware` (resiliency)
+### 63. [ ] `ChaosMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Chaos`.
   - **State:** REPLACE_ME=7 · loc=39 · tla=n · concurrency=n · mutable=n · tests=y · score=10992
   - **Signals:** _No signals._
 
-### 65. [ ] `ComplianceEvent` (resiliency)
+### 64. [ ] `ComplianceEvent` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=25 · tla=n · concurrency=n · mutable=n · tests=y · score=5072
   - **Signals:** _No signals._
 
-### 66. [ ] `CostMiddleware` (resiliency)
+### 65. [ ] `CostMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Cost`.
   - **State:** REPLACE_ME=7 · loc=44 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=41952
   - **Signals:** _No signals._
 
-### 67. [ ] `CostMiddleware` (resiliency)
+### 66. [ ] `CostMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Cost`.
   - **State:** REPLACE_ME=7 · loc=44 · tla=n · concurrency=n · mutable=n · tests=y · score=41952
   - **Signals:** _No signals._
 
-### 68. [ ] `DLPMiddleware` (resiliency)
+### 67. [ ] `DLPMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `DLP`.
   - **State:** REPLACE_ME=7 · loc=52 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=64160
   - **Signals:** _No signals._
 
-### 69. [ ] `DLPMiddleware` (resiliency)
+### 68. [ ] `DLPMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `DLP`.
   - **State:** REPLACE_ME=7 · loc=52 · tla=n · concurrency=n · mutable=n · tests=y · score=64160
   - **Signals:** _No signals._
 
-### 70. [ ] `DeliveryTracker` (resiliency)
+### 69. [ ] `DeliveryTracker` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=44 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=23772
   - **Signals:** _No signals._
 
-### 71. [ ] `DeliveryTracker` (resiliency)
+### 70. [ ] `DeliveryTracker` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=44 · tla=n · concurrency=n · mutable=n · tests=y · score=23772
   - **Signals:** _No signals._
 
-### 72. [ ] `DependencyChecker` (resiliency)
+### 71. [ ] `DependencyChecker` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=101 · tla=n · concurrency=y · mutable=n · tests=y · quarantined · score=809472
   - **Signals:** _No signals._
 
-### 73. [ ] `DependencyChecker` (resiliency)
+### 72. [ ] `DependencyChecker` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=101 · tla=n · concurrency=y · mutable=n · tests=y · score=809472
   - **Signals:** _No signals._
 
-### 74. [ ] `DeviceToken` (resiliency)
+### 73. [ ] `DeviceToken` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=13 · tla=n · concurrency=n · mutable=n · tests=y · score=2460
   - **Signals:** _No signals._
 
-### 75. [ ] `EmailEvent` (resiliency)
+### 74. [ ] `EmailEvent` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=14 · tla=n · concurrency=n · mutable=n · tests=y · score=2068
   - **Signals:** _No signals._
 
-### 76. [ ] `ErrorInjector` (resiliency)
+### 75. [ ] `ErrorInjector` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=28 · tla=n · concurrency=n · mutable=n · tests=y · score=6832
   - **Signals:** _No signals._
 
-### 77. [ ] `FingerprintMiddleware` (resiliency)
+### 76. [ ] `FingerprintMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Fingerprint`.
   - **State:** REPLACE_ME=7 · loc=74 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=513504
   - **Signals:** _No signals._
 
-### 78. [ ] `FingerprintMiddleware` (resiliency)
+### 77. [ ] `FingerprintMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Fingerprint`.
   - **State:** REPLACE_ME=7 · loc=74 · tla=n · concurrency=n · mutable=n · tests=y · score=513504
   - **Signals:** _No signals._
 
-### 79. [ ] `Job` (resiliency)
+### 78. [ ] `Job` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=38 · tla=n · concurrency=n · mutable=n · tests=y · score=9404
   - **Signals:** _No signals._
 
-### 80. [ ] `LeakDetectorMiddleware` (resiliency)
+### 79. [ ] `LeakDetectorMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `LeakDetector`.
   - **State:** REPLACE_ME=7 · loc=55 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=91200
   - **Signals:** _No signals._
 
-### 81. [ ] `LeakDetectorMiddleware` (resiliency)
+### 80. [ ] `LeakDetectorMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `LeakDetector`.
   - **State:** REPLACE_ME=7 · loc=55 · tla=n · concurrency=n · mutable=n · tests=y · score=91200
   - **Signals:** _No signals._
 
-### 82. [ ] `LoadSheddingMiddleware` (resiliency)
+### 81. [ ] `LoadSheddingMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `LoadShedding`.
   - **State:** REPLACE_ME=7 · loc=34 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=11544
   - **Signals:** _No signals._
 
-### 83. [ ] `LoadSheddingMiddleware` (resiliency)
+### 82. [ ] `LoadSheddingMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `LoadShedding`.
   - **State:** REPLACE_ME=7 · loc=34 · tla=n · concurrency=n · mutable=n · tests=y · score=11544
   - **Signals:** _No signals._
 
-### 84. [ ] `MLModel` (resiliency)
+### 83. [ ] `MLModel` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=31 · tla=n · concurrency=n · mutable=n · tests=y · score=7364
   - **Signals:** _No signals._
 
-### 85. [ ] `MeteringMiddleware` (resiliency)
+### 84. [ ] `MeteringMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Metering`.
   - **State:** REPLACE_ME=7 · loc=38 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=45384
   - **Signals:** _No signals._
 
-### 86. [ ] `MeteringMiddleware` (resiliency)
+### 85. [ ] `MeteringMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Metering`.
   - **State:** REPLACE_ME=7 · loc=38 · tla=n · concurrency=n · mutable=n · tests=y · score=45384
   - **Signals:** _No signals._
 
-### 87. [ ] `Notification` (resiliency)
+### 86. [ ] `Notification` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=25 · tla=n · concurrency=n · mutable=n · tests=y · score=4868
   - **Signals:** _No signals._
 
-### 88. [ ] `NotificationService` (resiliency)
+### 87. [ ] `NotificationService` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Notification`.
   - **State:** REPLACE_ME=7 · loc=42 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=45648
   - **Signals:** _No signals._
 
-### 89. [ ] `NotificationService` (resiliency)
+### 88. [ ] `NotificationService` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Notification`.
   - **State:** REPLACE_ME=7 · loc=42 · tla=n · concurrency=n · mutable=n · tests=y · score=45648
   - **Signals:** _No signals._
 
-### 90. [ ] `OTELMiddleware` (resiliency)
+### 89. [ ] `OTELMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `OTEL`.
   - **State:** REPLACE_ME=7 · loc=52 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=31632
   - **Signals:** _No signals._
 
-### 91. [ ] `OTELMiddleware` (resiliency)
+### 90. [ ] `OTELMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `OTEL`.
   - **State:** REPLACE_ME=7 · loc=52 · tla=n · concurrency=n · mutable=n · tests=y · score=31632
   - **Signals:** _No signals._
 
-### 92. [ ] `OutboxDlq` (resiliency)
+### 91. [ ] `OutboxDlq` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=24 · tla=n · concurrency=n · mutable=n · tests=y · score=3920
   - **Signals:** _No signals._
 
-### 93. [ ] `OutboxEvent` (resiliency)
+### 92. [ ] `OutboxEvent` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=38 · tla=n · concurrency=n · mutable=n · tests=y · score=9324
   - **Signals:** _No signals._
 
-### 94. [ ] `OutboxService` (resiliency)
+### 93. [ ] `OutboxService` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Outbox`.
   - **State:** REPLACE_ME=7 · loc=43 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=30672
   - **Signals:** _No signals._
 
-### 95. [ ] `OutboxService` (resiliency)
+### 94. [ ] `OutboxService` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Outbox`.
   - **State:** REPLACE_ME=7 · loc=43 · tla=n · concurrency=n · mutable=n · tests=y · score=30672
   - **Signals:** _No signals._
 
-### 96. [ ] `PrometheusMiddleware` (resiliency)
+### 95. [ ] `PrometheusMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Prometheus`.
   - **State:** REPLACE_ME=7 · loc=32 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=8704
   - **Signals:** _No signals._
 
-### 97. [ ] `PrometheusMiddleware` (resiliency)
+### 96. [ ] `PrometheusMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Prometheus`.
   - **State:** REPLACE_ME=7 · loc=32 · tla=n · concurrency=n · mutable=n · tests=y · score=8704
   - **Signals:** _No signals._
 
-### 98. [ ] `RecorderMiddleware` (resiliency)
+### 97. [ ] `RecorderMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Recorder`.
   - **State:** REPLACE_ME=7 · loc=63 · tla=n · concurrency=y · mutable=n · tests=y · quarantined · score=186420
   - **Signals:** _No signals._
 
-### 99. [ ] `RecorderMiddleware` (resiliency)
+### 98. [ ] `RecorderMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Recorder`.
   - **State:** REPLACE_ME=7 · loc=63 · tla=n · concurrency=y · mutable=n · tests=y · score=186420
   - **Signals:** _No signals._
 
-### 100. [ ] `Refund` (resiliency)
+### 99. [ ] `Refund` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=28 · tla=n · concurrency=n · mutable=n · tests=y · score=7144
   - **Signals:** _No signals._
 
-### 101. [ ] `RegistryService` (resiliency)
+### 100. [ ] `RegistryService` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Registry`.
   - **State:** REPLACE_ME=7 · loc=110 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=119280
   - **Signals:** _No signals._
 
-### 102. [ ] `RegistryService` (resiliency)
+### 101. [ ] `RegistryService` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Registry`.
   - **State:** REPLACE_ME=7 · loc=110 · tla=n · concurrency=n · mutable=n · tests=y · score=119280
   - **Signals:** _No signals._
 
-### 103. [ ] `ResponseArmorMiddleware` (resiliency)
+### 102. [ ] `ResponseArmorMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `ResponseArmor`.
   - **State:** REPLACE_ME=7 · loc=61 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=175120
   - **Signals:** _No signals._
 
-### 104. [ ] `ResponseArmorMiddleware` (resiliency)
+### 103. [ ] `ResponseArmorMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `ResponseArmor`.
   - **State:** REPLACE_ME=7 · loc=61 · tla=n · concurrency=n · mutable=n · tests=y · score=175120
   - **Signals:** _No signals._
 
-### 105. [ ] `SagaCoordinator` (resiliency)
+### 104. [ ] `SagaCoordinator` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=117 · tla=n · concurrency=y · mutable=n · tests=y · quarantined · score=706944
   - **Signals:** _No signals._
 
-### 106. [ ] `SagaCoordinator` (resiliency)
+### 105. [ ] `SagaCoordinator` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=117 · tla=n · concurrency=y · mutable=n · tests=y · score=706944
   - **Signals:** _No signals._
 
-### 107. [ ] `SagaInstance` (resiliency)
+### 106. [ ] `SagaInstance` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=33 · tla=n · concurrency=n · mutable=n · tests=y · score=7696
   - **Signals:** _No signals._
 
-### 108. [ ] `SagaStepExecution` (resiliency)
+### 107. [ ] `SagaStepExecution` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=33 · tla=n · concurrency=n · mutable=n · tests=y · score=7104
   - **Signals:** _No signals._
 
-### 109. [ ] `SanitizeMiddleware` (resiliency)
+### 108. [ ] `SanitizeMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Sanitize`.
   - **State:** REPLACE_ME=7 · loc=69 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=88956
   - **Signals:** _No signals._
 
-### 110. [ ] `SanitizeMiddleware` (resiliency)
+### 109. [ ] `SanitizeMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Sanitize`.
   - **State:** REPLACE_ME=7 · loc=69 · tla=n · concurrency=n · mutable=n · tests=y · score=88956
   - **Signals:** _No signals._
 
-### 111. [ ] `ShutdownHealthGate` (resiliency)
+### 110. [ ] `ShutdownHealthGate` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=26 · tla=n · concurrency=n · mutable=n · tests=y · score=7616
   - **Signals:** _No signals._
 
-### 112. [ ] `ShutdownMiddleware` (resiliency)
+### 111. [ ] `ShutdownMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Shutdown`.
   - **State:** REPLACE_ME=7 · loc=33 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=10792
   - **Signals:** _No signals._
 
-### 113. [ ] `ShutdownMiddleware` (resiliency)
+### 112. [ ] `ShutdownMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Shutdown`.
   - **State:** REPLACE_ME=7 · loc=33 · tla=n · concurrency=n · mutable=n · tests=y · score=10792
   - **Signals:** _No signals._
 
-### 114. [ ] `TracingMiddleware` (resiliency)
+### 113. [ ] `TracingMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Tracing`.
   - **State:** REPLACE_ME=7 · loc=46 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=29040
   - **Signals:** _No signals._
 
-### 115. [ ] `TracingMiddleware` (resiliency)
+### 114. [ ] `TracingMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `Tracing`.
   - **State:** REPLACE_ME=7 · loc=46 · tla=n · concurrency=n · mutable=n · tests=y · score=29040
   - **Signals:** _No signals._
 
-### 116. [ ] `UploadSizeMiddleware` (resiliency)
+### 115. [ ] `UploadSizeMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `UploadSize`.
   - **State:** REPLACE_ME=7 · loc=46 · tla=n · concurrency=n · mutable=n · tests=y · quarantined · score=51840
   - **Signals:** _No signals._
 
-### 117. [ ] `UploadSizeMiddleware` (resiliency)
+### 116. [ ] `UploadSizeMiddleware` (resiliency)
 
   - **Rationale:** Framework-coupled (fastapi, starlette) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. Suggested motor name: `UploadSize`.
   - **State:** REPLACE_ME=7 · loc=46 · tla=n · concurrency=n · mutable=n · tests=y · score=51840
   - **Signals:** _No signals._
 
-### 118. [ ] `UsageRecord` (resiliency)
+### 117. [ ] `UsageRecord` (resiliency)
 
   - **Rationale:** Framework-coupled (sqlalchemy) with no registered motor. Requires re-extraction into (framework-free motor primitive + FastAPI adapter) per §B1.0.1. No common framework suffix; motor name must be chosen manually.
   - **State:** REPLACE_ME=7 · loc=21 · tla=n · concurrency=n · mutable=n · tests=y · score=4596

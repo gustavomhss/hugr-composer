@@ -169,31 +169,36 @@ async def flow_data_pipeline(ctx: ScenarioContext) -> None:
         "SqlEventSourcedStore append serializes tail (with_for_update) + raises ConcurrencyError",
     )
 
-    # --- 5. HONEST GAP: no Projector / read-model rebuild ships ------------------
-    # PRODUCT GAP (projector_not_shipped): the EventStore/Projector venous
-    # primitives exist ONLY in core/venous/_staging/_quarantine/ and are NOT
-    # registered by any tool. add_event_sourcing ships the append/load/replay
-    # half (above) but NO Projector that folds events into a queryable read model
-    # and rebuilds it. We assert the gap honestly rather than inventing a
-    # projector or weakening-by-deletion. See report for the future-capability
-    # product call.
-    projector_glue = project_dir / "app" / "projector.py"
-    shipped_projector = project_dir / "core" / "venous" / "events" / "Projector" / "Projector.py"
-    ctx.record(
-        "projector_not_shipped_by_add_event_sourcing",
-        not projector_glue.exists() and not shipped_projector.exists(),
-        "GAP: no app/projector.py and no registered core.venous.events.Projector "
-        "(Projector lives only in _staging/_quarantine) — event-store half ships, "
-        "read-model projector does not",
+    # --- 5. READ MODEL: add_read_model_projection ships the CQRS query side ------
+    # GAP CLOSED: the read-model half now ships via the registered MaterializedView
+    # primitive + MaterializedViewAdapter (not the broken quarantined Projector
+    # stub, which was DELETED as redundant). add_read_model_projection copies
+    # MaterializedView + adapter and emits app/projections.py glue that folds the
+    # event store into a queryable, rebuildable read model.
+    mv_primitive = (
+        project_dir / "core" / "venous" / "data" / "MaterializedView" / "MaterializedView.py"
     )
+    proj_glue = project_dir / "app" / "projections.py"
+    ctx.record(
+        "read_model_projection_primitive_shipped",
+        mv_primitive.exists(),
+        str(mv_primitive),
+    )
+    ctx.record(
+        "read_model_projection_glue_calls_install",
+        proj_glue.exists() and "install_projections" in proj_glue.read_text(),
+        "app/projections.py exposes install_projections(app) consuming app.state.event_store",
+    )
+    # The broken quarantined Projector stub is GONE (deleted as redundant vs
+    # MaterializedView) — assert it never ships into a generated project.
     quarantined_projector = (
         project_dir / "core" / "venous" / "_staging" / "_quarantine" / "Projector" / "Projector.py"
     )
     ctx.record(
-        "projector_capability_is_quarantined_not_emitted",
+        "quarantined_projector_stub_not_emitted",
         not quarantined_projector.exists(),
-        "GAP: quarantined Projector primitive is NOT copied into generated projects "
-        f"(checked {quarantined_projector.name}); replay-into-read-model is a future capability",
+        "redundant quarantined Projector stub is not copied into generated projects "
+        "(deleted in favour of MaterializedView)",
     )
 
 
@@ -205,6 +210,7 @@ DATA_PIPELINE = Scenario(
         ("add_data_import", "adapt.extend.crud_data.add_data_import"),
         ("add_data_versioning", "adapt.extend.crud_data.add_data_versioning"),
         ("add_event_sourcing", "adapt.extend.crud_data.add_event_sourcing"),
+        ("add_read_model_projection", "adapt.extend.crud_data.add_read_model_projection"),
     ],
     flow=flow_data_pipeline,
     needs_boot=False,  # Migration-heavy tools with Alembic deps; file-content checks are sufficient

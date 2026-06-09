@@ -1,0 +1,172 @@
+"""Durable SQL-backed read-model projection store (opt-in via PROJECTIONS_DURABLE).
+
+The reference ``InMemoryMaterializedView`` loses every projected row on restart
+and is per-process. ``DurableMaterializedView`` mirrors each apply to relational
+tables via a dedicated SYNCHRONOUS SQLAlchemy engine, so the read model survives
+restarts and is shared across workers. It wraps the in-memory view (which stays
+the apply/query engine) and writes through:
+
+- a PER-PROJECTION row table ``projection_rows`` (keyed by view + aggregate_id),
+- a per-(view, aggregate) checkpoint ``projection_checkpoints`` (last_seq),
+
+so a restart reloads rows from SQL instead of forcing a full event-store replay.
+
+HONEST SCOPE: this is still EVENTUALLY CONSISTENT / bounded-stale w.r.t. the
+event store — NOT linearizable, NOT real-time. Rebuild stays MANUAL/on-demand.
+Apply is at-least-once + idempotent (an event whose seq is <= the stored
+last_seq is dropped). PostgreSQL durability needs a synchronous driver (e.g.
+``psycopg``); SQLite works out of the box. Tables self-create on first use.
+"""
+
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
+from typing import Any
+
+from sqlalchemy import (
+    JSON,
+    Column,
+    Integer,
+    MetaData,
+    String,
+    Table,
+    UniqueConstraint,
+    delete,
+    select,
+)
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.engine import Engine
+
+from core.venous.data.MaterializedView.MaterializedView import InMemoryMaterializedView
+
+_METADATA = MetaData()
+
+projection_rows = Table(
+    "projection_rows",
+    _METADATA,
+    Column("view", String(256), primary_key=True),
+    Column("aggregate_id", String(512), primary_key=True),
+    Column("row", JSON, nullable=False),
+    UniqueConstraint("view", "aggregate_id", name="uq_projection_rows_view_agg"),
+)
+
+projection_checkpoints = Table(
+    "projection_checkpoints",
+    _METADATA,
+    Column("view", String(256), primary_key=True),
+    Column("last_seq", Integer, nullable=False),
+)
+
+
+class DurableMaterializedView:
+    """Wrap an ``InMemoryMaterializedView`` with write-through SQL persistence.
+
+    Delegates ``apply``/``query``/``on``/``rebuild`` to the wrapped in-memory
+    view and mirrors row + checkpoint state to SQL after each successful apply.
+    """
+
+    def __init__(self, view: InMemoryMaterializedView, engine: Engine, *, create: bool = True) -> None:
+        self._view = view
+        self._engine = engine
+        if create:
+            _METADATA.create_all(engine, tables=[projection_rows, projection_checkpoints])
+            self._load_checkpoint()
+
+    @property
+    def name(self) -> str:
+        return self._view.name
+
+    def on(self, event_type: str):  # noqa: ANN201 — passthrough decorator
+        return self._view.on(event_type)
+
+    def register_handler(self, event_type: str, fn) -> None:  # noqa: ANN001
+        self._view.register_handler(event_type, fn)
+
+    def apply(self, event: Mapping[str, object]) -> None:
+        before = self._view.last_applied_seq
+        self._view.apply(event)
+        if self._view.last_applied_seq != before:
+            self._persist(event.get("aggregate_id"))
+
+    def rebuild(self, source: Iterable[Any]) -> None:
+        self._view.rebuild(source)
+        self._truncate()
+
+    def query(self, criteria: object) -> Iterable[Any]:
+        return self._view.query(criteria)
+
+    def is_fresh(self) -> bool:
+        return self._view.is_fresh()
+
+    def staleness_s(self) -> float:
+        return self._view.staleness_s()
+
+    @property
+    def last_applied_seq(self) -> int:
+        return self._view.last_applied_seq
+
+    @property
+    def applied_event_count(self) -> int:
+        return self._view.applied_event_count
+
+    # ----- persistence helpers ----------------------------------------------
+    def _persist(self, aggregate_id: object) -> None:
+        rows = {r.get("id", r.get("aggregate_id")): r for r in self._view.rows()}
+        with self._engine.begin() as conn:
+            for agg, row in rows.items():
+                stmt = sqlite_insert(projection_rows).values(
+                    view=self._view.name, aggregate_id=str(agg), row=row
+                )
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=["view", "aggregate_id"], set_={"row": row}
+                )
+                conn.execute(stmt)
+            ck = sqlite_insert(projection_checkpoints).values(
+                view=self._view.name, last_seq=self._view.last_applied_seq
+            )
+            ck = ck.on_conflict_do_update(
+                index_elements=["view"], set_={"last_seq": self._view.last_applied_seq}
+            )
+            conn.execute(ck)
+
+    def _truncate(self) -> None:
+        with self._engine.begin() as conn:
+            conn.execute(delete(projection_rows).where(projection_rows.c.view == self._view.name))
+            conn.execute(
+                delete(projection_checkpoints).where(
+                    projection_checkpoints.c.view == self._view.name
+                )
+            )
+
+    def _load_checkpoint(self) -> int:
+        with self._engine.connect() as conn:
+            row = conn.execute(
+                select(projection_checkpoints.c.last_seq).where(
+                    projection_checkpoints.c.view == self._view.name
+                )
+            ).first()
+        return int(row.last_seq) if row is not None else -1
+
+
+def wrap_durable(view: InMemoryMaterializedView) -> DurableMaterializedView:
+    """Wrap *view* in a durable SQL-backed projection store from app settings.
+
+    Derives a SYNCHRONOUS SQLAlchemy URL from ``settings.SQLALCHEMY_DATABASE_URI``
+    (async drivers swapped: ``asyncpg`` -> ``psycopg``, ``aiosqlite`` -> sqlite).
+    """
+    from sqlalchemy import create_engine
+
+    from app.core.config import settings
+
+    url = str(settings.SQLALCHEMY_DATABASE_URI)
+    sync_url = url.replace("+asyncpg", "+psycopg").replace("+aiosqlite", "")
+    engine = create_engine(sync_url, pool_pre_ping=True)
+    return DurableMaterializedView(view, engine)
+
+
+__all__ = [
+    "DurableMaterializedView",
+    "projection_checkpoints",
+    "projection_rows",
+    "wrap_durable",
+]

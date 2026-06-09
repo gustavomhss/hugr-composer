@@ -20,17 +20,20 @@ tool / primitive renames going forward (CONTRACT §A10).
 
 - **Plan-level benchmark:** 100.00 (methodology `plan_level_v3_best_of_ensemble`).
 - **Code-level benchmark:** 100.00 on 20/20 specs.
-- **217 agent-facing tools** total:
-    - 201 catalog tools (`engine/index/catalog.json`)
+- **218 agent-facing tools** total:
+    - 202 catalog tools (`engine/index/catalog.json`)
     - 7 tier-1 meta tools (`mcp_tools/tier1.py` + `mcp_tools/compose.py`)
     - 9 tree dispatchers (`mcp_tools/tree/`)
 - **124 registered primitives** (full shell: contract + protocol + tests +
   TLA+ + dashboard + invariants + observability). Wave 1.5 promoted
   `events.PubSub` and `billing.Billing` out of the staged pool (see
   FREEZE §1.6.5).
-- **17 FastAPI adapters** (`core/venous/_adapters/fastapi/`). The 17th,
-  `BulkheadAdapter`, landed in the Wave-1 pre-freeze sprint (see
-  FREEZE §1.6) along with motor extension `InMemoryBulkhead.acquire()`.
+- **18 FastAPI adapters** (`core/venous/_adapters/fastapi/`). The 18th,
+  `MaterializedViewAdapter`, wires the CQRS read-model (query) side over the
+  event store — shipped by the `add_read_model_projection` tool, replacing the
+  deleted redundant quarantined `Projector` stub. The 17th, `BulkheadAdapter`,
+  landed in the Wave-1 pre-freeze sprint (see FREEZE §1.6) along with motor
+  extension `InMemoryBulkhead.acquire()`.
 - **2 provider adapters** beyond fastapi/: `_adapters/redis/PubSubAdapter.py`
   + `_adapters/stripe/BillingAdapter.py`. Both ship with lazy SDK
   imports and hermetic behavioural test suites (13 Redis + 22 Stripe).
@@ -45,8 +48,8 @@ tool / primitive renames going forward (CONTRACT §A10).
   & honesty family: no-dead-security, admin-route auth, no-module-state,
   notes-match-behaviour, strict write schemas, init-inside-lifespan,
   no-silent-broad-catch.)
-- **Catalog `stable_hash`: `03a8833f96fc...`** (full 64-char value:
-  `03a8833f96fc282950fccb633c5c6c7d2e98a97f6b9c2a3b6594b08f14a59c1e`,
+- **Catalog `stable_hash`: `2e2a89699c65...`** (full 64-char value:
+  `2e2a89699c65dcd6b669effadcb08c5c7532fb8504f0eb2a5ac830bee9899d78`,
   in `engine/index/catalog.json`) — consumers pin this for session
   reproducibility. Verify with `jq -r .stable_hash
   skills/SKILL-001-fastapi-production/engine/index/catalog.json`.

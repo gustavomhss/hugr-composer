@@ -6,34 +6,34 @@
 
 ## Headline
 
-- **263 files carry `MCP_TOOL` metadata** (agent-visible surface).
-- **Catalog:** 1 skill, 6 bundles, 201 tools (201 local + 0 federated), 299 primitives, 392 recipes.
+- **264 files carry `MCP_TOOL` metadata** (agent-visible surface).
+- **Catalog:** 1 skill, 6 bundles, 202 tools (202 local + 0 federated), 299 primitives, 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
-- **175 staged primitives** in `_staging/` (plus 42 quarantined).
-- **17 FastAPI adapters** (production-wired).
+- **175 staged primitives** in `_staging/` (plus 41 quarantined).
+- **18 FastAPI adapters** (production-wired).
 - **28 `modules/` packages** (pre-built feature bundles).
 - **0 populated examples** (0 empty scaffolds), 124 specs, 20 benchmark specs.
 
 ---
 
-## 1. adapt/ — 134 tools
+## 1. adapt/ — 135 tools
 
 | bucket | count |
 |---|---:|
-| `extend` | 104 |
+| `extend` | 105 |
 | `verify` | 6 |
 | `operate` | 8 |
 | `evolve` | 8 |
 | `proactive` | 4 |
 | `contracts` | 4 |
 
-### adapt/extend/ sub-domains (104 tools)
+### adapt/extend/ sub-domains (105 tools)
 
 | domain | count |
 |---|---:|
 | `api_design` | 7 |
 | `auth_access` | 17 |
-| `crud_data` | 10 |
+| `crud_data` | 11 |
 | `infrastructure` | 53 |
 | `realtime` | 5 |
 | `testing_tools` | 12 |
@@ -52,17 +52,17 @@ the full surface.
 |---|---:|---|
 | `api_design` | 12 | api, versioning, cqrs |
 | `auth_access` | 20 | security, auth |
-| `crud_data` | 20 | data, persistence |
+| `crud_data` | 21 | data, persistence |
 | `infrastructure` | 130 | resiliency, infra |
 | `realtime` | 7 | streaming, sse, websocket |
 | `testing_tools` | 12 | testing, fixtures |
 
-## 3. generators/ — 60 tools
+## 3. generators/ — 61 tools
 
 | category | count |
 |---|---:|
 | `auth` | 6 |
-| `database` | 8 |
+| `database` | 9 |
 | `deployment` | 5 |
 | `endpoints` | 4 |
 | `infra` | 11 |
@@ -107,13 +107,13 @@ the full surface.
 | `resiliency` | 14 |
 | `security` | 8 |
 
-Plus **17 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
+Plus **18 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
 
-## 6. core/venous/_staging — staged primitives (175 + 42 quarantined)
+## 6. core/venous/_staging — staged primitives (175 + 41 quarantined)
 
 | namespace | count |
 |---|---:|
-| `_quarantine` | 42 |
+| `_quarantine` | 41 |
 | `api` | 18 |
 | `auth` | 25 |
 | `data` | 14 |

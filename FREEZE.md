@@ -79,9 +79,10 @@ Rails-connected in Wave 1.5 — same tool count, but
 
 - `engine/promotion/` module (schemas, classify, signals, state,
   promote, ledger).
-- `engine/promotion/LEDGER.md` — 218-entry triage ledger (post-Wave-1.5
+- `engine/promotion/LEDGER.md` — 217-entry triage ledger (post-Wave-1.5
   pool cleanup — 225 → 218 after 3 NEEDS_REVIEW promotions + 3 twin
-  deletions) with action-focused verdicts (promote_as_adapter /
+  deletions; → 217 after the redundant quarantined Projector was deleted)
+  with action-focused verdicts (promote_as_adapter /
   promote_as_primitive / extract_motor_pair / fill_and_promote /
   redundant / needs_caller / needs_review).
 - Classifier: 10 decision rules; 38/38 unit tests (32 classifier +

@@ -91,13 +91,13 @@ the command says 125, the doc is wrong, not the command.
 | Generators | 56 | scaffolders per subsystem |
 | Module packages | 28 | pre-built feature bundles |
 | Registered primitives | 124 | `core/venous/<ns>/<Name>/` — framework-free, full shell |
-| FastAPI adapters | 17 | Production-wired in `core/venous/_adapters/fastapi/` |
+| FastAPI adapters | 18 | Production-wired in `core/venous/_adapters/fastapi/` |
 | Provider adapters | 2 | `_adapters/redis/PubSubAdapter.py` + `_adapters/stripe/BillingAdapter.py` |
 | Staged primitives | 175 | `_staging/<ns>/`, surfaced as `status="staged"` |
-| Quarantined primitives | 42 | `_staging/_quarantine/`, hidden from catalog |
+| Quarantined primitives | 41 | `_staging/_quarantine/`, hidden from catalog |
 | Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
-| Ledger entries | 218 | Post-Wave-1.5 triage state (1 needs_caller → extract_motor_pair on 2026-05-29) |
+| Ledger entries | 217 | Post-Wave-1.5 triage state; Projector deleted (redundant vs MaterializedView) on 2026-06-09 |
 | Contract rules passing | 37/37 | Machine-verified by `engine.audit.contract_check` |
 | Plan-level benchmark | 100.00 | 20/20 specs, v3 best-of-ensemble |
 | Code-level benchmark | 100.00 | 20/20 specs, executable pytest rubric |
