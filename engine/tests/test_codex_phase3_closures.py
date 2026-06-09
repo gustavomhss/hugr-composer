@@ -252,8 +252,9 @@ def test_c2_f007_md_location_keeps_root_governance_canonical() -> None:
 
 def test_c4_f004_install_sh_decomposition_sums_to_catalog_total() -> None:
     """The install banner's per-bucket breakdown must add up to catalog.json's
-    `tools_total` (201). Pre-fix the labels were `100 + 27 + 56 + 7 + 9 + 2`
+    `tools_total` (202). Pre-fix the labels were `100 + 27 + 56 + 7 + 9 + 2`
     which sums to 201 but mislabels each bucket against the catalog truth.
+    The 202nd tool is add_read_model_projection (CQRS read-model, crud_data slice).
     """
     install_sh = (REPO_ROOT / "install.sh").read_text(encoding="utf-8")
     # Find all "N slice/macro/dispatcher/…" numbers in the banner block.
@@ -262,9 +263,9 @@ def test_c4_f004_install_sh_decomposition_sums_to_catalog_total() -> None:
     m = re.search(r"MCP tools\${c_reset}\s*\(([^)]+)\)", banner)
     assert m is not None, "Could not locate the MCP tools decomposition tuple"
     nums = [int(n) for n in re.findall(r"\b(\d+)\b", m.group(1))]
-    assert sum(nums) == 201, (
+    assert sum(nums) == 202, (
         f"install.sh banner decomposition {nums} sums to {sum(nums)}, "
-        "not 201 (catalog.json tools_total). F-004 drift."
+        "not 202 (catalog.json tools_total). F-004 drift."
     )
     # And the banner must point at files that actually exist post-install.
     # The skill README is the F-004 hot point.
@@ -278,18 +279,18 @@ def test_c4_f004_install_sh_decomposition_sums_to_catalog_total() -> None:
     )
 
 
-def test_c4_f004_catalog_total_remains_201() -> None:
+def test_c4_f004_catalog_total_remains_202() -> None:
     """Lock the canonical catalog total the banner is reconciled against.
 
-    If catalog.json moves off 201, the install.sh banner must be re-cut.
+    If catalog.json moves off 202, the install.sh banner must be re-cut.
     """
     import json
 
     catalog = json.loads(
         (SKILL_ROOT / "engine" / "index" / "catalog.json").read_text(encoding="utf-8")
     )
-    assert catalog["counts"]["tools_total"] == 201, (
-        f"Catalog tools_total = {catalog['counts']['tools_total']} ≠ 201. "
+    assert catalog["counts"]["tools_total"] == 202, (
+        f"Catalog tools_total = {catalog['counts']['tools_total']} ≠ 202. "
         "Update install.sh banner + re-sum the decomposition."
     )
 
