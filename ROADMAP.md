@@ -83,7 +83,7 @@ the command says 125, the doc is wrong, not the command.
 
 | Surface | Count | Notes |
 |---|---:|---|
-| MCP-registered tools on disk | 257 | Files with `MCP_TOOL` metadata |
+| MCP-registered tools on disk | 213 | Files defining a module-level `MCP_TOOL` assignment (AST-counted) |
 | Tools indexed in `catalog.json` | 201 | Canonical `fastapi_<domain>_<verb>_<noun>` |
 | Tier-1 meta tools | 7 | home / search / describe / scaffold / compose / audit / verify |
 | Tree dispatchers | 9 | auth, data, api, realtime, resiliency, obs, compliance, deployment, testing |
