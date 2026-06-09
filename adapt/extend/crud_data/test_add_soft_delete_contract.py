@@ -6,17 +6,17 @@ without per-tool bespoke tests. Run alongside test_add_soft_delete.py in the mut
 runner: ``--tests test_add_soft_delete.py test_add_soft_delete_contract.py``.
 
 The ``test_sd_*`` functions below target this tool's bespoke logic — the
-column-injection placement, sqlalchemy/datetime import management, and the
-Alembic migration down-revision chaining — which the generic preamble checks
-do not exercise.
+SPEC-v2 SoftDeleteMixin inheritance rewrite, the ``__future__`` import
+anchoring, and the Alembic migration down-revision chaining — which the generic
+preamble checks do not exercise.
 """
 
+import ast
 import tempfile
 from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_soft_delete import (
-    _ensure_sa_imports,
     _insert_after_future,
     _patch_model,
     add_soft_delete,
@@ -33,15 +33,22 @@ def test_contract():
 
 
 # ---------------------------------------------------------------------------
-# _patch_model — column injection placement & idempotency
+# _patch_model — SPEC-v2 SoftDeleteMixin inheritance rewrite & idempotency
+#
+# Re-anchored from the OLD design, where _patch_model injected an is_deleted/
+# deleted_at column literal (plus datetime/Boolean import management) directly
+# into every model file. SPEC-v2 (#19) moves the columns onto the emitted
+# app/models/mixins.py::SoftDeleteMixin and makes _patch_model only (a) add the
+# mixin import and (b) rewrite the class bases to inherit it. The mutation-kill
+# targets are now the import-insertion and the base-rewrite, which these tests
+# pin precisely; the removed per-model column-injection / datetime-import /
+# _ensure_sa_imports helpers no longer exist and have no SPEC-v2 equivalent.
 # ---------------------------------------------------------------------------
 
 
-def _model_src(*, datetime_line: str = "from datetime import datetime") -> str:
-    """Return a minimal SQLAlchemy model source for placement assertions."""
-    head = "from app.models.base import Base\n"
-    if datetime_line:
-        head = datetime_line + "\n" + head
+def _model_src(*, base_import: str = "from app.models.base import Base") -> str:
+    """Return a minimal SQLAlchemy model source for mixin-rewrite assertions."""
+    head = base_import + "\n" if base_import else ""
     return (
         head
         + "from sqlalchemy import String\n"
@@ -53,126 +60,70 @@ def _model_src(*, datetime_line: str = "from datetime import datetime") -> str:
 
 
 def test_sd_patch_model_is_idempotent_when_already_present():
-    """L204 BoolLiteral False->True: re-patching a model that already carries
-    is_deleted must return False (no second injection)."""
+    """Re-patching a model that already inherits SoftDeleteMixin must return
+    False and must NOT duplicate the import or the base."""
     d = Path(tempfile.mkdtemp())
     mf = d / "m.py"
     mf.write_text(_model_src())
 
     first = _patch_model(mf, "Foo")
     assert first is True
-    assert mf.read_text().count("is_deleted") == 1
+    assert mf.read_text().count("SoftDeleteMixin") == 2  # import line + base
 
     second = _patch_model(mf, "Foo")
-    assert second is False, "second patch must be a no-op once is_deleted is present"
-    assert mf.read_text().count("is_deleted") == 1, "columns must not be injected twice"
-    assert mf.read_text().count("deleted_at") == 1
+    assert second is False, "second patch must be a no-op once the mixin is present"
+    assert mf.read_text().count("from app.models.mixins import SoftDeleteMixin") == 1, (
+        "mixin import must not be added twice"
+    )
+    assert mf.read_text().count("class Foo(SoftDeleteMixin") == 1, (
+        "the class base must not be rewritten twice"
+    )
 
 
-def test_sd_patch_model_inserts_columns_after_last_class_line():
-    """L226/L227/L230/L231: columns land inside the class body, immediately
-    after the last existing indented member (here the ``name`` column), not at
-    file end and not before the class declaration."""
+def test_sd_patch_model_rewrites_class_bases_to_inherit_mixin():
+    """The target class's bases gain ``SoftDeleteMixin`` (prepended) so the
+    global do_orm_execute filter can key off it — and the original ``Base`` is
+    preserved, not replaced."""
     d = Path(tempfile.mkdtemp())
     mf = d / "m.py"
     mf.write_text(_model_src())
     _patch_model(mf, "Foo")
 
-    text = mf.read_text()
-    lines = text.splitlines()
-    name_idx = next(i for i, ln in enumerate(lines) if "name: Mapped[str]" in ln)
-    isdel_idx = next(i for i, ln in enumerate(lines) if "is_deleted:" in ln)
-    class_idx = next(i for i, ln in enumerate(lines) if ln.startswith("class Foo"))
-
-    # Injected after the class declaration and after the last member.
-    assert isdel_idx > class_idx
-    assert isdel_idx > name_idx
-    # And the injected columns are indented members of the class.
-    assert lines[isdel_idx].startswith("    is_deleted:")
+    tree = ast.parse(mf.read_text())
+    foo = next(n for n in ast.walk(tree) if isinstance(n, ast.ClassDef) and n.name == "Foo")
+    base_names = [b.id for b in foo.bases if isinstance(b, ast.Name)]
+    assert "SoftDeleteMixin" in base_names, "Foo must inherit SoftDeleteMixin"
+    assert "Base" in base_names, "the original Base must be preserved as a base"
+    # Mixin is prepended (MRO order: mixin first so its columns/criteria win).
+    assert base_names.index("SoftDeleteMixin") < base_names.index("Base")
 
 
-def test_sd_patch_model_in_class_flag_starts_false():
-    """L223 BoolLiteral False->True: a pre-class indented line (e.g. a
-    continuation inside a top-level call) must NOT be treated as the class body.
-    If in_class started True, the columns would be inserted before the class."""
+def test_sd_patch_model_inserts_mixin_import_after_base_import():
+    """The ``from app.models.mixins import SoftDeleteMixin`` line is anchored
+    immediately after the ``from app.models.base import Base`` line, not at file
+    top and not after the class."""
     d = Path(tempfile.mkdtemp())
     mf = d / "m.py"
-    # An indented, non-blank line appears BEFORE the class definition.
-    mf.write_text(
-        "from app.models.base import Base\n"
-        "PRELUDE = (\n"
-        '    "indented-before-class"\n'
-        ")\n\n\n"
-        "class Foo(Base):\n"
-        '    __tablename__ = "foo"\n'
-    )
+    mf.write_text(_model_src())
     _patch_model(mf, "Foo")
 
     lines = mf.read_text().splitlines()
-    class_idx = next(i for i, ln in enumerate(lines) if ln.startswith("class Foo"))
-    isdel_idx = next(i for i, ln in enumerate(lines) if "is_deleted:" in ln)
-    assert isdel_idx > class_idx, "columns must be inside the class, not before it"
-
-
-def test_sd_patch_model_fallback_appends_for_bodyless_class():
-    """L230 Compare Eq->NotEq: a class with no indented body (last_class_line
-    stays -1) falls back to appending the columns at end of file."""
-    d = Path(tempfile.mkdtemp())
-    mf = d / "m.py"
-    mf.write_text("from app.models.base import Base\nclass Foo(Base): pass\n")
-    _patch_model(mf, "Foo")
-
-    text = mf.read_text()
-    assert "is_deleted:" in text
-    assert "deleted_at:" in text
-    # Fallback path appends at the very end.
-    assert text.rstrip().endswith("default=None)")
-
-
-# ---------------------------------------------------------------------------
-# datetime import handling (L207 / L209)
-# ---------------------------------------------------------------------------
-
-
-def test_sd_adds_datetime_import_when_absent():
-    """L207 Compare NotIn->In: a model with NO datetime import at all must get
-    ``from datetime import datetime, timezone`` injected (deleted_at uses
-    datetime)."""
-    d = Path(tempfile.mkdtemp())
-    mf = d / "m.py"
-    mf.write_text(_model_src(datetime_line=""))
-    _patch_model(mf, "Foo")
-
-    text = mf.read_text()
-    assert "from datetime import datetime, timezone" in text
-
-
-def test_sd_does_not_duplicate_datetime_when_module_imported():
-    """L207 BoolOp And->Or: when ``import datetime`` is already present the
-    second guard short-circuits the And to False, so NO extra
-    ``from datetime import datetime`` line is added."""
-    d = Path(tempfile.mkdtemp())
-    mf = d / "m.py"
-    mf.write_text(_model_src(datetime_line="import datetime"))
-    _patch_model(mf, "Foo")
-
-    text = mf.read_text()
-    assert "from datetime import datetime" not in text, (
-        "must not add a from-import when `import datetime` already covers it"
+    base_idx = next(i for i, ln in enumerate(lines) if ln == "from app.models.base import Base")
+    mixin_idx = next(
+        i for i, ln in enumerate(lines) if ln == "from app.models.mixins import SoftDeleteMixin"
     )
-    assert text.count("import datetime") == 1
+    class_idx = next(i for i, ln in enumerate(lines) if ln.startswith("class Foo"))
+    assert mixin_idx == base_idx + 1, "mixin import must sit directly after the base import"
+    assert mixin_idx < class_idx, "mixin import must precede the class definition"
 
 
-def test_sd_upgrades_datetime_import_to_include_timezone():
-    """L209 Compare NotIn->In: a model importing datetime WITHOUT timezone and
-    without any other 'timezone' token must have its import upgraded to include
-    timezone."""
+def test_sd_patch_model_falls_back_to_future_anchor_without_base_import():
+    """With no ``from app.models.base import Base`` line, the mixin import is
+    anchored after the ``__future__`` import instead (via _insert_after_future)."""
     d = Path(tempfile.mkdtemp())
     mf = d / "m.py"
-    # Plain datetime import, no DateTime(timezone=True) anywhere -> 'timezone' absent.
     mf.write_text(
-        "from datetime import datetime\n"
-        "from app.models.base import Base\n"
+        "from __future__ import annotations\n"
         "from sqlalchemy import String\n"
         "from sqlalchemy.orm import Mapped, mapped_column\n\n\n"
         "class Foo(Base):\n"
@@ -181,56 +132,39 @@ def test_sd_upgrades_datetime_import_to_include_timezone():
     )
     _patch_model(mf, "Foo")
 
-    text = mf.read_text()
-    assert "from datetime import datetime, timezone" in text, (
-        "existing datetime import must be upgraded to include timezone"
+    lines = mf.read_text().splitlines()
+    fut_idx = next(i for i, ln in enumerate(lines) if ln.startswith("from __future__"))
+    mixin_idx = next(
+        i for i, ln in enumerate(lines) if ln == "from app.models.mixins import SoftDeleteMixin"
+    )
+    class_idx = next(i for i, ln in enumerate(lines) if ln.startswith("class Foo"))
+    assert mixin_idx > fut_idx, "mixin import must land after the __future__ import"
+    assert mixin_idx < class_idx, "mixin import must still precede the class"
+    # And the class is still rewritten to inherit the mixin.
+    assert "class Foo(SoftDeleteMixin, Base)" in mf.read_text()
+
+
+def test_sd_patch_model_noop_when_no_matching_class():
+    """When the named class is absent, _patch_model rewrites nothing and the
+    file's class definitions are unchanged (returns False)."""
+    d = Path(tempfile.mkdtemp())
+    mf = d / "m.py"
+    mf.write_text(_model_src())  # defines Foo, not Bar
+    result = _patch_model(mf, "Bar")
+    assert result is False, "no matching class -> no-op"
+    assert "SoftDeleteMixin" not in mf.read_text(), (
+        "must not rewrite/import when the target class is not found"
     )
 
 
 # ---------------------------------------------------------------------------
-# _ensure_sa_imports (L250 / L253 / L258)
-# ---------------------------------------------------------------------------
-
-
-def test_sd_ensure_sa_imports_noop_when_all_present():
-    """L250 UnaryNot: when no names are missing the source is returned
-    unchanged (no spurious empty import line)."""
-    src = "from sqlalchemy import Boolean, DateTime\nclass F: pass\n"
-    out = _ensure_sa_imports(src, {"Boolean", "DateTime"})
-    assert out == src, "no-op expected when all names already imported"
-    assert "from sqlalchemy import \n" not in out
-
-
-def test_sd_ensure_sa_imports_uses_orm_anchor_fallback():
-    """L253 BoolOp Or->And: with no ``from sqlalchemy import`` line the tool
-    falls back to anchoring before ``from sqlalchemy.orm`` rather than
-    prepending at file top."""
-    src = "from sqlalchemy.orm import Mapped\nclass F: pass\n"
-    out = _ensure_sa_imports(src, {"Boolean"})
-    lines = out.splitlines()
-    new_idx = next(i for i, ln in enumerate(lines) if ln == "from sqlalchemy import Boolean")
-    orm_idx = next(i for i, ln in enumerate(lines) if ln.startswith("from sqlalchemy.orm"))
-    assert new_idx == orm_idx - 1, "new import must sit directly before the orm anchor"
-
-
-def test_sd_ensure_sa_imports_inserts_before_anchor():
-    """L258 BinOp Add->Sub: the new import is spliced in immediately before the
-    matched ``from sqlalchemy import`` anchor, preserving the anchor line."""
-    src = "from sqlalchemy import DateTime, String\nclass F: pass\n"
-    out = _ensure_sa_imports(src, {"Boolean"})
-    lines = out.splitlines()
-    assert lines[0] == "from sqlalchemy import Boolean"
-    assert lines[1] == "from sqlalchemy import DateTime, String"
-
-
-# ---------------------------------------------------------------------------
-# _insert_after_future (L266 / L267)
+# _insert_after_future
 # ---------------------------------------------------------------------------
 
 
 def test_sd_insert_after_future_places_line_below_future():
-    """L266/L267 BinOp Add->Sub: the inserted line lands immediately after the
-    __future__ import (with a separating blank line), not before it."""
+    """The inserted line lands immediately after the __future__ import
+    (with a separating blank line), not before it."""
     src = "from __future__ import annotations\nimport os\n"
     out = _insert_after_future(src, "INSERTED\n")
     lines = out.splitlines()
@@ -247,14 +181,14 @@ def test_sd_insert_after_future_prepends_when_no_future():
 
 
 # ---------------------------------------------------------------------------
-# migration down-revision chaining (L276)
+# migration down-revision chaining
 # ---------------------------------------------------------------------------
 
 
 def test_sd_migration_chains_to_real_head():
-    """L276 BoolOp Or->And: the emitted migration's down_revision must chain to
-    the discovered Alembic head (0002_baseline_schema in the fixture), proving
-    find_migration_head() is used rather than the '0001_initial' fallback."""
+    """The emitted migration's down_revision must chain to the discovered Alembic
+    head (0002_baseline_schema in the fixture), proving find_migration_head() is
+    used rather than the '0001_initial' fallback."""
     p = create_fixture_project(name="sd_contract_head")
     r = add_soft_delete(ToolInput(project_dir=str(p)))
     assert r.status == "success", r.error
