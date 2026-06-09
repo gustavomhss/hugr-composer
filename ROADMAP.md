@@ -73,7 +73,7 @@ Drift between this doc and INVENTORY = audit bug (caught by CONTRACT
 
 ---
 
-## Part 1 — Current state (machine-verified 2026-04-21)
+## Part 1 — Current state (machine-verified 2026-06-09)
 
 Regenerate counts via `PYTHONPATH=. .venv/bin/python -m engine.inventory`.
 Every row below is emitted by a specific command; if the doc says 124 and
@@ -84,11 +84,11 @@ the command says 125, the doc is wrong, not the command.
 | Surface | Count | Notes |
 |---|---:|---|
 | MCP-registered tools on disk | 213 | Files defining a module-level `MCP_TOOL` assignment (AST-counted) |
-| Tools indexed in `catalog.json` | 201 | Canonical `fastapi_<domain>_<verb>_<noun>` |
+| Tools indexed in `catalog.json` | 202 | Canonical `fastapi_<domain>_<verb>_<noun>` |
 | Tier-1 meta tools | 7 | home / search / describe / scaffold / compose / audit / verify |
 | Tree dispatchers | 9 | auth, data, api, realtime, resiliency, obs, compliance, deployment, testing |
-| Adapt tools | 126 | 99 extend / 8 evolve / 8 operate / 6 verify / 4 contracts / 1 proactive (matches INVENTORY.md §1; drift fixed via Codex C4 F-002) |
-| Generators | 56 | scaffolders per subsystem |
+| Adapt tools | 135 | 105 extend / 8 evolve / 8 operate / 6 verify / 4 contracts / 4 proactive (matches INVENTORY.md §1) |
+| Generators | 61 | scaffolders per subsystem |
 | Module packages | 28 | pre-built feature bundles |
 | Registered primitives | 124 | `core/venous/<ns>/<Name>/` — framework-free, full shell |
 | FastAPI adapters | 18 | Production-wired in `core/venous/_adapters/fastapi/` |
@@ -98,7 +98,7 @@ the command says 125, the doc is wrong, not the command.
 | Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
 | Ledger entries | 217 | Post-Wave-1.5 triage state; Projector deleted (redundant vs MaterializedView) on 2026-06-09 |
-| Contract rules passing | 37/37 | Machine-verified by `engine.audit.contract_check` |
+| Contract rules passing | 47/47 | Machine-verified by `engine.audit.contract_check` |
 | Plan-level benchmark | 100.00 | 20/20 specs, v3 best-of-ensemble |
 | Code-level benchmark | 100.00 | 20/20 specs, executable pytest rubric |
 | Rails-connected extend tools | 24/100 | Floor = 22 (§B1.3 non-regression) |
