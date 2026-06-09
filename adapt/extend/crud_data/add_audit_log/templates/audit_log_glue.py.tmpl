@@ -24,6 +24,15 @@ def _audit_hmac_secret() -> bytes:
     return hashlib.sha256(b"hugr-audit-log:" + settings.SECRET_KEY.encode()).digest()
 
 
+# Registering the before_flush listener (app.core.audit_listeners) materializes
+# the audit_logs table; it registers as a one-time import side effect and is
+# imported nowhere else, so without this the table is created but never written.
+# A runtime import inside install_audit_log (startup, after app.* is fully built)
+# avoids the circular import a model-level side-effect import would cause.
+def _activate_audit_table_listener() -> None:
+    import app.core.audit_listeners  # noqa: F401
+
+
 def install_audit_log(app: FastAPI) -> None:
     """Attach a superuser-gated tamper-evident audit log to *app* (R5-S1-F1/F2).
 
@@ -37,3 +46,4 @@ def install_audit_log(app: FastAPI) -> None:
 
         log = build_durable_audit_log(secret)
     install(app, hmac_secret=secret, auth_dependency=get_current_superuser, log=log)
+    _activate_audit_table_listener()

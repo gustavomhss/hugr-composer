@@ -30,6 +30,7 @@ import time
 from pathlib import Path
 
 from adapt._base import (
+    load_template,
     patch_add_import,
     patch_append_module_block,
     patch_append_router_endpoint,
@@ -258,9 +259,20 @@ def _soft_delete_already_installed(crud_base_file: Path) -> bool:
 
 
 def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
-    """Return ``(snake_stem, PascalName)`` pairs from ``app/models/``."""
+    """Return ``(snake_stem, PascalName)`` pairs for standard CRUD models.
+
+    A model qualifies only if it has BOTH a route file AND a public read schema
+    ``<Pascal>Public`` in ``app/schemas/<stem>.py``. The management routes this
+    tool appends import ``app.schemas.<stem>.<Pascal>Public``, so a model lacking
+    that schema (e.g. add_mfa's MFADevice, whose routes define schemas inline and
+    never emit app/schemas/mfa.py) would otherwise get management routes that
+    import a non-existent symbol — ModuleNotFoundError: No module named
+    'app.schemas.mfa' at boot. Requiring the schema scopes soft-delete to the
+    business CRUD models it was designed for.
+    """
     models_dir = app_dir / "models"
     routes_dir = app_dir / "api" / "routes"
+    schemas_dir = app_dir / "schemas"
     skip = {"base", "user", "mixins", "__init__", "tenant"}
     pairs: list[tuple[str, str]] = []
 
@@ -290,8 +302,16 @@ def _discover_models(app_dir: Path) -> list[tuple[str, str]]:
                 for b in n.bases
             )
         ]
-        if base_subclasses:
-            pairs.append((stem, base_subclasses[0]))
+        if not base_subclasses:
+            continue
+        pascal = base_subclasses[0]
+        # Require the standard <Pascal>Public read schema; the management routes
+        # import it. Models without it (auth-infra models like MFADevice) are out
+        # of scope for soft-delete management.
+        schema_file = schemas_dir / f"{stem}.py"
+        if not schema_file.exists() or f"{pascal}Public" not in schema_file.read_text():
+            continue
+        pairs.append((stem, pascal))
 
     return pairs
 
@@ -340,11 +360,41 @@ def _patch_model(model_file: Path, model_name: str) -> bool:
 
 
 def _emit_mixin(app_dir: Path, created: list[str]) -> None:
-    """Emit ``app/models/mixins.py`` with the SoftDeleteMixin (once)."""
+    """Emit ``app/models/mixins.py`` with the SoftDeleteMixin (once).
+
+    APPEND-safe: ``app/models/mixins.py`` is a shared file — other tools (e.g.
+    add_multi_tenancy's TenantScopedMixin) emit their own mixin into it. A naive
+    ``render_to`` would OVERWRITE the whole file and silently drop a sibling
+    mixin, breaking ``from app.models.mixins import TenantScopedMixin`` at boot
+    whenever multi_tenancy was applied before soft_delete. So when the file
+    already exists we append only the missing imports + the SoftDeleteMixin
+    class, preserving whatever is already there.
+    """
     dest = app_dir / "models" / "mixins.py"
     if dest.exists() and "SoftDeleteMixin" in dest.read_text():
         return
-    render_to(_HERE, "mixin.py.tmpl", dest=dest, substitutions={})
+    if not dest.exists():
+        render_to(_HERE, "mixin.py.tmpl", dest=dest, substitutions={})
+        created.append(str(dest))
+        return
+    # File exists (another mixin lives here) → append without clobbering.
+    existing = dest.read_text()
+    needed_imports = [
+        "import uuid",
+        "from datetime import datetime",
+        "from sqlalchemy import Boolean, DateTime, ForeignKey, Uuid",
+        "from sqlalchemy.orm import Mapped, declared_attr, mapped_column",
+    ]
+    full = load_template(_HERE, "mixin.py.tmpl").template
+    # Pull just the class definition (from `class SoftDeleteMixin` onward).
+    marker = "class SoftDeleteMixin"
+    class_body = full[full.index(marker) :]
+    to_add = [imp for imp in needed_imports if imp not in existing]
+    chunk = ""
+    if to_add:
+        chunk += "\n" + "\n".join(to_add) + "\n"
+    chunk += "\n\n" + class_body
+    dest.write_text(existing.rstrip("\n") + "\n" + chunk)
     created.append(str(dest))
 
 
@@ -369,9 +419,16 @@ def _wire_filter_into_main(app_dir: Path) -> bool:
     src = main_file.read_text()
     if "soft_delete_filter" in src:
         return False
-    # Side-effect import (noqa: registers the do_orm_execute listener at import).
+    # Side-effect import (registers the do_orm_execute listener at import).
+    # Use `from app.core import soft_delete_filter` rather than
+    # `import app.core.soft_delete_filter`: the latter BINDS the name `app` in
+    # main.py's namespace. _insert_after_imports drops this after the LAST import,
+    # and sibling tools (e.g. add_multi_tenancy) add imports BELOW `app =
+    # FastAPI(...)` — so the dotted import would rebind `app` to the package,
+    # shadowing the FastAPI instance and breaking the next `app.add_middleware`
+    # call. The from-import binds `soft_delete_filter`, never `app`.
     import_line = (
-        "import app.core.soft_delete_filter  # noqa: F401  (registers soft-delete filter)\n"
+        "from app.core import soft_delete_filter  # noqa: F401  (registers soft-delete filter)\n"
     )
     new_src = _insert_after_imports(src, import_line)
     main_file.write_text(new_src)

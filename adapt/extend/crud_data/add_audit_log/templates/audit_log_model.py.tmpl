@@ -44,3 +44,10 @@ class AuditLog(Base):
         default=lambda: datetime.datetime.now(datetime.UTC),
         nullable=False,
     )
+
+# NOTE: the before_flush Session listener that materializes rows in this table
+# lives in app.core.audit_listeners and is activated by install_audit_log(app)
+# at app startup (see app/audit_log.py). It is intentionally NOT imported here:
+# a model-level side-effect import re-enters the partially-initialized `app`
+# package during the app.main import chain and breaks boot in some compositions
+# (circular import). install_audit_log runs after the app object is fully built.

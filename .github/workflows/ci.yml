@@ -355,10 +355,9 @@ jobs:
   #     (a fresh build+boot per pair). It NEVER fails, but its combinatorial
   #     build time can exceed 15min under a loaded shared runner — too slow/
   #     flaky-on-time for the PR critical path. Runs nightly with a wide budget.
-  # KNOWN GAP (tracked, not gated anywhere yet):
-  #   - test_realworld_ecommerce.py is a script-runner that needs a dedicated
-  #     Postgres fixture (exits 2 without one). It is NOT yet wired here pending
-  #     a verified PG fixture for it; do not assume it is covered.
+  # (test_realworld_ecommerce.py — the script-runner real-world acceptance test —
+  #  is now gated in the `postgres-behavior` job, which provides the live PG +
+  #  E2E_POSTGRES_URL it needs. No longer a gap.)
   nightly-extras:
     name: nightly extras (cross-composition)
     needs: setup
@@ -390,9 +389,14 @@ jobs:
       - uses: actions/checkout@v4
       - name: Link shared venv into checkout
         run: ln -sfn "${VENV}" "${{ github.workspace }}/.venv"
-      - name: PostgreSQL E2E + behavior scenarios
+      - name: PostgreSQL E2E + behavior scenarios + real-world e-commerce
         env: { PYTHONPATH: . }
         run: |
           set -euo pipefail
           "${VENV}/bin/python" tests/test_e2e_postgres.py
           "${VENV}/bin/python" tests/test_behavior_scenarios.py
+          # Real-world acceptance: generate + boot a 14-tool e-commerce API and
+          # exercise 40+ live HTTP endpoints against this job's Postgres. The
+          # script honours E2E_POSTGRES_URL (set above) — same PG contract as
+          # test_e2e_postgres. Exits 2 (skip) only with no PG; here PG is live.
+          "${VENV}/bin/python" tests/test_realworld_ecommerce.py

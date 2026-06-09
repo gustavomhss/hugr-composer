@@ -379,10 +379,31 @@ def patch_model(model_file: Path, model_name: str) -> None:
             src = src[: m.end()] + "\n    Index," + src[m.end() :]
         elif "from sqlalchemy import" in src:
             src = src.replace("from sqlalchemy import", "from sqlalchemy import Index,", 1)
-    src = src.replace(
-        "class " + model_name + "(Base):",
-        "class " + model_name + "(TenantScopedMixin, Base):",
-    )
+    # Inject TenantScopedMixin as the FIRST base, preserving any bases a prior
+    # tool already added (e.g. SoftDeleteMixin from add_soft_delete). A naive
+    # ``class Model(Base):`` -> ``class Model(TenantScopedMixin, Base):`` literal
+    # replace silently no-ops once the bases are widened, leaving the tenant_id
+    # column absent while the tenant_id index below still gets emitted — which
+    # blows up at metadata.create_all (ConstraintColumnNotFoundError). Match the
+    # whole base list and prepend instead.
+    base_pattern = re.compile(rf"^(class {re.escape(model_name)}\s*\()([^)]*)\)", re.MULTILINE)
+
+    def _add_mixin(m: re.Match) -> str:
+        bases = m.group(2).strip()
+        if not bases:
+            new_bases = "TenantScopedMixin"
+        elif "TenantScopedMixin" in bases:
+            new_bases = bases
+        else:
+            new_bases = "TenantScopedMixin, " + bases
+        return f"{m.group(1)}{new_bases})"
+
+    src, n_base = base_pattern.subn(_add_mixin, src)
+    if n_base == 0:
+        raise RuntimeError(
+            f"could not locate `class {model_name}(...)` declaration to inject "
+            f"TenantScopedMixin into {model_file.name} — model bases not patched."
+        )
     index_block = (
         "\n"
         "    __table_args__ = (\n"
@@ -406,6 +427,18 @@ def _verify_table_args_in_class(src: str, model_name: str) -> None:
                     )
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef) and node.name == model_name:
+            # The tenant_id index references the tenant_id column, which only
+            # exists if TenantScopedMixin is actually in the class bases. If a
+            # prior tool widened the bases and the mixin injection silently
+            # no-op'd, the index would point at a phantom column and
+            # metadata.create_all would raise ConstraintColumnNotFoundError.
+            base_names = {b.id for b in node.bases if isinstance(b, ast.Name)}
+            if "TenantScopedMixin" not in base_names:
+                raise RuntimeError(
+                    f"TenantScopedMixin missing from {model_name} bases after "
+                    f"patching — tenant_id column absent, tenant index would "
+                    f"reference a phantom column.  This is a tool bug."
+                )
             for item in node.body:
                 if isinstance(item, ast.Assign):
                     for t in item.targets:

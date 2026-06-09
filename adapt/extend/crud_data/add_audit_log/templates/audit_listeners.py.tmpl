@@ -26,11 +26,41 @@ import hashlib
 import json
 from typing import Any
 
-from sqlalchemy import event, func, select
+from sqlalchemy import event, func, inspect, select
 from sqlalchemy.orm import Session
 
 from app.core.audit_context import get_audit_context
 from app.models.audit_log import AuditLog
+
+def _audit_table_exists(session: Session) -> bool:
+    """Best-effort: does the audit_logs table exist on this session's bind?
+
+    Cached per engine on ``engine.info`` (NOT module-level state — B0.12: a
+    module global would drift per-worker). Returns False (skip auditing) if the
+    bind can't be resolved or inspection fails, so a missing table never crashes
+    a host write.
+    """
+    try:
+        bind = session.get_bind()
+    except Exception:
+        return False
+    engine = getattr(bind, "engine", bind)
+    # engine.info is a dict bound to the engine's own lifetime — the sanctioned
+    # place for a per-engine cache. Probe once per engine, then stop.
+    info = getattr(engine, "info", None)
+    if info is not None and info.get("_hugr_audit_table_present"):
+        return True
+    try:
+        present = inspect(bind).has_table(AuditLog.__tablename__)
+    except Exception:
+        # Inspection itself failed (e.g. mid-transaction); don't cache, don't crash.
+        return False
+    # Only cache the positive result: a table absent now may be created later on
+    # the same engine (e.g. create_all after an early flush), so keep re-probing
+    # until it appears, then stop probing.
+    if present and info is not None:
+        info["_hugr_audit_table_present"] = True
+    return present
 
 
 def _compute_entry_hash(entry: AuditLog) -> str:
@@ -60,13 +90,37 @@ def _emit_audit(
     row to the current chain head and computes its hash before the flush
     completes. Private by design — not exported from app/__init__.py.
     """
-    last_hash = session.execute(
-        select(AuditLog.entry_hash).order_by(AuditLog.seq.desc()).limit(1)
-    ).scalar_one_or_none()
-    next_seq = session.execute(select(func.max(AuditLog.seq))).scalar_one_or_none()
+    # The chain head must account for AuditLog rows already STAGED in this same
+    # flush (session.new) — not just rows already persisted in the DB. A single
+    # flush routinely stages several auditable objects, so this helper runs
+    # multiple times before any AuditLog row is written. Reading only the DB max
+    # would hand every entry in the flush the SAME seq (-> UniqueViolation on
+    # audit_logs_seq_key) and the SAME prev_hash (-> a broken/forked chain).
+    # Fold the pending rows into the head so seq increments and the hash chain
+    # stays linear within the flush.
+    pending = sorted(
+        (o for o in session.new if isinstance(o, AuditLog)),
+        key=lambda r: r.seq,
+    )
+    if pending:
+        head = pending[-1]
+        last_seq = head.seq
+        last_hash = head.entry_hash
+    else:
+        # no_autoflush: querying inside before_flush would otherwise trigger an
+        # autoflush of the very rows this listener is staging, recursing into the
+        # listener / inserting half-built rows. Read the persisted chain head
+        # without flushing.
+        with session.no_autoflush:
+            last_seq = (
+                session.execute(select(func.max(AuditLog.seq))).scalar_one_or_none() or 0
+            )
+            last_hash = session.execute(
+                select(AuditLog.entry_hash).order_by(AuditLog.seq.desc()).limit(1)
+            ).scalar_one_or_none()
 
     entry = AuditLog(
-        seq=(next_seq or 0) + 1,
+        seq=last_seq + 1,
         user_id=get_audit_context(),
         action=action,
         resource=resource,
@@ -78,17 +132,46 @@ def _emit_audit(
     return entry
 
 
-@event.listens_for(Session, "before_flush")
+# Per-flush dedupe key stashed on the session. before_flush is RE-FIRED every
+# time a listener mutates session state — and this listener adds AuditLog rows,
+# so it re-fires repeatedly within ONE flush. The audited business objects stay
+# in session.new/dirty/deleted across those re-fires, so a naive re-scan would
+# audit each one many times (duplicate audit rows, seq collisions on
+# audit_logs_seq_key, a forked hash chain) and would even keep auditing the
+# AuditLog rows this listener just added. We record (action, id(obj)) for each
+# object already audited in the current flush and skip repeats; the set is
+# cleared on after_flush so the next flush starts clean.
+_AUDITED_THIS_FLUSH = "_hugr_audited_this_flush"
+
+
+def _already_audited(session: Session, action: str, obj: object) -> bool:
+    seen = session.info.setdefault(_AUDITED_THIS_FLUSH, set())
+    key = (action, id(obj))
+    if key in seen:
+        return True
+    seen.add(key)
+    return False
+
+
 def _audit_before_flush(session: Session, flush_context, instances) -> None:
     """Emit audit rows for staged mutations via the before_flush listener.
 
     Iterates the unit of work's pending changes and records one audit entry per
     auditable object. AuditLog rows themselves are skipped so the listener never
-    recurses on its own writes.
+    recurses on its own writes, and each object is audited at most once per flush
+    even though before_flush re-fires after this listener stages new rows.
     """
+    # Fail safe when the audit_logs table is not present on this bind. The
+    # listener is attached to the GLOBAL Session class, so it also fires for
+    # apps/sessions that never installed the audit table (and during the window
+    # before migrations create it). Auditing must never crash the host write, so
+    # skip silently when the table is absent rather than raising
+    # UndefinedTableError mid-flush.
+    if not _audit_table_exists(session):
+        return
     actor = get_audit_context()
     for obj in list(session.new):
-        if isinstance(obj, AuditLog):
+        if isinstance(obj, AuditLog) or _already_audited(session, "create", obj):
             continue
         _emit_audit(
             session,
@@ -99,6 +182,8 @@ def _audit_before_flush(session: Session, flush_context, instances) -> None:
     for obj in list(session.dirty):
         if isinstance(obj, AuditLog) or not session.is_modified(obj):
             continue
+        if _already_audited(session, "update", obj):
+            continue
         _emit_audit(
             session,
             action="update",
@@ -106,7 +191,7 @@ def _audit_before_flush(session: Session, flush_context, instances) -> None:
             extra={"actor": str(actor) if actor is not None else None},
         )
     for obj in list(session.deleted):
-        if isinstance(obj, AuditLog):
+        if isinstance(obj, AuditLog) or _already_audited(session, "delete", obj):
             continue
         _emit_audit(
             session,
@@ -114,3 +199,25 @@ def _audit_before_flush(session: Session, flush_context, instances) -> None:
             resource=obj.__tablename__,
             extra={"actor": str(actor) if actor is not None else None},
         )
+
+
+def _audit_reset_flush_dedupe(session: Session, flush_context) -> None:
+    """Clear the per-flush dedupe set once the flush completes."""
+    session.info.pop(_AUDITED_THIS_FLUSH, None)
+
+
+# Idempotent registration that survives module RELOAD. The decorator form
+# (@event.listens_for) re-registers the listener every time this module's
+# top-level code runs — which happens not just once but on every reimport after a
+# sys.modules purge (e.g. test harnesses that reload `app.*` per case). Duplicate
+# registrations emit one audit row PER registration for the same mutation, all
+# sharing a seq -> UniqueViolation on audit_logs_seq_key. event.contains() can't
+# guard this: a reloaded module defines fresh function objects, so the identity
+# check never matches the already-attached (old) functions and it re-attaches.
+# Instead, stamp a sentinel on the SQLAlchemy Session class (which is NOT
+# reloaded), so the guard state persists across every reimport of this module.
+_AUDIT_LISTENERS_FLAG = "_hugr_audit_listeners_attached"
+if not getattr(Session, _AUDIT_LISTENERS_FLAG, False):
+    event.listen(Session, "before_flush", _audit_before_flush)
+    event.listen(Session, "after_flush", _audit_reset_flush_dedupe)
+    setattr(Session, _AUDIT_LISTENERS_FLAG, True)
