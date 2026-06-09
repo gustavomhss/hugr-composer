@@ -135,6 +135,9 @@ _CONFIG = DomainTreeConfig(
     venous_dir=VENOUS_DIR,
     adapters_dir=ADAPTERS_FASTAPI,
     toolinput_factory=_toolinput_factory,
+    bundle_missing_output_dir_next_steps=(
+        "Pass params={'output_dir':'/path/to/project'}.",
+    ),
 )
 
 fastapi_testing = make_dispatcher(_CONFIG)

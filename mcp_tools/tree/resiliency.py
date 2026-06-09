@@ -331,6 +331,9 @@ _CONFIG = DomainTreeConfig(
     venous_dir=VENOUS_DIR,
     adapters_dir=ADAPTERS_FASTAPI,
     toolinput_factory=_toolinput_factory,
+    bundle_missing_output_dir_next_steps=(
+        "Pass params={'output_dir':'/path/to/project'}.",
+    ),
     primitive_missing_args_next_steps=(
         "Example: fastapi_resiliency(action='primitive', params={'name':'X','output_dir':'/tmp/app'}).",
         "Call fastapi_resiliency(action='list') to see available primitive names.",

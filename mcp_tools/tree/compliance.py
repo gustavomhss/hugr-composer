@@ -3,14 +3,24 @@
 ONE MCP tool that routes to 0 slice tool(s) + 7 primitive(s) under the `compliance` domain. The Claude agent chooses granularity by `action`.
 
 See `mcp_tools/tree/auth.py` — the canonical POC template this file mirrors.
+
+M3.2 fan-out: this module is now pure DATA + one
+``make_dispatcher(DomainTreeConfig(...))`` call. The branch logic, envelope,
+slice routing, and primitive copy live in ``hugr_core.dispatch`` — the generic
+engine shared by every domain. Compliance is the empty-bundle (primitives-only)
+domain: with no slice tools / no curated bundle, the dispatcher reproduces the
+hand-rolled surface (action="list" omits the ``bundle`` key, action="bundle"
+fails with the "no slice tools" message, unknown-action valid list omits
+"bundle"). The data tables are unchanged, so the public contract is
+byte-identical to the pre-extraction dispatcher.
 """
 
 from __future__ import annotations
 
-import shutil
-import time
 from pathlib import Path
 from typing import Any
+
+from hugr_core.dispatch import DomainTreeConfig, make_dispatcher
 
 SKILL_ROOT = Path(__file__).resolve().parents[2]
 VENOUS_DIR = SKILL_ROOT / "core" / "venous" / "compliance"
@@ -38,133 +48,6 @@ BUNDLE_SLICES: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------
-# Shared envelope (same shape as tier-1 meta tools)
-# ---------------------------------------------------------------------------
-
-
-def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: float) -> dict:
-    return {
-        "ok": ok,
-        "what_happened": what,
-        "result": result,
-        "next_steps": next_steps[:5],
-        "elapsed_ms": int((time.perf_counter() - t0) * 1000),
-    }
-
-
-# ---------------------------------------------------------------------------
-# Slice routing
-# ---------------------------------------------------------------------------
-
-
-def _call_slice(slice_name: str, **kwargs) -> dict:
-    """Route to the underlying `<pkg>.<mod>` tool.
-
-    Multi-bucket aware: each SLICES entry carries its own `pkg`
-    because compliance tools span multiple adapt/ subtrees. Routes
-    through the shared `dispatch_via_toolinput` helper so the public
-    contract matches the central MCP discovery wrapper + `tree/auth.py`
-    (closes Codex 3 F-001).
-
-    Note: the compliance domain currently ships zero slice tools
-    (``SLICES = {}``); this helper is kept so the surface stays
-    uniform when slices are added later.
-    """
-    from mcp_tools._tree_dispatch import dispatch_via_toolinput
-
-    meta = SLICES[slice_name]
-    return dispatch_via_toolinput(
-        module_path=f"{meta['pkg']}.{meta['mod']}",
-        entry_name=meta["mod"],
-        slice_name=slice_name,
-        **kwargs,
-    )
-
-
-# ---------------------------------------------------------------------------
-# Primitive routing
-# ---------------------------------------------------------------------------
-
-
-def _is_non_empty(p: Path) -> bool:
-    """Return True if *p* exists, is a directory, and has at least one child."""
-    return p.is_dir() and any(p.iterdir())
-
-
-def _copy_primitive(name: str, output_dir: str, *, force: bool = False) -> dict:
-    """Copy core/venous/compliance/<Name>/ into <output_dir>/core/venous/compliance/<Name>/.
-
-    Follows ADR 0002 (copy-in distribution). Skips _t0_report.json +
-    _evidence/ (per .gitignore). Also copies the matching fastapi
-    adapter under _adapters/fastapi/ if one exists.
-
-    F-002 (Codex 3): default non-destructive. Pass ``force=True`` to
-    overwrite an existing populated target.
-    F-003 (Codex 3): target layout matches the generator + compose
-    import path (``core/venous/<ns>/<Name>/<Name>.py``).
-    """
-    if name not in PRIMITIVES:
-        raise ValueError(
-            f"unknown primitive {name!r} in domain compliance. Available: {sorted(PRIMITIVES)}"
-        )
-    src = VENOUS_DIR / name
-    if not src.is_dir():
-        raise FileNotFoundError(f"primitive source missing: {src}")
-    target = Path(output_dir) / "core" / "venous" / "compliance" / name
-    warnings: list[str] = []
-    if _is_non_empty(target) and not force:
-        return {
-            "primitive": name,
-            "status": "skipped",
-            "reason": (
-                f"target exists and is non-empty: {target.relative_to(output_dir)}. "
-                "Pass params={'force': True} to overwrite (destructive)."
-            ),
-            "files_created": [],
-            "target": str(target.relative_to(output_dir)),
-        }
-    if target.exists() and force:
-        warnings.append(
-            f"force=True: removed existing {target.relative_to(output_dir)} "
-            "before copy (user customisations lost)."
-        )
-        shutil.rmtree(target)
-    shutil.copytree(
-        src,
-        target,
-        ignore=shutil.ignore_patterns(
-            "__pycache__",
-            "_t0_report.json",
-            "_evidence",
-            "*.pyc",
-        ),
-    )
-    files_created = sorted(str(p.relative_to(output_dir)) for p in target.rglob("*") if p.is_file())
-    adapter_name = f"{name}Adapter.py"
-    adapter_src = ADAPTERS_FASTAPI / adapter_name
-    if adapter_src.exists():
-        adapter_target = Path(output_dir) / "core" / "venous" / "_adapters" / "fastapi"
-        adapter_target.mkdir(parents=True, exist_ok=True)
-        shutil.copy(adapter_src, adapter_target / adapter_name)
-        files_created.append(str((adapter_target / adapter_name).relative_to(output_dir)))
-        test_src = ADAPTERS_FASTAPI / f"test_{adapter_name}"
-        if test_src.exists():
-            shutil.copy(test_src, adapter_target / f"test_{adapter_name}")
-            files_created.append(
-                str((adapter_target / f"test_{adapter_name}").relative_to(output_dir))
-            )
-    result = {
-        "primitive": name,
-        "status": "copied",
-        "files_created": files_created,
-        "target": str(target.relative_to(output_dir)),
-    }
-    if warnings:
-        result["warnings"] = warnings
-    return result
-
-
-# ---------------------------------------------------------------------------
 # Top-level dispatcher
 # ---------------------------------------------------------------------------
 
@@ -179,106 +62,31 @@ MCP_TOOL = {
 }
 
 
-def fastapi_compliance(action: str, params: dict | None = None) -> dict:
-    """See MCP_TOOL description.
+def _toolinput_factory(**kwargs):
+    """Lazily import adapt.contracts.ToolInput (keeps action='list' pydantic-free)."""
+    from adapt.contracts import ToolInput
 
-    Signature note: `params` is a polymorphic dict whose expected keys
-    depend on `action`. FastMCP doesn't support **kwargs in tool
-    signatures, so a single `params` dict is the uniform contract.
-    """
-    t0 = time.perf_counter()
-    params = params or {}
+    return ToolInput(**kwargs)
 
-    if action == "list":
-        return _envelope(
-            ok=True,
-            what="compliance domain tree (0 bundle + 0 slices + 7 primitives)",
-            result={
-                "domain": "compliance",
-                "slices": {
-                    name: {"description": meta["desc"]} for name, meta in sorted(SLICES.items())
-                },
-                "primitives": {
-                    name: {"purpose": purpose} for name, purpose in sorted(PRIMITIVES.items())
-                },
-                "usage_examples": [
-                    "fastapi_compliance(action='primitive', params={'name':'AuditEvent','output_dir':'/tmp/my-app'})"
-                ],
-            },
-            next_steps=["action='primitive' + name=X → copy one Lego surgically."],
-            t0=t0,
-        )
 
-    if action == "bundle":
-        return _envelope(
-            ok=False,
-            what="domain 'compliance' has no slice tools — no bundle to install",
-            result={},
-            next_steps=[
-                "Use action='primitive' with name=<PrimitiveName> + output_dir.",
-                "Call fastapi_compliance(action='list') to see available primitives.",
-            ],
-            t0=t0,
-        )
+_CONFIG = DomainTreeConfig(
+    domain="compliance",
+    tool_name="fastapi_compliance",
+    tool_meta=MCP_TOOL,
+    slices=SLICES,
+    primitives=PRIMITIVES,
+    bundle_slices=BUNDLE_SLICES,
+    list_summary="compliance domain tree (0 bundle + 0 slices + 7 primitives)",
+    venous_dir=VENOUS_DIR,
+    adapters_dir=ADAPTERS_FASTAPI,
+    toolinput_factory=_toolinput_factory,
+    primitive_missing_args_next_steps=(
+        "Example: fastapi_compliance(action='primitive', params={'name':'X','output_dir':'/tmp/app'}).",
+        "Call fastapi_compliance(action='list') to see available primitive names.",
+    ),
+    list_usage_examples=(
+        "fastapi_compliance(action='primitive', params={'name':'AuditEvent','output_dir':'/tmp/my-app'})",
+    ),
+)
 
-    if action == "primitive":
-        name = params.get("name")
-        output_dir = params.get("output_dir")
-        force = bool(params.get("force", False))
-        if not name or not output_dir:
-            return _envelope(
-                ok=False,
-                what="primitive action requires name + output_dir",
-                result={},
-                next_steps=[
-                    "Example: fastapi_compliance(action='primitive', params={'name':'X','output_dir':'/tmp/app'}).",
-                    "Call fastapi_compliance(action='list') to see available primitive names.",
-                ],
-                t0=t0,
-            )
-        try:
-            res = _copy_primitive(name, output_dir, force=force)
-        except (ValueError, FileNotFoundError) as exc:
-            return _envelope(
-                ok=False,
-                what=str(exc),
-                result={},
-                next_steps=["Call fastapi_compliance(action='list') for valid primitive names."],
-                t0=t0,
-            )
-        skipped = res.get("status") == "skipped"
-        return _envelope(
-            ok=True,
-            what=(
-                f"primitive {name} skipped (target exists; pass force=True)"
-                if skipped
-                else f"primitive {name} copied into {output_dir}"
-            ),
-            result=res,
-            next_steps=(
-                [
-                    res["reason"],
-                    "Re-run with params={'force': True} to overwrite the existing target.",
-                ]
-                if skipped
-                else [
-                    f"Import in your handler: from core.venous.compliance.{name}.{name} import {name}",
-                    f"Call fastapi_meta_describe(name='{name}') for Protocol + invariants.",
-                ]
-            ),
-            t0=t0,
-        )
-
-    # No slice actions for this domain.
-
-    valid = ["list", "primitive"] + sorted(SLICES)
-    return _envelope(
-        ok=False,
-        what=f"unknown action {action!r}",
-        result={"valid_actions": valid},
-        next_steps=[
-            "Call fastapi_compliance(action='list') to see the full tree.",
-            f"Did you mean one of: {', '.join(valid[:5])}, ...?",
-        ],
-        t0=t0,
-    )
+fastapi_compliance = make_dispatcher(_CONFIG)
