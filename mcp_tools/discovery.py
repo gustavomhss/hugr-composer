@@ -292,6 +292,8 @@ def register_tree_tools(mcp_app) -> int:
     compliance, deployment, testing. All mirror the canonical
     `mcp_tools/tree/auth.py` template.
     """
+    from hugr_core.dispatch import register_dispatchers
+
     from mcp_tools.tree.api import MCP_TOOL as API_META
     from mcp_tools.tree.api import fastapi_api
     from mcp_tools.tree.auth import MCP_TOOL as AUTH_META
@@ -322,12 +324,9 @@ def register_tree_tools(mcp_app) -> int:
         (fastapi_deployment, DEPLOYMENT_META),
         (fastapi_testing, TESTING_META),
     )
-    for fn, meta in dispatchers:
-        mcp_app.tool(
-            name=meta["name"],
-            tags=set(meta.get("tags", [])),
-        )(fn)
-    return len(dispatchers)
+    # M3.2 consumer flip: delegate the identical registration loop
+    # (mcp_app.tool(name=..., tags=set(...))(fn)) to hugr_core.dispatch.
+    return register_dispatchers(mcp_app, dispatchers)
 
 
 def register_tier1_tools(mcp_app) -> int:
