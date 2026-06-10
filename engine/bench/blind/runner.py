@@ -11,6 +11,7 @@ import hashlib
 import json
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -227,6 +228,56 @@ def run_attempt(
     )
 
 
+def _run_or_reuse(
+    spec: Spec,
+    adapter: AgentAdapter,
+    condition: str,
+    *,
+    run_id: str,
+    attempt: int,
+    seed: int,
+    run_root: Path,
+    completed: set[tuple[str, str, int, int]],
+    compute_process_rewards: bool,
+) -> dict:
+    """Run one (spec, condition, seed, attempt) unit, or reuse its cached
+    metrics.json when `resume` already marked it completed.
+
+    Pure per-unit work: writes only to this attempt's own directory and
+    binds only ephemeral ports, so it is safe to call concurrently from a
+    thread pool (no shared mutable state, no process-global cwd mutation).
+    """
+    key = (spec.spec_id, condition, seed, attempt)
+    if key in completed:
+        reused = _read_metrics_for(run_root, spec, condition, attempt)
+        if reused is not None:
+            outcome = reused["outcome"]
+            print(
+                f"  [resume] {spec.spec_id:45} {condition:6} "
+                f"seed={seed:<10} attempt={attempt}  "
+                f"score={outcome['final_score']:6.2f}  (cached)"
+            )
+            return reused
+    m = run_attempt(
+        spec,
+        adapter,
+        run_id=run_id,
+        condition=condition,
+        attempt=attempt,
+        seed=seed,
+        compute_process_rewards=compute_process_rewards,
+    )
+    outcome = m["outcome"]
+    print(
+        f"  {spec.spec_id:45} {condition:6} seed={seed:<10} "
+        f"attempt={attempt}  "
+        f"score={outcome['final_score']:6.2f}  "
+        f"({outcome['tests_passed']}/{outcome['tests_total']}, "
+        f"boot={outcome['boot_status']})"
+    )
+    return m
+
+
 def run_all(
     specs: list[Spec],
     adapters: dict[str, AgentAdapter],
@@ -236,6 +287,7 @@ def run_all(
     attempts_per_seed: int = 1,
     resume: bool = False,
     compute_process_rewards: bool = False,
+    concurrency: int = 1,
 ) -> dict:
     """Orchestrate spec × condition × seed → emit + judge + persist.
 
@@ -254,43 +306,41 @@ def run_all(
         if completed:
             print(f"  [resume] skipping {len(completed)} already-completed attempt(s)")
 
-    all_metrics: list[dict] = []
     # Attempt index is per-(spec, condition, seed) so DPO pairing across
-    # conditions works on matching (spec, seed, attempt_within_seed).
-    for spec in specs:
-        for seed in seeds:
-            for attempt_within in range(1, attempts_per_seed + 1):
-                for condition, adapter in adapters.items():
-                    key = (spec.spec_id, condition, seed, attempt_within)
-                    if key in completed:
-                        reused = _read_metrics_for(run_root, spec, condition, attempt_within)
-                        if reused is not None:
-                            all_metrics.append(reused)
-                            outcome = reused["outcome"]
-                            print(
-                                f"  [resume] {spec.spec_id:45} {condition:6} "
-                                f"seed={seed:<10} attempt={attempt_within}  "
-                                f"score={outcome['final_score']:6.2f}  (cached)"
-                            )
-                            continue
-                    m = run_attempt(
-                        spec,
-                        adapter,
-                        run_id=run_id,
-                        condition=condition,
-                        attempt=attempt_within,
-                        seed=seed,
-                        compute_process_rewards=compute_process_rewards,
-                    )
-                    all_metrics.append(m)
-                    outcome = m["outcome"]
-                    print(
-                        f"  {spec.spec_id:45} {condition:6} seed={seed:<10} "
-                        f"attempt={attempt_within}  "
-                        f"score={outcome['final_score']:6.2f}  "
-                        f"({outcome['tests_passed']}/{outcome['tests_total']}, "
-                        f"boot={outcome['boot_status']})"
-                    )
+    # conditions works on matching (spec, seed, attempt_within_seed). The
+    # full matrix is a list of independent units (each writes only its own
+    # attempt dir + binds ephemeral ports), so it parallelises cleanly.
+    work = [
+        (spec, adapter, condition, attempt_within, seed)
+        for spec in specs
+        for seed in seeds
+        for attempt_within in range(1, attempts_per_seed + 1)
+        for condition, adapter in adapters.items()
+    ]
+
+    def _dispatch(item: tuple) -> dict:
+        spec, adapter, condition, attempt_within, seed = item
+        return _run_or_reuse(
+            spec,
+            adapter,
+            condition,
+            run_id=run_id,
+            attempt=attempt_within,
+            seed=seed,
+            run_root=run_root,
+            completed=completed,
+            compute_process_rewards=compute_process_rewards,
+        )
+
+    if concurrency <= 1:
+        all_metrics: list[dict] = [_dispatch(item) for item in work]
+    else:
+        all_metrics = []
+        with ThreadPoolExecutor(max_workers=concurrency) as pool:
+            futures = [pool.submit(_dispatch, item) for item in work]
+            for fut in as_completed(futures):
+                all_metrics.append(fut.result())
+
     manifest = {
         "run_id": run_id,
         "harness_version": HARNESS_VERSION,
@@ -351,6 +401,16 @@ def main(argv: list[str] | None = None) -> int:
         "results under a previous run_id and re-running "
         "would waste API credits.",
     )
+    parser.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="number of (spec×condition×seed×attempt) units to run in "
+        "parallel (default 1 = serial). Each unit is independent "
+        "(own attempt dir, ephemeral port), but every unit drives a "
+        "live agent + boots an app, so size this to spare cores AND "
+        "API rate limits — modest values (4-6) on a shared machine.",
+    )
     args = parser.parse_args(argv)
 
     specs = discover_specs(SPECS_ROOT)
@@ -384,6 +444,7 @@ def main(argv: list[str] | None = None) -> int:
         attempts_per_seed=args.attempts,
         resume=args.resume,
         compute_process_rewards=args.compute_process_rewards,
+        concurrency=args.concurrency,
     )
     print(f"\nrun_id={manifest['run_id']}  attempts={manifest['attempts_total']}")
     return 0
