@@ -411,6 +411,16 @@ def main(argv: list[str] | None = None) -> int:
         "live agent + boots an app, so size this to spare cores AND "
         "API rate limits — modest values (4-6) on a shared machine.",
     )
+    parser.add_argument(
+        "--timeout-s",
+        type=int,
+        default=900,
+        help="per-attempt wall-clock deadline for the live agent (default "
+        "900). Raise it when running on a loaded machine: under CPU "
+        "starvation the wall clock elapses while the agent makes little "
+        "progress, so a too-low deadline SIGTERMs valid-but-slow builds "
+        "into spurious emit=error / score-0 results.",
+    )
     args = parser.parse_args(argv)
 
     specs = discover_specs(SPECS_ROOT)
@@ -427,8 +437,12 @@ def main(argv: list[str] | None = None) -> int:
             "kit": StubAdapter(args.stub_fixture_root, name="kit"),
         }
     else:
-        naked_cfg = ClaudeCliConfig(model=args.model, mcp_config_path=None)
-        kit_cfg = ClaudeCliConfig(model=args.model, mcp_config_path=MCP_CONFIG)
+        naked_cfg = ClaudeCliConfig(
+            model=args.model, mcp_config_path=None, timeout_s=args.timeout_s
+        )
+        kit_cfg = ClaudeCliConfig(
+            model=args.model, mcp_config_path=MCP_CONFIG, timeout_s=args.timeout_s
+        )
         adapters = {
             "naked": ClaudeCliAdapter(naked_cfg, name="naked"),
             "kit": ClaudeCliAdapter(kit_cfg, name="kit"),
