@@ -145,6 +145,16 @@ line-length = 100
 extend-exclude = [
     "core/venous/_staging",
     ".venv",
+    # Per-primitive generated corpus — machine-emitted analysis/test/stub files,
+    # not the hand-maintained surface. Excluded so `ruff check` reflects the real
+    # code a reviewer reads, not generator output. The primitive impl (<Name>.py)
+    # and its test (test_<Name>.py) are still linted.
+    "core/venous/**/chaos_*",
+    "core/venous/**/metamorphic_*",
+    "core/venous/**/behavioral_*",
+    "core/venous/**/state_machine_*",
+    "core/venous/**/observability_*",
+    "core/venous/**/*.protocol.py",
 ]
 
 
@@ -167,10 +177,10 @@ ignore = [
 # engine/discovery/* + mcp_tools/* place `MCP_TOOL` dict at top of file (Maestro-facing
 # discovery contract); imports follow. Pattern is intentional + documented.
 "engine/discovery/**" = ["E402"]
-# core/venous/_adapters/** modules are deliberately PascalCase to mirror the
-# adapter class they wrap (AuditLogAdapter, SagaAdapter, ...) — the same naming
-# convention as the _staging primitives. N999 (module-name casing) is expected.
-"core/venous/_adapters/**" = ["N999"]
+# core/venous/** primitive + adapter modules are deliberately PascalCase to
+# mirror the class they define/wrap (AuditLog, SagaAdapter, ...). N999
+# (module-name casing) is the project's core naming convention, not a defect.
+"core/venous/**" = ["N999"]
 # Tests + bench files use short loop vars (l for ledger, l for line) idiomatically.
 # Nested with-statements in bench snapshots/process_rewards are required by context
 # manager ordering. Ignored explicitly.
