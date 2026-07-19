@@ -263,9 +263,16 @@ def wrap(primitive_dir: Path, *, force: bool = False) -> dict[str, Any]:
     # Protocol stub.
     protocols = protocol_for_source(original_source)
     if protocols:
+        joined = "\n\n".join(protocols)
+        # `@abstractmethod` is a runtime decorator, not an annotation — if any
+        # inferred method carries it, the stub must import it or it NameErrors
+        # at import time (typing-only names are safe under `from __future__`).
+        abc_import = "from abc import abstractmethod\n" if "@abstractmethod" in joined else ""
         proto_src = (
             "from __future__ import annotations\n\n"
-            "from typing import Protocol, runtime_checkable\n\n\n" + "\n\n".join(protocols)
+            + abc_import
+            + "from typing import Protocol, runtime_checkable\n\n\n"
+            + joined
         )
         (primitive_dir / f"{name}.protocol.py").write_text(proto_src)
 

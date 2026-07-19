@@ -135,6 +135,25 @@ def test_schema_comparator_diff() -> None:
     assert any("removed" in v for v in diff.breaking)
 
 
+def test_protocol_stubs_import_abstractmethod_when_used() -> None:
+    """Every generated Protocol stub that decorates a method with
+    ``@abstractmethod`` must import it — otherwise the stub NameErrors at
+    import time (the decorator runs at class-definition, unlike the
+    ``from __future__``-deferred annotations). Guards the wrap_shell header
+    assembly against regressing for both current and future-generated stubs.
+    """
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1] / "core" / "venous"
+    offenders = [
+        str(p.relative_to(root))
+        for p in root.rglob("*.protocol.py")
+        if "@abstractmethod" in (text := p.read_text())
+        and "from abc import abstractmethod" not in text
+    ]
+    assert offenders == [], f"protocol stubs use @abstractmethod without importing it: {offenders}"
+
+
 if __name__ == "__main__":
     import sys
 
