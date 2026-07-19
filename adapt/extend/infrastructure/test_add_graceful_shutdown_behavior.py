@@ -178,6 +178,83 @@ async def test_b01_healthz_returns_200_normal(asgi_app: Any) -> None:
 # ---------------------------------------------------------------------------
 # B-02: GracefulShutdown not draining by default
 # ---------------------------------------------------------------------------
+
+def _wired_app() -> Any:
+    """Build a fresh app and wire the emitted glue the way main.py must
+    (the tool is non-invasive: its notes/next_steps tell the user to call
+    ``install_graceful_shutdown(app)`` themselves). Returns the app whose
+    ``state.graceful_shutdown`` is the installed coordinator."""
+    from fastapi import FastAPI
+
+    from app.shutdown import install_graceful_shutdown
+
+    app = FastAPI()
+    install_graceful_shutdown(app)
+    return app
+
+
+def test_b02_not_draining_on_startup(project_dir: Path) -> None:
+    """B-02: the installed coordinator reports not-draining right after wiring."""
+    app = _wired_app()
+    assert app.state.graceful_shutdown.is_draining() is False
+
+
+# ---------------------------------------------------------------------------
+# B-03: drain middleware returns 503 for non-probe paths while draining
+# ---------------------------------------------------------------------------
+
+@pytest.mark.anyio
+async def test_b03_middleware_returns_503_when_draining(project_dir: Path) -> None:
+    """B-03: once draining, any non-probe request is rejected with 503."""
+    app = _wired_app()
+    app.state.graceful_shutdown._draining = True  # simulate an in-progress drain
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/some/business/path")
+    assert response.status_code == 503, (
+        f"Expected 503 while draining, got {response.status_code}; body: {response.text}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# B-04: health probe stays reachable while draining (pass-through)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.anyio
+async def test_b04_healthz_reachable_while_draining(project_dir: Path) -> None:
+    """B-04: /healthz is pass-through so the load balancer can still observe
+    the node during a drain — it must NOT be 503'd by the drain middleware."""
+    app = _wired_app()
+
+    @app.get("/healthz")
+    def _healthz() -> dict[str, str]:
+        return {"status": "ok"}
+
+    app.state.graceful_shutdown._draining = True
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.get("/healthz")
+    assert response.status_code == 200, (
+        f"/healthz must stay reachable while draining, got {response.status_code}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# B-05: in-flight counter increments, decrements, and floors at zero
+# ---------------------------------------------------------------------------
+
+def test_b05_in_flight_counter(project_dir: Path) -> None:
+    """B-05: in-flight tracking is symmetric and never goes negative."""
+    coordinator = _wired_app().state.graceful_shutdown
+    coordinator.increment_in_flight()
+    assert coordinator._in_flight == 1
+    coordinator.decrement_in_flight()
+    assert coordinator._in_flight == 0
+    coordinator.decrement_in_flight()  # underflow guard
+    assert coordinator._in_flight == 0
+
+
+# ---------------------------------------------------------------------------
 # B-06: all functions <= 50 LOC
 # ---------------------------------------------------------------------------
 
@@ -264,8 +341,8 @@ if __name__ == "__main__":
     _TESTS: list[tuple[str, Any]] = [
         ("B-01: /healthz → 200 normal", lambda: _run_async_test(test_b01_healthz_returns_200_normal, _app)),
         ("B-02: not draining on startup", lambda: test_b02_not_draining_on_startup(_pd)),
-        ("B-03: middleware 503 when draining", lambda: test_b03_middleware_returns_503_when_draining(_pd)),
-        ("B-04: health gate unhealthy when draining", lambda: test_b04_health_gate_unhealthy_when_draining(_pd)),
+        ("B-03: middleware 503 when draining", lambda: _run_async_test(test_b03_middleware_returns_503_when_draining, _pd)),
+        ("B-04: /healthz reachable while draining", lambda: _run_async_test(test_b04_healthz_reachable_while_draining, _pd)),
         ("B-05: in-flight counter", lambda: test_b05_in_flight_counter(_pd)),
         ("B-06: all funcs <= 50 LOC", lambda: test_b06_all_generated_functions_under_50_loc(_pd)),
         ("B-07: config 4-space indent", lambda: test_b07_config_fields_4_space_indent(_pd)),

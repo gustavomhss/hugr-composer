@@ -350,9 +350,9 @@ if __name__ == "__main__":
 
     tests = [
         test_beh_01_app_boots,
-        test_beh_02_register_begin_without_pywebauthn,
+        test_beh_02_register_begin_requires_auth,
         test_beh_03_login_begin_without_pywebauthn,
-        test_beh_04_register_complete_invalid_session,
+        test_beh_04_register_complete_requires_auth,
         test_beh_05_login_complete_invalid_session,
         test_beh_06_py_webauthn_lazy_import_verified,
         test_beh_07_all_functions_le_50_loc,
