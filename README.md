@@ -1,79 +1,94 @@
 # HuGR Arsenal
 
-**Executable knowledge a agent LLM invokes to scaffold AND customize
-production backend apps.** Rails-style 3-layer architecture: macro
-scaffold (skill) + slice generators (tools) + reusable building blocks
-(primitives).
+**Executable knowledge an LLM agent invokes to scaffold *and* customize
+production FastAPI backends — plus a harness that proves the agent writes
+better code with the toolset than without it.**
 
-## Read these first
+Most "AI code generation" is a prompt and a hope. This is the opposite: a
+tool surface an agent drives through a disciplined MCP interface, a library
+of framework-free building blocks the generated code imports from, and a
+**blind A/B evaluation harness** that runs the same agent with and without
+the toolset and scores the emitted apps under concurrency and chaos. The
+toolset earns its place by measurement, not assertion.
 
-- **[PRODUCT.md](PRODUCT.md)** — what we are building, for whom, and
-  how we know it's working.
-- **[ROADMAP.md](ROADMAP.md)** — where we are today, honest; phased
-  plan through v1.0.
-- **[CONTRACT.md](CONTRACT.md)** — inviolable rules + per-step DoD /
-  Invariants / Completeness / Quality gates. Binding.
+Built by orchestrating a fleet of code agents under a quality contract — see
+[**docs/HOW_I_BUILT_THIS.md**](docs/HOW_I_BUILT_THIS.md).
 
-## Current status
+## The idea in one diagram
 
-```
-Phase:      v1.0.0 (release-prep — awaiting ratification + tag)
-Skills:      1   (SKILL-001-fastapi-production)
-Tools:     219   (202 catalog + 8 tier-1 + 9 tree dispatchers)
-Primitives: 124  (production, 18-FastAPI + 1-Redis + 1-Stripe adapters, 10-tier gate)
-Staged:    175   (core/venous/_staging/, +41 quarantined, pre-audited pool)
-Benchmark: 100.00 plan · 100.00 code-level (20/20 specs × 100%)
-Contract:  47/47 green
-Examples:   20   (full spec coverage; /examples/01-20)
-```
-
-Numbers machine-verified via
-`python -m engine.audit.contract_check` from the skill root.
-See `INVENTORY.md` in the skill dir for the full machine-verified
-manifest and `FREEZE.md` + `GOLIVE.md` for the v1.0 cut checklist.
-
-## Quick orient
-
-```
-HuGR_Arsenal/
-├── PRODUCT.md            # architecture contract
-├── ROADMAP.md            # phased plan
-├── CONTRACT.md           # execution rules
-├── FREEZE.md             # v1.0 scope lock
-├── GOLIVE.md             # v1.0 execution checklist
-├── INTERFACES.md         # agent + Forge contracts
-└── skills/
-    └── SKILL-001-fastapi-production/
-        ├── SKILL.md              # skill manifest (Anthropic Agent Skills format)
-        ├── INVENTORY.md          # machine-verified on-disk counts
-        ├── adapt/                # 135 tools (105 extend + 30 other)
-        ├── generators/           # 61 macro scaffold helpers
-        ├── core/venous/          # 124 primitives + 18 FastAPI adapters (+2 provider) + 175 staged
-        ├── mcp_tools/            # MCP server + tier-1 meta + tree dispatchers
-        └── engine/               # audit + index + bench + promotion + extraction
+```mermaid
+flowchart LR
+    A["LLM agent"] -->|drives| M
+    subgraph SURFACE["Tool surface · progressive disclosure"]
+        M["8 tier-1 meta tools"] --> T["9 domain dispatchers"] --> C["202 catalog tools"]
+    end
+    C -->|emit| APP["FastAPI app · imports<br/>framework-free primitives"]
+    subgraph PROOF["Verification loop · earns the toolset"]
+        AUD["AST audit · 47 rules"]
+        EVAL["Blind A/B eval · 5-layer judge"]
+    end
+    APP --> AUD & EVAL
+    AUD & EVAL -.gate/score.-> C
 ```
 
-## Install
+Rails-style three layers: a **macro scaffold** (the skill) lays the project
+down, **slice generators** add capabilities, and **primitives** (a
+framework-free library the agent composes) keep the output hand-editable.
+
+## What makes it real, not a demo
+
+- **Blind A/B eval harness** (`engine/bench/blind/`, ~2.6k LOC) — drives a live
+  agent *naked* vs *kit*, boots each emitted app on an ephemeral port, judges
+  it across five sealed layers (functional · property · concurrency · chaos ·
+  static-AST). Resumable, seed-controlled, concurrent; harvests SFT/DPO pairs.
+- **Progressive-disclosure MCP surface** (`mcp_tools/`) — 202 tools would drown
+  an agent (tool-use degrades past ~30–50), so it sees 8 tier-1 metas and
+  narrows through 9 dispatchers. Auto-discovered from a `MCP_TOOL` convention.
+- **AST contract audit** (`engine/audit/`) — 47 machine-checked rules gate every
+  change (no module-level state, init inside lifespan, authed admin routes, …).
+- **Governed promotion** (`engine/promotion/`) — atomic backup → promote →
+  re-verify → auto-rollback, with a human-reviewable ledger.
+
+## Try it
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Arsenal/main/install.sh | bash
+# a self-contained example that proves the invariants of a generated app
+cd examples/01-todos-crud
+python -m pytest -q          # owner-scoping + keyset pagination, green
 ```
 
-Validated nightly in a fresh `python:3.12-slim` container — see
-[`.github/workflows/install-docker.yml`](.github/workflows/install-docker.yml).
+Each of the 20 [`examples/`](examples/) is an agent-built illustration tied to
+a benchmark spec, with the `AGENT_SESSION.md` transcript that built it; the
+full production scaffold comes from `fastapi_generate_project` + the `add_*`
+tools. The blind A/B harness runs via
+`python -m engine.bench.blind.runner` (see [docs/DEMO.md](docs/DEMO.md)).
 
-## Contributing
+## By the numbers (machine-verified)
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the primitive / tool / recipe
-workflows and the 10-tier gate. Every PR is also judged against
-[CONTRACT.md §C](CONTRACT.md#c--enforcement) six-field discipline.
+Regenerate with `python -m engine.inventory`; every doc reconciles against
+[`INVENTORY.md`](INVENTORY.md) or the audit fails.
 
-## Status is not marketing
+```
+Tools:      219 (202 catalog + 8 tier-1 + 9 tree)   Contract: 47/47 green
+Primitives: 124 (registered)   Staged: 175 (+41 quarantined)
+Examples:    20 agent-built apps · 18 FastAPI adapters · Benchmark 100.00
+```
 
-Every claim in every doc maps to a code location or a ROADMAP step.
-Claim-vs-reality drift is a bug to fix the same day it's discovered
-([CONTRACT.md A8](CONTRACT.md)). No aspirational phrasing allowed.
+```
+core/venous/     # 124 primitives + 18 FastAPI adapters
+adapt/           # 135 tools (105 extend + 30 other)
+generators/      # 61 macro scaffold helpers
+mcp_tools/       # MCP server + 8 tier-1 metas + 9 tree dispatchers
+engine/          # audit · blind eval · promotion · extraction · inventory
+```
 
----
+## More
 
-Signed: Gustavo Schneiter — 2026-04-19.
+- [docs/HOW_I_BUILT_THIS.md](docs/HOW_I_BUILT_THIS.md) — the agent-orchestration story
+- [PRODUCT.md](PRODUCT.md) · [CONTRACT.md](CONTRACT.md) · [core/venous/README.md](core/venous/README.md) · [ROADMAP.md](ROADMAP.md)
+- Install: `curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Arsenal/main/install.sh | bash`
+
+**Status is not marketing** — every claim maps to a code location or a machine
+count; claim-vs-reality drift is a bug fixed the day it's found.
+
+Built and maintained by Gustavo Schneiter.
