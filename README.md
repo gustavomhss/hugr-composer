@@ -19,11 +19,11 @@ scaffold (skill) + slice generators (tools) + reusable building blocks
 ```
 Phase:      v1.0.0 (release-prep — awaiting ratification + tag)
 Skills:      1   (SKILL-001-fastapi-production)
-Tools:     218   (202 catalog + 7 tier-1 + 9 tree dispatchers)
+Tools:     219   (202 catalog + 8 tier-1 + 9 tree dispatchers)
 Primitives: 124  (production, 18-FastAPI + 1-Redis + 1-Stripe adapters, 10-tier gate)
 Staged:    175   (core/venous/_staging/, +41 quarantined, pre-audited pool)
 Benchmark: 100.00 plan · 100.00 code-level (20/20 specs × 100%)
-Contract:  37/37 green
+Contract:  47/47 green
 Examples:   20   (full spec coverage; /examples/01-20)
 ```
 
