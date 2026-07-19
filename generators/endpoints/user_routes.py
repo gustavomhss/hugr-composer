@@ -235,8 +235,11 @@ async def delete_user_by_id(
     content = textwrap.dedent(f'''\
 """User routes -- signup, self-management, and superuser administration."""
 
-from __future__ import annotations
-
+# NOTE: no `from __future__ import annotations` here. `signup` is wrapped by
+# slowapi's `@limiter.limit`, whose functools.wraps wrapper resolves string
+# annotations against slowapi's module globals — where `SessionDep` is absent.
+# Under PEP 563 that leaves the dependency as an unresolved ForwardRef and
+# FastAPI mis-reads it as a query param, breaking openapi.json generation.
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
