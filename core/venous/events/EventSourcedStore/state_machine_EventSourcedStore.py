@@ -11,15 +11,14 @@ retry-on-conflict. Invariants assert:
 
 from __future__ import annotations
 
-from hypothesis import strategies as st
-from hypothesis.stateful import RuleBasedStateMachine, initialize, invariant, rule
-
 from EventSourcedStore import (
     ConcurrencyError,
     EventSourcedStoreInvariantError,
     InMemoryEventSourcedStore,
     replay,
 )
+from hypothesis import strategies as st
+from hypothesis.stateful import RuleBasedStateMachine, initialize, invariant, rule
 
 
 def _fold(state: object, event: object) -> int:

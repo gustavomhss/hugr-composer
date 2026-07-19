@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import threading
 from collections import deque
 from typing import Any
 
@@ -12,6 +14,7 @@ class TracingBuffer:
 
     def __init__(self, maxlen: int=1000) -> None:
         self._buf: deque[dict[str, Any]] = deque(maxlen=maxlen)
+        self._lock = threading.Lock()
 
     def record(self, entry: dict[str, Any]) -> None:
         """Append a request trace entry to the ring buffer.
@@ -20,12 +23,12 @@ class TracingBuffer:
             entry: Dict with at minimum 'id', 'method', 'path',
                 'status_code', 'total_ms', 'spans'.
         """
-        with _lock:
+        with self._lock:
             self._buf.append(entry)
 
     def get_all(self) -> list[dict[str, Any]]:
         """Return all buffered entries, newest-first."""
-        with _lock:
+        with self._lock:
             return list(reversed(self._buf))
 
     def get_by_id(self, request_id: str) -> dict[str, Any] | None:
@@ -34,7 +37,7 @@ class TracingBuffer:
         Args:
             request_id: UUID string assigned when the request arrived.
         """
-        with _lock:
+        with self._lock:
             for entry in self._buf:
                 if entry.get('id') == request_id:
                     return entry
@@ -47,7 +50,7 @@ class TracingBuffer:
             percentile: Fraction (0-1) above which requests are 'slow'.
                 Defaults to 0.99 (p99).
         """
-        with _lock:
+        with self._lock:
             items = sorted(self._buf, key=lambda r: r.get('total_ms', 0))
         if not items:
             return []

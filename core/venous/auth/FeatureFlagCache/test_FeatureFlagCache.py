@@ -12,7 +12,7 @@ class _Cache:
     def __init__(self, ttl: float = 60.0, max_size: int = 3):
         self._ttl = ttl
         self._max = max_size
-        self._store: "OrderedDict[str, tuple[float, dict]]" = OrderedDict()
+        self._store: OrderedDict[str, tuple[float, dict]] = OrderedDict()
 
     def _now(self) -> float:
         return self._time

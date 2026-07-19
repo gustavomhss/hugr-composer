@@ -1,5 +1,84 @@
 from __future__ import annotations
+
+from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any
+
+
+class ChangeClass(str, Enum):
+    """Severity classification for a schema diff (most→least severe)."""
+
+    BREAKING = "breaking"
+    COMPATIBLE = "compatible"
+    ADDITIVE = "additive"
+    IDENTICAL = "identical"
+
+
+@dataclass
+class ComparisonResult:
+    """Classified diff between two OpenAPI schemas."""
+
+    classification: ChangeClass
+    breaking: list[str] = field(default_factory=list)
+    compatible: list[str] = field(default_factory=list)
+    additive: list[str] = field(default_factory=list)
+    summary: str = ""
+
+
+def check_fields_removed(base_props: dict[str, Any], curr_props: dict[str, Any], path: str) -> list[str]:
+    """Removing a response/request field is breaking for consumers reading it."""
+    return [
+        f"BREAKING: field '{path}.{name}' removed"
+        for name in sorted(set(base_props) - set(curr_props))
+    ]
+
+
+def check_types_changed(base_props: dict[str, Any], curr_props: dict[str, Any], path: str) -> list[str]:
+    """A changed `type` breaks clients that (de)serialise the old type."""
+    out: list[str] = []
+    for name in sorted(set(base_props) & set(curr_props)):
+        base_type = base_props[name].get("type")
+        curr_type = curr_props[name].get("type")
+        if base_type != curr_type:
+            out.append(
+                f"BREAKING: field '{path}.{name}' type changed "
+                f"from '{base_type}' to '{curr_type}'"
+            )
+    return out
+
+
+def check_required_added(base_schema: dict[str, Any], curr_schema: dict[str, Any], path: str) -> list[str]:
+    """Newly-required fields break existing clients that omit them."""
+    base_required = set(base_schema.get("required", []))
+    curr_required = set(curr_schema.get("required", []))
+    return [
+        f"BREAKING: field '{path}.{name}' became required"
+        for name in sorted(curr_required - base_required)
+    ]
+
+
+def check_enum_shrunk(base_props: dict[str, Any], curr_props: dict[str, Any], path: str) -> list[str]:
+    """Dropping enum members breaks clients that still send the old value."""
+    out: list[str] = []
+    for name in sorted(set(base_props) & set(curr_props)):
+        base_enum = base_props[name].get("enum")
+        curr_enum = curr_props[name].get("enum")
+        if base_enum is None or curr_enum is None:
+            continue
+        removed = [v for v in base_enum if v not in curr_enum]
+        if removed:
+            out.append(
+                f"BREAKING: field '{path}.{name}' enum shrunk (removed: {sorted(map(str, removed))})"
+            )
+    return out
+
+
+def check_response_shape_changed(base_resp: dict[str, Any], curr_resp: dict[str, Any], op_path: str) -> list[str]:
+    """Removing a documented response status is breaking for consumers of it."""
+    return [
+        f"BREAKING: {op_path} response '{code}' removed"
+        for code in sorted(set(base_resp) - set(curr_resp), key=str)
+    ]
 
 
 class SchemaComparator:

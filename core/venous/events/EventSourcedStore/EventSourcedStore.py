@@ -211,11 +211,11 @@ class InMemoryEventSourcedStore:
         """
         key = _check_aggregate_id(aggregate_id)
         if not isinstance(from_version, int) or isinstance(from_version, bool):
-            raise EventSourcedStoreError(
+            raise EventSourcedStoreInvariantError(
                 f"load_from: from_version MUST be int, got {type(from_version).__name__}."
             )
         if from_version < 0:
-            raise EventSourcedStoreError(
+            raise EventSourcedStoreInvariantError(
                 f"load_from: from_version MUST be >= 0, got {from_version}."
             )
         with self._lock:
