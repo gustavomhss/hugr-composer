@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_csrf_protection import add_csrf_protection
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

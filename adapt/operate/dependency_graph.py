@@ -25,7 +25,6 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult
 
-
 MCP_TOOL = {
     "name": "fastapi_resiliency_analyze_dependency_graph",
     "description": "Render the FastAPI dependency injection graph as a Mermaid diagram.",

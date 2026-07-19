@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from modules.database.tools.operate_db import analyze_query
 
-
 MCP_TOOL = {
     "name": "fastapi_meta_analyze_db_explain",
     "description": "Run EXPLAIN ANALYZE on a query and interpret the execution plan.",

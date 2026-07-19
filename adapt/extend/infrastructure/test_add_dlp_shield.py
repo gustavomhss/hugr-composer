@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_dlp_shield import add_dlp_shield
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

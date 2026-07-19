@@ -20,13 +20,14 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.verify.test_coverage_gaps import (
-    test_coverage_gaps as run_test_coverage_gaps,
-    _parse_coverage_xml,
-    _compute_risk,
     _HIGH_RISK_PATTERNS,
+    _compute_risk,
+    _parse_coverage_xml,
+)
+from adapt.verify.test_coverage_gaps import (
+    test_coverage_gaps as run_test_coverage_gaps,
 )
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Helpers

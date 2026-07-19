@@ -41,7 +41,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_temporal_workflow import add_temporal_workflow
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------

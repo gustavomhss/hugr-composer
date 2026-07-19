@@ -30,7 +30,6 @@ from typing import Any
 
 from adapt.contracts import ToolInput, ToolResult
 
-
 # ---------------------------------------------------------------------------
 # Data models
 # ---------------------------------------------------------------------------
@@ -131,7 +130,7 @@ def sla_reporter(
         )
 
     # --- Prerequisite check ---------------------------------------------------
-    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.CONFIG_SETTINGS)
     if prereq_errors:

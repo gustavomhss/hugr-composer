@@ -343,7 +343,7 @@ def _build_structlog_processor_py(service_name: str) -> str:
     Returns:
         Complete Python source as a string.
     """
-    return textwrap.dedent(f"""\
+    return textwrap.dedent("""\
         \"\"\"structlog configuration with OpenTelemetry trace context injection.
 
         Configures structlog to produce JSON logs in production with ``trace_id``
@@ -368,9 +368,9 @@ def _build_structlog_processor_py(service_name: str) -> str:
 
         Output (production JSON)::
 
-            {{"event": "order_placed", "trace_id": "4bf92f3577b34da6...",
+            {"event": "order_placed", "trace_id": "4bf92f3577b34da6...",
              "span_id": "00f067aa0ba902b7", "order_id": "ORD-123",
-             "total": 49.99, "level": "info", "timestamp": "2026-01-01T00:00:00Z"}}
+             "total": 49.99, "level": "info", "timestamp": "2026-01-01T00:00:00Z"}
         \"\"\"
 
         from __future__ import annotations

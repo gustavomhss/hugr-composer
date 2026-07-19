@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.testing_tools.add_schema_evolution_guard import add_schema_evolution_guard
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -47,7 +47,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_pdf_reports import add_pdf_reports
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------

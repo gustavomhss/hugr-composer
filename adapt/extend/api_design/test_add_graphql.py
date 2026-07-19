@@ -19,7 +19,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.api_design.add_graphql import add_graphql
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

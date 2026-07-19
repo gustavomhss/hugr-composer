@@ -14,15 +14,14 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.operate.sla_reporter import (
-    sla_reporter,
-    _load_sla_config,
+    SLOResult,
+    SLOTarget,
     _burn_rate,
     _compute_slo,
+    _load_sla_config,
     _render_report,
-    SLOTarget,
-    SLOResult,
+    sla_reporter,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers — _suggest_semver_from_results not in module, test indirectly

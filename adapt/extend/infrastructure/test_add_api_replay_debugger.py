@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_api_replay_debugger import add_api_replay_debugger
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

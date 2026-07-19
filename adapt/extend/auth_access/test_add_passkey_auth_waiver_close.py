@@ -41,7 +41,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_passkey_auth import add_passkey_auth
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Project build (module-scoped so tests are fast)
 # ---------------------------------------------------------------------------

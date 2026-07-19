@@ -41,7 +41,6 @@ from __future__ import annotations
 
 import ast
 import sys
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -55,10 +54,14 @@ sys.path.insert(0, str(SKILL_ROOT))
 from adapt.contracts import ToolInput  # noqa: E402
 from adapt.extend.infrastructure.add_prometheus_metrics import (  # noqa: E402
     _patch_main as _prometheus_patch_main,
+)
+from adapt.extend.infrastructure.add_prometheus_metrics import (
     add_prometheus_metrics,
 )
 from adapt.extend.infrastructure.add_structured_logging import (  # noqa: E402
     _patch_main as _structlog_patch_main,
+)
+from adapt.extend.infrastructure.add_structured_logging import (
     add_structured_logging,
 )
 
@@ -190,7 +193,7 @@ def test_waiver_set_is_empty() -> None:
     """
     from engine.audit.contract_rules.r_init_inside_lifespan import _WAIVED_TOOLS
 
-    assert _WAIVED_TOOLS == frozenset(), (
+    assert frozenset() == _WAIVED_TOOLS, (
         f"_WAIVED_TOOLS is no longer empty: {sorted(_WAIVED_TOOLS)!r}. "
         f"The W2 FINAL B0.15 PR drained the set to zero — any new entry "
         f"must come with a written justification in its own PR."

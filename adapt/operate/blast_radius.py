@@ -26,10 +26,8 @@ import json
 import subprocess
 import time
 from pathlib import Path
-from typing import Any
 
 from adapt.contracts import ToolInput, ToolResult
-
 
 MCP_TOOL = {
     "name": "fastapi_resiliency_analyze_blast_radius",
@@ -81,7 +79,7 @@ def blast_radius(
         )
 
     # --- Prerequisite check ---------------------------------------------------
-    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.BASE_MODEL)
     if prereq_errors:

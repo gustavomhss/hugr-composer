@@ -13,21 +13,19 @@ from __future__ import annotations
 import ast
 import json
 import sys
-import textwrap
 import tempfile
+import textwrap
 from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.verify.schema_coverage import (
-    schema_coverage,
-    _discover_schemas,
-    _extract_fields,
     _collect_test_references,
-    _run_analysis,
+    _extract_fields,
     _is_basemodel_subclass,
+    _run_analysis,
+    schema_coverage,
 )
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Helpers

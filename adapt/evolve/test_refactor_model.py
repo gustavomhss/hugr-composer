@@ -19,7 +19,6 @@ from pathlib import Path
 from adapt.contracts import ToolInput
 from adapt.evolve.refactor_model import refactor_model
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

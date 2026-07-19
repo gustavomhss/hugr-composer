@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.testing_tools.add_e2e_test_suite import add_e2e_test_suite
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

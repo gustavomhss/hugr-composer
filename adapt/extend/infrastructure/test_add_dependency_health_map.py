@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_dependency_health_map import add_dependency_health_map
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

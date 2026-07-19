@@ -48,7 +48,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_structured_logging import add_structured_logging
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

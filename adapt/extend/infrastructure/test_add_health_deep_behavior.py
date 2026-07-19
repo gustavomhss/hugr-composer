@@ -37,8 +37,6 @@ import importlib.util
 import json
 import sys
 import textwrap
-import time
-import traceback
 from pathlib import Path
 from typing import Any
 
@@ -49,7 +47,6 @@ import pytest
 from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_health_deep import add_health_deep
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -499,7 +496,6 @@ def _run_async_test(coro_fn: Any, *args: Any) -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import traceback as _tb
 
     # Build the shared project once
     _pd, _app = _get_shared_app()
@@ -559,7 +555,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print(f"TOOL-061 BEHAVIOR: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(json.dumps(contract, indent=2))
 
     if failed:

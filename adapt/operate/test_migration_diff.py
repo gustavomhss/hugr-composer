@@ -13,15 +13,14 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.operate.migration_diff import (
-    migration_diff,
-    _extract_ops,
     _classify_ops,
-    _rollback_distance,
     _detect_multi_phase,
-    _sha256,
+    _extract_ops,
     _is_allow_listed,
+    _rollback_distance,
+    _sha256,
+    migration_diff,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

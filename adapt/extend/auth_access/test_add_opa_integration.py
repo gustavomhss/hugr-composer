@@ -23,7 +23,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_opa_integration import add_opa_integration
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

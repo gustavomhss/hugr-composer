@@ -49,7 +49,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_chaos_testing import add_chaos_testing
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -249,7 +248,7 @@ def test_b05_latency_injector_importable(project_dir: Path) -> None:
     for key in stale:
         del sys.modules[key]
     try:
-        from app.chaos.injectors import LatencyInjector, ErrorInjector, TimeoutInjector
+        from app.chaos.injectors import ErrorInjector, LatencyInjector, TimeoutInjector
         assert LatencyInjector is not None
         assert ErrorInjector is not None
         assert TimeoutInjector is not None

@@ -40,7 +40,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_notifications import add_notifications
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Shared fixture — one project, one patched app, all tests reuse it
 # ---------------------------------------------------------------------------
@@ -138,6 +137,7 @@ def booted_app(behavior_project: Path):
 
     # --- Patch session dependency so CRUD works against SQLite -------------
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
     from app.models.base import Base
 
     # Import all models so metadata is populated (includes Notification)

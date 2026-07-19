@@ -24,11 +24,10 @@ from __future__ import annotations
 import ast
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult
-
 
 # ---------------------------------------------------------------------------
 # Data model
@@ -175,7 +174,7 @@ def dead_code_finder(
 # Symbol collection
 # ---------------------------------------------------------------------------
 
-def _collect_defs(tree: ast.AST, rel: str, defs: dict[str, "DeadSymbol"]) -> None:
+def _collect_defs(tree: ast.AST, rel: str, defs: dict[str, DeadSymbol]) -> None:
     """Populate *defs* with top-level definitions from *tree*.
 
     Args:
@@ -294,7 +293,7 @@ def _is_pytest_fixture(node: ast.expr) -> bool:
 # Rendering
 # ---------------------------------------------------------------------------
 
-def _render_report(dead: list["DeadSymbol"]) -> str:
+def _render_report(dead: list[DeadSymbol]) -> str:
     """Render a Markdown dead code report.
 
     Args:

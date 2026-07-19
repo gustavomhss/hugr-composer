@@ -14,7 +14,6 @@ from pathlib import Path
 from adapt.contracts import ToolInput
 from adapt.operate.error_rate_analyzer import error_rate_analyzer
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

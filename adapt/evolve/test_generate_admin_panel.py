@@ -19,7 +19,6 @@ from pathlib import Path
 from adapt.contracts import ToolInput
 from adapt.evolve.generate_admin_panel import generate_admin_panel
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

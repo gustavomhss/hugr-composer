@@ -181,7 +181,7 @@ def test_b03_breaking_field_removed(behavior_project: Path) -> None:
         sys.path.insert(0, project_str)
     _clear_modules()
     try:
-        from app.schema_guard.comparator import SchemaComparator, ChangeClass
+        from app.schema_guard.comparator import ChangeClass, SchemaComparator
         comparator = SchemaComparator()
         baseline = {
             "components": {"schemas": {"Item": {"properties": {"id": {"type": "integer"}, "name": {"type": "string"}}}}},
@@ -213,7 +213,7 @@ def test_b04_additive_field_added(behavior_project: Path) -> None:
         sys.path.insert(0, project_str)
     _clear_modules()
     try:
-        from app.schema_guard.comparator import SchemaComparator, ChangeClass
+        from app.schema_guard.comparator import ChangeClass, SchemaComparator
         comparator = SchemaComparator()
         baseline = {
             "components": {"schemas": {"Item": {"properties": {"id": {"type": "integer"}}}}},
@@ -242,7 +242,7 @@ def test_b05_identical_schemas(behavior_project: Path) -> None:
         sys.path.insert(0, project_str)
     _clear_modules()
     try:
-        from app.schema_guard.comparator import SchemaComparator, ChangeClass
+        from app.schema_guard.comparator import ChangeClass, SchemaComparator
         comparator = SchemaComparator()
         schema = {
             "components": {"schemas": {"Item": {"properties": {"id": {"type": "integer"}}}}},
@@ -267,7 +267,7 @@ def test_b06_breaking_enum_shrunk(behavior_project: Path) -> None:
         sys.path.insert(0, project_str)
     _clear_modules()
     try:
-        from app.schema_guard.comparator import SchemaComparator, ChangeClass
+        from app.schema_guard.comparator import ChangeClass, SchemaComparator
         comparator = SchemaComparator()
         baseline = {
             "components": {"schemas": {"Status": {"properties": {"value": {"type": "string", "enum": ["active", "inactive", "pending"]}}}}},

@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_secret_rotation import add_secret_rotation
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

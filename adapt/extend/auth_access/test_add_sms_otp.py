@@ -18,7 +18,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_sms_otp import add_sms_otp
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

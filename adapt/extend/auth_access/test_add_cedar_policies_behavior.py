@@ -40,8 +40,8 @@ os.environ.setdefault("CEDAR_ENABLED", "false")
 os.environ.pop("REDIS_URL", None)
 
 import asyncio
-import pytest
 
+import pytest
 
 # ---------------------------------------------------------------------------
 # Module-level shared project (built once per session)
@@ -61,9 +61,9 @@ def _build_project() -> Path:
     if _PROJECT_DIR is not None:
         return _PROJECT_DIR
 
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
     from adapt.extend.auth_access.add_cedar_policies import add_cedar_policies
+    from tests.common.fixture_factory import create_fixture_project
 
     _TMPDIR = tempfile.TemporaryDirectory()
     project_dir = create_fixture_project(
@@ -109,12 +109,12 @@ async def _make_sqlite_client(project_dir: Path):
     Returns:
         Tuple of (AsyncClient, AsyncSession, AsyncEngine, app).
     """
-    from sqlalchemy.ext.asyncio import (
-        create_async_engine,
-        async_sessionmaker,
-        AsyncSession,
-    )
     from httpx import ASGITransport, AsyncClient
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
 
     app = _load_app(project_dir)
     get_session_mod = importlib.import_module("app.core.session")

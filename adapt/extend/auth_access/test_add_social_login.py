@@ -18,7 +18,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_social_login import add_social_login
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

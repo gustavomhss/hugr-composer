@@ -45,7 +45,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_adaptive_timeouts import add_adaptive_timeouts
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------
@@ -265,7 +264,6 @@ async def test_b05_decorator_enforces_timeout(project_dir: Path) -> None:
     for key in stale:
         del sys.modules[key]
     try:
-        from app.resilience.adaptive_timeout import AdaptiveTimeout
         from app.resilience.timeout_registry import TimeoutRegistry
 
         registry = TimeoutRegistry(floor_ms=50.0, ceiling_ms=200.0)

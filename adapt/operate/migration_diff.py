@@ -30,7 +30,6 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult
 
-
 # ---------------------------------------------------------------------------
 # Safety classification constants
 # ---------------------------------------------------------------------------
@@ -104,7 +103,7 @@ def migration_diff(
         )
 
     # --- Prerequisite check ---------------------------------------------------
-    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.ALEMBIC_VERSIONS)
     if prereq_errors:

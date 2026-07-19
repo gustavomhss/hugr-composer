@@ -24,7 +24,6 @@ import importlib
 import os
 import sys
 import tempfile
-import uuid
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
@@ -55,9 +54,9 @@ def _build_project() -> Path:
     if _PROJECT_DIR is not None:
         return _PROJECT_DIR
 
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
     from adapt.extend.auth_access.add_opa_integration import add_opa_integration
+    from tests.common.fixture_factory import create_fixture_project
 
     _TMPDIR = tempfile.TemporaryDirectory()
     project_dir = create_fixture_project(
@@ -100,12 +99,12 @@ async def _make_sqlite_client(project_dir: Path):
     Returns:
         Tuple of (AsyncClient, AsyncSession, AsyncEngine, app).
     """
+    from httpx import ASGITransport, AsyncClient
     from sqlalchemy.ext.asyncio import (
         AsyncSession,
         async_sessionmaker,
         create_async_engine,
     )
-    from httpx import ASGITransport, AsyncClient
 
     app = _load_app(project_dir)
     get_session_mod = importlib.import_module("app.core.session")

@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.testing_tools.add_factory import add_factory
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

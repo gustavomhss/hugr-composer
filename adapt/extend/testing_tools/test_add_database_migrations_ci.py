@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.testing_tools.add_database_migrations_ci import add_database_migrations_ci
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -27,17 +27,15 @@ MCP_TOOL = {
     'annotations': {'readOnlyHint': False},
 }
 
-import re
 from pathlib import Path
 
-from generators.tools._layout import resolve_app_root
-
-from generators.database.model import generate_model
 from generators.database.crud import generate_crud
-from generators.schemas.input_schema import generate_input_schema
-from generators.schemas.output_schema import generate_output_schema
-from generators.schemas.list_response import generate_list_response
+from generators.database.model import generate_model
 from generators.endpoints.crud_routes import generate_crud_routes
+from generators.schemas.input_schema import generate_input_schema
+from generators.schemas.list_response import generate_list_response
+from generators.schemas.output_schema import generate_output_schema
+from generators.tools._layout import resolve_app_root
 
 
 def add_model(
@@ -220,8 +218,8 @@ def add_model(
     versions_dir = proj_root / "alembic" / "versions"
     if versions_dir.is_dir():
         try:
-            from generators.database.alembic_migration import _table_block
             from generators._pluralize import pluralize as _plural
+            from generators.database.alembic_migration import _table_block
 
             table = _plural(lower)
             has_owner = owner_field is not None
@@ -278,7 +276,7 @@ def add_model(
         except ImportError:
             notes.append("Could not import migration helpers — generate migration manually.")
 
-    next_steps.append(f"Review the migration in alembic/versions/")
+    next_steps.append("Review the migration in alembic/versions/")
     next_steps.append("alembic upgrade head")
     next_steps.append(f"Run tests: pytest tests/ -v -k {lower}")
 

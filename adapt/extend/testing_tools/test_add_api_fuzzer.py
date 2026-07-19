@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.testing_tools.add_api_fuzzer import add_api_fuzzer
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -30,7 +30,6 @@ os.environ.setdefault("SECRET_KEY", "behavior-test-bulkhead-secret-key-32+chars!
 os.environ.pop("REDIS_URL", None)
 
 import ast
-import asyncio
 import importlib
 import sys
 import textwrap
@@ -44,7 +43,6 @@ import pytest
 from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_bulkhead_isolation import add_bulkhead_isolation
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Patch templates

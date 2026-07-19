@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_bola_guard import add_bola_guard
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

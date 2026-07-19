@@ -290,7 +290,7 @@ def test_b0_14_no_waivers_remain() -> None:
     structural rule now, not a debt list."""
     from engine.audit.contract_rules.r_write_schemas_strict import _WAIVED_TOOLS
 
-    assert _WAIVED_TOOLS == frozenset(), (
+    assert frozenset() == _WAIVED_TOOLS, (
         f"_WAIVED_TOOLS must be empty after the W2 batch PR; still "
         f"holds: {sorted(_WAIVED_TOOLS)}. Any new entry means a new "
         "B0.14 debt item — add a fix-PR, don't reopen the waiver list."

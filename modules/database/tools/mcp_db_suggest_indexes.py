@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from modules.database.tools.operate_db import suggest_indexes
 
-
 MCP_TOOL = {
     "name": "fastapi_meta_analyze_db_suggest_indexes",
     "description": "Suggest missing indexes based on sequential scan patterns.",

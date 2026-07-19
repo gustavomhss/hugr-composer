@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.api_design.add_cqrs import add_cqrs
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

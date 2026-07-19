@@ -17,14 +17,13 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.verify.performance_baseline import (
-    performance_baseline,
-    get_hardware_fingerprint,
-    compute_percentiles,
-    check_regression,
     _build_empty_baseline,
+    check_regression,
+    compute_percentiles,
+    get_hardware_fingerprint,
+    performance_baseline,
 )
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Helpers

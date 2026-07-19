@@ -23,7 +23,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_ml_model_server import add_ml_model_server
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -401,7 +400,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print(f"TOOL-068 STRUCTURAL: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(json.dumps(contract, indent=2))
 
     if failed:

@@ -17,12 +17,11 @@ from pathlib import Path
 from adapt.contracts import ToolInput
 from adapt.verify.api_spec_compliance import (
     api_spec_compliance,
+    check_documentation,
     diff_openapi,
     suggest_semver,
-    check_documentation,
 )
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Helpers

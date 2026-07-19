@@ -47,7 +47,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_request_fingerprint import add_request_fingerprint
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------
@@ -403,7 +402,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print(f"TOOL-103 BEHAVIOR: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(json.dumps(contract, indent=2))
 
     if failed:

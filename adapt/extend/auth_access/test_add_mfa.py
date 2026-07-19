@@ -21,7 +21,7 @@ import sys
 from pathlib import Path
 
 from adapt.contracts import ToolInput
-from adapt.extend.auth_access.add_mfa import MCP_TOOL, _WARN_NOT_AUTO_ENFORCED, add_mfa
+from adapt.extend.auth_access.add_mfa import _WARN_NOT_AUTO_ENFORCED, MCP_TOOL, add_mfa
 from tests.common.fixture_factory import create_fixture_project
 
 

@@ -48,7 +48,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.testing_tools.add_schema_enforcer import add_schema_enforcer
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch helpers
 # ---------------------------------------------------------------------------
@@ -416,7 +415,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print(f"TOOL-117 BEHAVIOR: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(json.dumps(contract, indent=2))
 
     if failed:

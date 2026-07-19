@@ -15,15 +15,13 @@ or without pytest::
 from __future__ import annotations
 
 import ast
+import json
 import sys
 from pathlib import Path
-
-import json
 
 from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_feature_flags import MCP_TOOL, add_feature_flags
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Helpers

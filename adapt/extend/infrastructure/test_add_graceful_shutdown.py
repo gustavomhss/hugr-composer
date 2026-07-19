@@ -29,7 +29,6 @@ from adapt.extend.infrastructure.add_graceful_shutdown import (
 )
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

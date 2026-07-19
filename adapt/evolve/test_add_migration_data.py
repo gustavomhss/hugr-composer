@@ -19,7 +19,6 @@ from pathlib import Path
 from adapt.contracts import ToolInput
 from adapt.evolve.add_migration_data import add_migration_data
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
