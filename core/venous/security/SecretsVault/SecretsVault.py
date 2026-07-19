@@ -37,7 +37,7 @@ import ctypes
 import threading
 import time
 from collections.abc import Callable, Iterator, Mapping
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Final, Protocol, runtime_checkable
 

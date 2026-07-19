@@ -8,7 +8,6 @@ import time
 from unittest import mock
 
 import pytest
-
 from TotpVerifier import (
     DEFAULT_STEP_SECONDS,
     MIN_SECRET_BYTES,

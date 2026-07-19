@@ -5,7 +5,6 @@ from __future__ import annotations
 import threading
 
 import pytest
-
 from DiContainer import DiContainerInvariantError, InMemoryDiContainer
 
 
@@ -134,10 +133,9 @@ def test_inv_dispose_owned_under_failure() -> None:
     c = InMemoryDiContainer()
     c.register(Closable, Closable, scope="scoped")
     captured: list[Closable] = []
-    with pytest.raises(RuntimeError, match="boom"):
-        with c.create_scope() as scope:
-            captured.append(scope.resolve(Closable))
-            raise RuntimeError("boom")
+    with pytest.raises(RuntimeError, match="boom"), c.create_scope() as scope:
+        captured.append(scope.resolve(Closable))
+        raise RuntimeError("boom")
     assert captured[0].closed is True
 
 

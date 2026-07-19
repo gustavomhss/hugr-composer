@@ -5,7 +5,6 @@ from __future__ import annotations
 import threading
 
 import pytest
-
 from SecretsVault import (
     AuditEvent,
     CachingSecretsVault,
@@ -148,9 +147,8 @@ def test_inv_rotation_monotonic_prevents() -> None:
     backend = InMemoryBackend()
     backend.register("stuck", b"initial", factory=lambda _v: b"initial")
     vault = CachingSecretsVault(backend)
-    with caller_identity("ops"):
-        with pytest.raises(SecretsVaultError):
-            vault.rotate("stuck")
+    with caller_identity("ops"), pytest.raises(SecretsVaultError):
+        vault.rotate("stuck")
 
 
 def test_inv_rotation_monotonic_under_failure() -> None:
@@ -212,9 +210,8 @@ def test_inv_audit_event_under_failure() -> None:
 def test_inv_fail_closed_confirms() -> None:
     vault, backend, _, _ = _fresh()
     backend.set_available(False)
-    with pytest.raises(SecretBackendUnavailableError):
-        with caller_identity("svc"):
-            vault.get("cold-secret")  # never cached → MUST fail closed
+    with pytest.raises(SecretBackendUnavailableError), caller_identity("svc"):
+        vault.get("cold-secret")  # never cached → MUST fail closed
 
 
 def test_inv_fail_closed_prevents() -> None:
@@ -224,18 +221,16 @@ def test_inv_fail_closed_prevents() -> None:
         vault.get("alpha")
     backend.set_available(False)
     clock.advance(10.0)
-    with pytest.raises(SecretBackendUnavailableError):
-        with caller_identity("svc"):
-            vault.get("alpha")
+    with pytest.raises(SecretBackendUnavailableError), caller_identity("svc"):
+        vault.get("alpha")
 
 
 def test_inv_fail_closed_under_failure() -> None:
     # Rotation during outage fails closed too.
     vault, backend, _, _ = _fresh()
     backend.set_available(False)
-    with pytest.raises(SecretBackendUnavailableError):
-        with caller_identity("ops"):
-            vault.rotate("alpha")
+    with pytest.raises(SecretBackendUnavailableError), caller_identity("ops"):
+        vault.rotate("alpha")
 
 
 # ---------------------------------------------------------------------------
@@ -274,6 +269,5 @@ def test_concurrent_get_no_corruption() -> None:
 
 def test_missing_secret_raises_not_found() -> None:
     vault, _, _, _ = _fresh()
-    with pytest.raises(SecretNotFoundError):
-        with caller_identity("svc"):
-            vault.get("no-such-name")
+    with pytest.raises(SecretNotFoundError), caller_identity("svc"):
+        vault.get("no-such-name")

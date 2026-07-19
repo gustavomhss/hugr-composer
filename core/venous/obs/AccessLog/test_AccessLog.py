@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from AccessLog import AccessLogError, InMemoryAccessLog
 
-
-UTC = timezone.utc
+UTC = UTC
 T = datetime(2026, 1, 1, tzinfo=UTC)
 
 

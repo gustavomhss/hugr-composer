@@ -5,7 +5,6 @@ from __future__ import annotations
 import threading
 
 import pytest
-
 from IdempotentConsumer import (
     BaseIdempotentConsumer,
     EchoConsumer,
@@ -165,7 +164,9 @@ def test_inv_outbox_publishing_prevents() -> None:
     # invariant by demonstrating the outbox is write-gated by the inbox
     # bracket: writes outside the handle() call raise.
     _, _, outbox = build_echo_consumer()
-    from TransactionalOutbox import TransactionalOutboxInvariantError  # lazy — subsystem-specific rationale: ensures cross-primitive error surface is surfaced through the same error type
+    from TransactionalOutbox import (
+        TransactionalOutboxInvariantError,  # lazy — subsystem-specific rationale: ensures cross-primitive error surface is surfaced through the same error type
+    )
     with pytest.raises(TransactionalOutboxInvariantError):
         outbox.enqueue(destination="x", payload={}, key="k1")
 

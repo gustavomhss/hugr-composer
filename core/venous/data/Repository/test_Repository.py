@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import threading
+from collections.abc import Iterator
 from dataclasses import dataclass
-from typing import Iterator
 
 import pytest
-
 from Repository import (
     ConcreteRepository,
     InMemoryIdentityMap,

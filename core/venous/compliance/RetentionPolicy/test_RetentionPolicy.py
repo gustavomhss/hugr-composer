@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from RetentionPolicy import (
     ALLOWED_DELETION_MODES,
     InMemoryRetentionEnforcer,
@@ -83,7 +82,7 @@ def test_inv_deletion_mode_under_failure() -> None:
 
 # RP_INV_04 — sweep idempotent + respects LegalHold.
 def test_inv_sweep_idempotent_confirms() -> None:
-    clock = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+    clock = [datetime(2026, 1, 1, tzinfo=UTC)]
     enf = InMemoryRetentionEnforcer(now=lambda: clock[0])
     enf.bind(_policy(max_age=timedelta(days=1)))
     enf.enforce_on_write("access_token", "t1")
@@ -93,11 +92,11 @@ def test_inv_sweep_idempotent_confirms() -> None:
 
 
 def test_inv_sweep_idempotent_prevents() -> None:
-    clock = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+    clock = [datetime(2026, 1, 1, tzinfo=UTC)]
     enf = InMemoryRetentionEnforcer(now=lambda: clock[0])
     enf.bind(_policy(max_age=timedelta(days=1)))
     enf.enforce_on_write("access_token", "t1")
-    clock[0] = datetime(2026, 1, 3, tzinfo=timezone.utc)  # 2 days later
+    clock[0] = datetime(2026, 1, 3, tzinfo=UTC)  # 2 days later
     first = enf.sweep()
     second = enf.sweep()
     assert first == 1 and second == 0
@@ -108,12 +107,12 @@ def test_inv_sweep_idempotent_under_failure() -> None:
         def covers(self, rid: str) -> bool:
             return rid == "held-1"
 
-    clock = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+    clock = [datetime(2026, 1, 1, tzinfo=UTC)]
     enf = InMemoryRetentionEnforcer(hold_check=_Hold(), now=lambda: clock[0])
     enf.bind(_policy(max_age=timedelta(days=1)))
     enf.enforce_on_write("access_token", "held-1")
     enf.enforce_on_write("access_token", "free-1")
-    clock[0] = datetime(2026, 1, 3, tzinfo=timezone.utc)
+    clock[0] = datetime(2026, 1, 3, tzinfo=UTC)
     purged = enf.sweep()
     # Only 'free-1' is purged; 'held-1' survives.
     assert purged == 1
@@ -137,11 +136,11 @@ class _RecordingSink:
 
 def test_inv_audit_on_purge_confirms() -> None:
     sink = _RecordingSink()
-    clock = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+    clock = [datetime(2026, 1, 1, tzinfo=UTC)]
     enf = InMemoryRetentionEnforcer(audit_sink=sink, now=lambda: clock[0])
     enf.bind(_policy(max_age=timedelta(days=1)))
     enf.enforce_on_write("access_token", "t1")
-    clock[0] = datetime(2026, 1, 3, tzinfo=timezone.utc)
+    clock[0] = datetime(2026, 1, 3, tzinfo=UTC)
     enf.sweep()
     assert len(sink.rows) == 1
     assert sink.rows[0]["action"] == "purge"
@@ -160,9 +159,9 @@ def test_inv_audit_on_purge_prevents() -> None:
 
 def test_inv_audit_on_purge_under_failure() -> None:
     # Without an audit sink, sweep still works but cannot prove audit trail.
-    clock = [datetime(2026, 1, 1, tzinfo=timezone.utc)]
+    clock = [datetime(2026, 1, 1, tzinfo=UTC)]
     enf = InMemoryRetentionEnforcer(now=lambda: clock[0])
     enf.bind(_policy(max_age=timedelta(days=1)))
     enf.enforce_on_write("access_token", "t1")
-    clock[0] = datetime(2026, 1, 3, tzinfo=timezone.utc)
+    clock[0] = datetime(2026, 1, 3, tzinfo=UTC)
     assert enf.sweep() == 1  # still idempotent, still correct

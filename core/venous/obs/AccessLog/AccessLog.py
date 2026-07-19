@@ -27,7 +27,7 @@ from __future__ import annotations
 import threading
 from collections.abc import Iterable
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Protocol, runtime_checkable
 
 
@@ -160,7 +160,7 @@ class InMemoryAccessLog:
 
     def sweep_retention(self, now: datetime | None = None) -> int:
         """AL_INV_05: drop rows older than retention. Returns number dropped."""
-        t = now or datetime.now(timezone.utc)
+        t = now or datetime.now(UTC)
         with self._lock:
             kept = [r for r in self._rows if t - r.at <= self._retention]
             dropped = len(self._rows) - len(kept)

@@ -8,7 +8,6 @@ import threading
 import time
 
 import pytest
-
 from PasswordHasher import (
     FORBIDDEN_ALGOS,
     MIN_SALT_BYTES,

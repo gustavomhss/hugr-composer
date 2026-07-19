@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import FrozenInstanceError
 
 import pytest
-
 from RequestShape import (
     DEFAULT_PRIORITY,
     HDR_ATTEMPT,

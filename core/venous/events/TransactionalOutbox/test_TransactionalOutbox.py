@@ -5,7 +5,6 @@ from __future__ import annotations
 import threading
 
 import pytest
-
 from TransactionalOutbox import (
     InMemoryTransactionalOutbox,
     OutboxTransaction,
@@ -46,10 +45,9 @@ def test_inv_atomic_enqueue_under_failure() -> None:
         raise RuntimeError("state flush failed")
 
     outbox = InMemoryTransactionalOutbox(state_flush_fn=boom)
-    with pytest.raises(RuntimeError):
-        with outbox.begin() as scope:
-            outbox.enqueue("orders.placed", {"id": 1}, key="order-1")
-            scope.commit()
+    with pytest.raises(RuntimeError), outbox.begin() as scope:
+        outbox.enqueue("orders.placed", {"id": 1}, key="order-1")
+        scope.commit()
     # Atomicity: state flush failed → outbox row MUST NOT be visible.
     assert list(outbox.pending(10)) == []
 
@@ -97,7 +95,7 @@ def test_inv_at_least_once_confirms() -> None:
     attempts: list[str] = []
 
     def publisher(m: object) -> bool:
-        attempts.append(getattr(m, "message_id"))
+        attempts.append(m.message_id)
         return True
 
     outbox = InMemoryTransactionalOutbox(broker_publish_fn=publisher)

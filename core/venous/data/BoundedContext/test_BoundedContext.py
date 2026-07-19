@@ -5,7 +5,6 @@ from __future__ import annotations
 import threading
 
 import pytest
-
 from BoundedContext import (
     REL_ACL,
     REL_CONFORMIST,

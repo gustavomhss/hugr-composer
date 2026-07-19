@@ -6,7 +6,6 @@ import threading
 import time
 
 import pytest
-
 from TimeoutBudget import (
     CURRENT_BUDGET,
     DeadlineHeaderCodec,

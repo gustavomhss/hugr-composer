@@ -189,7 +189,7 @@ class InMemoryOutboundBinding:
             raise OutboundBindingError("OBND-INV-05: timeout_s MUST be > 0.")
         try:
             out_bytes, out_md = await asyncio.wait_for(call, timeout=budget)
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             raise BindingDeadlineExceededError(
                 f"OBND-INV-05: binding {request.binding_name!r} operation "
                 f"{request.operation!r} exceeded deadline {budget}s."

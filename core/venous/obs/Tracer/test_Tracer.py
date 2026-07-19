@@ -6,7 +6,6 @@ import threading
 import time
 
 import pytest
-
 from Tracer import (
     InMemoryTracer,
     TracerInvariantError,
@@ -32,9 +31,8 @@ def test_inv_name_timestamps_confirms() -> None:
 
 def test_inv_name_timestamps_prevents() -> None:
     tracer = InMemoryTracer()
-    with pytest.raises(TracerInvariantError):
-        with tracer.start_as_current_span(""):
-            pass
+    with pytest.raises(TracerInvariantError), tracer.start_as_current_span(""):
+        pass
     with pytest.raises(TracerInvariantError):
         validate_span_name("   ")
 

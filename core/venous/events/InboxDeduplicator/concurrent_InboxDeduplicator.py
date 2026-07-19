@@ -27,9 +27,8 @@ def test_concurrent_serialized_first_deliveries_unique_pairs() -> None:
 
     def worker(i: int) -> None:
         try:
-            with writer_lock:
-                with inbox.handle(f"m-{i}", "c", lambda: None):
-                    pass
+            with writer_lock, inbox.handle(f"m-{i}", "c", lambda: None):
+                pass
         except BaseException as exc:  # noqa: BLE001 — concurrency harness records any failure for diagnostics
             with err_lock:
                 errs.append(exc)
@@ -78,9 +77,8 @@ def test_concurrent_readers_see_consistent_seen_across_writes() -> None:
     writer_lock = threading.Lock()
 
     def writer() -> None:
-        with writer_lock:
-            with inbox.handle("m", "c", lambda: None):
-                pass
+        with writer_lock, inbox.handle("m", "c", lambda: None):
+            pass
 
     flips_to_false: list[int] = []
     flip_lock = threading.Lock()

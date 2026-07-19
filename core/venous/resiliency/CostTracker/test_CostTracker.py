@@ -5,7 +5,7 @@ Uses a lightweight reference model mirroring the staged impl. See
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 
 @dataclass

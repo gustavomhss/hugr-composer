@@ -6,7 +6,6 @@ import asyncio
 import random
 
 import pytest
-
 from RetryPolicy import (
     ExponentialBackoffRetryPolicy,
     FatalError,

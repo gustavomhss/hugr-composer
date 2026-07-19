@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pytest
-
 from LegalHold import InMemoryLegalHoldRegistry, LegalHold, LegalHoldError
 
-
-UTC = timezone.utc
+UTC = UTC
 T = datetime(2026, 1, 1, tzinfo=UTC)
 
 

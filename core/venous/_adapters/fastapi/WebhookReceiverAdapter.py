@@ -21,7 +21,7 @@ Usage::
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, FastAPI, Header, HTTPException, Request
@@ -30,7 +30,11 @@ from core.venous.compliance.AuditEvent.AuditEvent import InMemoryAuditSink, buil
 from core.venous.events.IdempotentConsumer.IdempotentConsumer import BaseIdempotentConsumer
 from core.venous.events.InboxDeduplicator.InboxDeduplicator import InMemoryInboxDeduplicator
 from core.venous.events.TransactionalOutbox.TransactionalOutbox import InMemoryTransactionalOutbox
-from core.venous.security.SignatureVerifier.SignatureVerifier import ALG_HMAC_SHA256, DetachedSigner, TrustAnchor
+from core.venous.security.SignatureVerifier.SignatureVerifier import (
+    ALG_HMAC_SHA256,
+    DetachedSigner,
+    TrustAnchor,
+)
 
 _MAX_BODY_BYTES = 1_048_576
 
@@ -69,6 +73,6 @@ class _EchoAuditConsumer(BaseIdempotentConsumer):
         self._tail = ""
 
     def _do_handle(self, message, enqueue):  # noqa: ANN001
-        ev = build_event(event_id=str(message["id"]), actor_id="system", actor_type="webhook", action="CREATE", resource_type="webhook", resource_id=str(message["id"]), outcome="success", attributes={}, prev_hash=self._tail, occurred_at=datetime.now(timezone.utc))
+        ev = build_event(event_id=str(message["id"]), actor_id="system", actor_type="webhook", action="CREATE", resource_type="webhook", resource_id=str(message["id"]), outcome="success", attributes={}, prev_hash=self._tail, occurred_at=datetime.now(UTC))
         self.audit.emit(ev); self._tail = ev.event_hash
         return {"ok": True}

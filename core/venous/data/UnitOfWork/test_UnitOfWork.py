@@ -5,7 +5,6 @@ from __future__ import annotations
 import threading
 
 import pytest
-
 from UnitOfWork import (
     EnlistingRepository,
     InMemoryUnitOfWork,
@@ -49,10 +48,9 @@ def test_inv_atomic_commit_under_failure() -> None:
 
     uow = InMemoryUnitOfWork(flush_fn=boom)
     obj = object()
-    with pytest.raises(RuntimeError):
-        with uow as u:
-            u.register_new(obj)
-            u.commit()
+    with pytest.raises(RuntimeError), uow as u:
+        u.register_new(obj)
+        u.commit()
     assert uow.state == "rolled_back"
     assert uow.new_snapshot == ()
 
@@ -111,9 +109,8 @@ def test_inv_no_reuse_prevents() -> None:
     uow = InMemoryUnitOfWork()
     with uow:
         uow.commit()
-    with pytest.raises(UnitOfWorkInvariantError):
-        with uow:
-            pass  # pragma: no cover — __enter__ should have raised
+    with pytest.raises(UnitOfWorkInvariantError), uow:
+        pass  # pragma: no cover — __enter__ should have raised
 
 
 def test_inv_no_reuse_under_failure() -> None:
@@ -182,9 +179,8 @@ def test_inv_enlist_confirms() -> None:
 def test_inv_enlist_prevents() -> None:
     uow = InMemoryUnitOfWork()
     repo = EnlistingRepository(uow)
-    with uow:
-        with pytest.raises(UnitOfWorkInvariantError):
-            repo.direct_write(object())
+    with uow, pytest.raises(UnitOfWorkInvariantError):
+        repo.direct_write(object())
 
 
 def test_inv_enlist_under_failure() -> None:

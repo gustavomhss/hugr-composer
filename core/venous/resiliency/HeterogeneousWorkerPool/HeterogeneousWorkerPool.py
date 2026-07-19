@@ -89,7 +89,7 @@ class HeterogeneousWorkerPool(Protocol[R]):
         kind: WorkerKind,
         executor: Callable[[Task[object]], Awaitable[R]],
     ) -> None: ...
-    def submit(self, task: Task[R], family: str) -> "asyncio.Future[R]": ...
+    def submit(self, task: Task[R], family: str) -> asyncio.Future[R]: ...
     def on_result(
         self, worker_id: str, latency_ms: float, ok: bool
     ) -> None: ...
@@ -214,7 +214,7 @@ class InMemoryHeterogeneousWorkerPool:
     # ------------------------------------------------------------------
     # Submit
     # ------------------------------------------------------------------
-    def submit(self, task: Task[R], family: str) -> "asyncio.Future[R]":
+    def submit(self, task: Task[R], family: str) -> asyncio.Future[R]:
         ws = self._choose(task, family)
         if task.session_id is not None:
             self._sessions[task.session_id] = ws.worker_id

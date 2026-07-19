@@ -6,7 +6,6 @@ import threading
 from dataclasses import dataclass
 
 import pytest
-
 from IdentityMap import (
     ConcurrentSessionError,
     IdentityMapInvariantError,
@@ -169,11 +168,10 @@ def test_inv_session_scoped_under_failure() -> None:
     # If a session_scope raises mid-flight, the map still disposes and cannot
     # be seen by any other transaction.
     captured: list[InMemoryIdentityMap] = []
-    with pytest.raises(ValueError):
-        with session_scope() as imap:
-            captured.append(imap)
-            imap.add(Order(id=77))
-            raise ValueError("boom")
+    with pytest.raises(ValueError), session_scope() as imap:
+        captured.append(imap)
+        imap.add(Order(id=77))
+        raise ValueError("boom")
     assert captured[0].state == "disposed"
     with pytest.raises(IdentityMapInvariantError):
         captured[0].get(Order, 77)
@@ -208,9 +206,8 @@ def test_inv_dispose_clears_prevents() -> None:
     with pytest.raises(IdentityMapInvariantError):
         imap.remove(Order, 1)
     # Context-manager re-entry after dispose is also forbidden.
-    with pytest.raises(IdentityMapInvariantError):
-        with imap:
-            pass  # pragma: no cover — __enter__ should have raised
+    with pytest.raises(IdentityMapInvariantError), imap:
+        pass  # pragma: no cover — __enter__ should have raised
 
 
 def test_inv_dispose_clears_under_failure() -> None:

@@ -29,7 +29,7 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Final, Literal, Protocol, runtime_checkable
 
 ActionKind = Literal["grant", "revoke"]
@@ -143,7 +143,7 @@ class InMemoryConsentLedger:
         self, subject_id: str, purpose: str, at: datetime | None = None,
     ) -> bool:
         """CL_INV_05: evaluate against history at time `at` (or now)."""
-        when = at if at is not None else datetime.now(timezone.utc)
+        when = at if at is not None else datetime.now(UTC)
         _check_utc(when, "at")
         with self._lock:
             idxs = self._by_subject.get(subject_id, [])

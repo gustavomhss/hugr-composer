@@ -5,7 +5,6 @@ from __future__ import annotations
 import uuid
 
 import pytest
-
 from RequestContext import (
     DefaultRequestContextProvider,
     FrozenRequestContext,
@@ -48,11 +47,10 @@ def test_inv_lifecycle_under_failure() -> None:
     class Boom(RuntimeError):
         pass
 
-    with pytest.raises(Boom):
-        with request_scope(request_id="req-3") as ctx:
-            captured["ctx"] = ctx
-            ctx.put("k", "v")
-            raise Boom("handler exploded")
+    with pytest.raises(Boom), request_scope(request_id="req-3") as ctx:
+        captured["ctx"] = ctx
+        ctx.put("k", "v")
+        raise Boom("handler exploded")
     assert captured["ctx"].is_disposed is True
     with pytest.raises(RequestContextError):
         captured["ctx"].put("late", "write")

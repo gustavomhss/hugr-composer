@@ -2,18 +2,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from BreachNotificationQueue import (
-    STATUTORY_WINDOW,
     BreachNotificationQueueError,
     InMemoryBreachNotificationQueue,
 )
 
-
-UTC = timezone.utc
+UTC = UTC
 T = datetime(2026, 4, 1, 0, 0, tzinfo=UTC)
 
 

@@ -27,7 +27,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any, Optional, Protocol, runtime_checkable
+from typing import Any, Protocol, runtime_checkable
 
 
 class SessionCacheError(RuntimeError):
@@ -40,7 +40,7 @@ class SessionCacheError(RuntimeError):
 
 @runtime_checkable
 class SessionCache(Protocol):
-    def get(self, token: str) -> Optional[Mapping[str, Any]]: ...
+    def get(self, token: str) -> Mapping[str, Any] | None: ...
     def set(self, token: str, value: Mapping[str, Any], ttl_s: int) -> None: ...
     def invalidate(self, token: str) -> None: ...
 
@@ -68,7 +68,7 @@ class InMemorySessionCache:
         self._store: dict[str, _Entry] = {}
         self._clock: Clock = clock or time.monotonic
 
-    def get(self, token: str) -> Optional[Mapping[str, Any]]:
+    def get(self, token: str) -> Mapping[str, Any] | None:
         """SC_INV_01: read-only. SC_INV_04: TTL honored on read."""
         entry = self._store.get(token)
         if entry is None:
@@ -105,7 +105,7 @@ class ReadThroughSessionCache:
 
     def __init__(
         self,
-        loader: Callable[[str], Optional[Mapping[str, Any]]],
+        loader: Callable[[str], Mapping[str, Any] | None],
         *,
         ttl_s: int = 300,
         clock: Clock | None = None,
@@ -116,7 +116,7 @@ class ReadThroughSessionCache:
         self._ttl_s = ttl_s
         self._local = InMemorySessionCache(clock=clock)
 
-    def get(self, token: str) -> Optional[Mapping[str, Any]]:
+    def get(self, token: str) -> Mapping[str, Any] | None:
         hit = self._local.get(token)
         if hit is not None:
             return hit

@@ -2,18 +2,16 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from KeyRotationSchedule import (
     InMemoryKeyRotator,
     KeyRotationSchedule,
     KeyRotationScheduleError,
 )
 
-
-UTC = timezone.utc
+UTC = UTC
 
 
 def _s(**o: object) -> KeyRotationSchedule:

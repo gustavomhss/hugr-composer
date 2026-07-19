@@ -25,7 +25,6 @@ Invariant IDs (full text in ``ShardedCounter.md``):
 from __future__ import annotations
 
 import threading
-from collections.abc import Hashable
 from typing import Protocol, runtime_checkable
 
 

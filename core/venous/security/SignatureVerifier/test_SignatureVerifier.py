@@ -5,7 +5,6 @@ from __future__ import annotations
 import time
 
 import pytest
-
 from SignatureVerifier import (
     ALG_ECDSA_P256,
     ALG_ED25519,

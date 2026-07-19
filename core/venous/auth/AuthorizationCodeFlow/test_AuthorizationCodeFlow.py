@@ -7,9 +7,7 @@ from dataclasses import replace
 from typing import Any
 
 import pytest
-
 from AuthorizationCodeFlow import (
-    AuthorizationRequest,
     InvalidGrantError,
     InvalidRedirectURIError,
     InvalidRequestError,

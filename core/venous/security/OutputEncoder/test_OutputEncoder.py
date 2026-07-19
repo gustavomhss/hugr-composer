@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from OutputEncoder import (
     DefaultOutputEncoder,
     EncodedFragment,

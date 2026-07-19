@@ -5,7 +5,6 @@ from __future__ import annotations
 import threading
 
 import pytest
-
 from LifetimeScope import (
     LifetimeScope,
     LifetimeScopeInvariantError,
@@ -114,12 +113,11 @@ def test_inv_scoped_lifecycle_under_failure() -> None:
     m.register("b", Svc, scope=LifetimeScope.SCOPED)
     m.register("c", Svc, scope=LifetimeScope.SCOPED)
     captured: dict[str, Svc] = {}
-    with pytest.raises(RuntimeError, match="boom"):
-        with m.scope() as child:
-            captured["a"] = child.resolve_typed("a", Svc)
-            captured["b"] = child.resolve_typed("b", Svc)
-            captured["c"] = child.resolve_typed("c", Svc)
-            raise RuntimeError("boom")
+    with pytest.raises(RuntimeError, match="boom"), m.scope() as child:
+        captured["a"] = child.resolve_typed("a", Svc)
+        captured["b"] = child.resolve_typed("b", Svc)
+        captured["c"] = child.resolve_typed("c", Svc)
+        raise RuntimeError("boom")
     assert captured["a"].closed
     assert captured["b"].closed
     assert captured["c"].closed

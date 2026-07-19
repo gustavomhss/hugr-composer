@@ -139,8 +139,8 @@ def ensure_metatype(meta: ArgumentMetadata, expected: type) -> None:
     # so primitive types maintain strict identity.
     if meta.metatype is bool and expected is int:
         raise MetatypeMismatchError(
-            f"VTRANSFORM-INV-03: declared metatype bool is NOT acceptable as "
-            f"int output — use a bool-specific transform to preserve type identity.",
+            "VTRANSFORM-INV-03: declared metatype bool is NOT acceptable as "
+            "int output — use a bool-specific transform to preserve type identity.",
             expected=str(expected),
             received=str(meta.metatype),
         )

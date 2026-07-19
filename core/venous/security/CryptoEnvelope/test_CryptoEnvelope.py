@@ -6,7 +6,6 @@ import secrets
 import threading
 
 import pytest
-
 from CryptoEnvelope import (
     AEAD_TAG_BYTES,
     AES_GCM_NONCE_BYTES,

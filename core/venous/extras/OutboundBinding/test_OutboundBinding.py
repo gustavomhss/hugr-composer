@@ -6,7 +6,6 @@ import asyncio
 from collections.abc import Mapping
 
 import pytest
-
 from OutboundBinding import (
     BindingComponent,
     BindingDeadlineExceededError,

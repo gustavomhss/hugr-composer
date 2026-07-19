@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import pytest
-
 from SamplingPolicy import (
+    MAX_DESCRIPTION_LEN,
     AlwaysOffSampler,
     AlwaysOnSampler,
-    MAX_DESCRIPTION_LEN,
     ParentBasedHeadSampler,
     SamplingDecision,
     SamplingInvariantError,

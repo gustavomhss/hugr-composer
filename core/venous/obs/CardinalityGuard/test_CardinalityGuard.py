@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import pytest
-
 from CardinalityGuard import (
-    CardinalityInvariantError,
     DEFAULT_DENY_KEYS,
+    CardinalityInvariantError,
     InMemoryCardinalityGuard,
 )
 

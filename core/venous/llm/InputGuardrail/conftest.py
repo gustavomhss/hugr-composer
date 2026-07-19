@@ -17,7 +17,6 @@ import pytest
 from hypothesis import settings
 from hypothesis.database import DirectoryBasedExampleDatabase
 
-
 # Hypothesis storage — stateful primitive; T3 writes an example DB by default.
 _HYP_DIR = tempfile.mkdtemp(prefix="hypothesis_inputguardrail_")
 os.environ.setdefault("HYPOTHESIS_STORAGE_DIRECTORY", _HYP_DIR)

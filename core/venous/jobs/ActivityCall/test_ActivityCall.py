@@ -5,11 +5,9 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from ActivityCall import (
     ActivityCall,
     ActivityCallError,
-    ActivityHeartbeatMissedError,
     ActivityMaxAttemptsExceededError,
     InMemoryActivityExecutor,
     RetryPolicy,

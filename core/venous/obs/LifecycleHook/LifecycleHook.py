@@ -163,7 +163,7 @@ class LifecycleRegistry:
         timeout_s = self._timeouts.get(id(hook), self._default_timeout_s)
         try:
             await asyncio.wait_for(hook.cb(), timeout=timeout_s)
-        except asyncio.TimeoutError as e:
+        except TimeoutError as e:
             raise LifecycleInvariantError(
                 f"LIFE-INV-04: hook timed out after {timeout_s}s in phase "
                 f"{hook.phase.value!r}."

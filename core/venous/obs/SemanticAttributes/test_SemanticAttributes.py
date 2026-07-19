@@ -3,11 +3,7 @@
 from __future__ import annotations
 
 import pytest
-
 from SemanticAttributes import (
-    DB_SYSTEM_VALUES,
-    DEPRECATED_KEYS,
-    MESSAGING_SYSTEM_VALUES,
     SemanticAttributes,
     SemanticAttributesInvariantError,
     canonicalize_key,

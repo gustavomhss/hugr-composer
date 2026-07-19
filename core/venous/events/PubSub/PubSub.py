@@ -47,7 +47,6 @@ import asyncio
 from collections.abc import AsyncIterator
 from typing import Any, Final, Protocol, runtime_checkable
 
-
 # ---------------------------------------------------------------------------
 # Sentinel — signals a subscriber to stop iterating. Private to this module.
 # ---------------------------------------------------------------------------

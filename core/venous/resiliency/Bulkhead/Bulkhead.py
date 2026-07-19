@@ -374,7 +374,7 @@ class InMemoryBulkhead:
         effective_timeout = timeout_s if timeout_s > 0.0 else 1e-9
         try:
             await asyncio.wait_for(self._sem.acquire(), timeout=effective_timeout)
-        except (TimeoutError, asyncio.TimeoutError):
+        except TimeoutError:
             # BH_INV_02: wait exceeded → reject, record, DO NOT enter the body.
             self._record_rejection("wait_timeout")
             if (

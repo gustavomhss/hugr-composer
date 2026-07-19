@@ -372,9 +372,7 @@ class StrictConfigBinder:
             target_type = f.type if isinstance(f.type, type) else _resolve_type_hint(schema, f.name)
             if f.name in resolved:
                 kwargs[f.name] = _coerce(f.name, resolved[f.name], target_type)
-            elif f.default is not dataclasses.MISSING:
-                continue
-            elif f.default_factory is not dataclasses.MISSING:
+            elif f.default is not dataclasses.MISSING or f.default_factory is not dataclasses.MISSING:
                 continue
             else:
                 missing.append(f.name)
