@@ -12,7 +12,7 @@
 - **175 staged primitives** in `_staging/` (plus 41 quarantined).
 - **18 FastAPI adapters** (production-wired).
 - **28 `modules/` packages** (pre-built feature bundles).
-- **0 populated examples** (0 empty scaffolds), 124 specs, 20 benchmark specs.
+- **20 populated examples** (0 empty scaffolds), 124 specs, 20 benchmark specs.
 
 ---
 

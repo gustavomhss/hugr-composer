@@ -65,23 +65,25 @@ def _cfg() -> InventoryConfig:
     """Snapshot this skill's paths into an InventoryConfig.
 
     Read fresh each call so a test that monkeypatches ``SKILL_ROOT`` sees the
-    change reflected in ``collect`` / ``main``. Every anchor mirrors the
-    pre-lift single-file engine EXACTLY (incl. the ``root.parent.parent /
-    "examples"`` location) so the rendered INVENTORY.md stays byte-identical.
+    change reflected in ``collect`` / ``main``.
+
+    Layout note: this is a *standalone* checkout — the skill IS the repo root,
+    so ``examples/`` sits directly under ``root``. The pre-lift engine assumed a
+    monorepo layout (``repo/skills/SKILL-.../`` with ``repo/examples``) and
+    anchored examples at ``root.parent.parent``; in a standalone checkout that
+    overshoots two levels to a non-existent path and silently counted 0 examples.
     """
     root = SKILL_ROOT
     return InventoryConfig(
         skill_root=root,
-        # NOTE: the pre-lift engine derived examples + its main() print base from
-        # ``root.parent.parent``; reproduce it verbatim for byte-identity.
-        repo_root=root.parent.parent,
+        repo_root=root,
         catalog_path=root / "engine" / "index" / "catalog.json",
         registry_path=root / "engine" / "primitives_by_concern.yaml",
         venous_root=root / "core" / "venous",
         staging_root=root / "core" / "venous" / "_staging",
         adapters_root=root / "core" / "venous" / "_adapters" / "fastapi",
         adapt_subdirs=("extend", "verify", "operate", "evolve", "proactive", "contracts"),
-        examples_dir=root.parent.parent / "examples",
+        examples_dir=root / "examples",
         specs_dir=root / "specs",
         benchmark_specs_dir=root / "benchmarks" / "specs",
         doc_title="SKILL-001 Inventory",
@@ -131,7 +133,7 @@ def main() -> None:
     inv = collect()
     out = SKILL_ROOT / "INVENTORY.md"
     out.write_text(render_markdown(inv), encoding="utf-8")
-    print(f"wrote {out.relative_to(SKILL_ROOT.parent.parent)}")
+    print(f"wrote {out.relative_to(SKILL_ROOT)}")
     print(f"  MCP tools: {inv['mcp_tools_total']}")
     print(f"  registered primitives: {inv['venous_registered_total']}")
     print(
