@@ -210,6 +210,7 @@ def create_download_url(
 @router.delete(
     "/{key:path}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
     summary="Delete an object from S3",
 )
 def delete_object(
