@@ -1,0 +1,10 @@
+name: zz-smoke
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: [self-hosted, macos, local]
+    steps:
+      - run: echo "runner OK"
