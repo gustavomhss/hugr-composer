@@ -17,7 +17,7 @@ pydantic>=2.10.0
 # FastAPI stubs used by adapt tools that inspect generated FastAPI code
 # Starlette 1.x breaks FastAPI <0.116 (on_startup removed). Pin to compatible version.
 fastapi>=0.115.0,<0.116.0
-starlette>=0.40.0,<0.43.0
+starlette>=0.40.0
 
 # HTTP client (used by adapt/extend/realtime/add_webhook_sender,
 # adapt/operate/error_rate_analyzer, and generated project code)
