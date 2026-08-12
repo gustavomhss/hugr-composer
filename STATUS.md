@@ -72,6 +72,30 @@ the single source of truth for each.
    generated code. Every production primitive carries a
    "Compose with:" section citing ≥3 sibling pairings.
 
+## Distribution & packaging (SOTA plugin split)
+
+Three artifacts, two channels — see `docs/PACKAGING.md` for the design and
+`PLUGIN_PACKAGING_PLAN.md` for the build plan:
+
+| Artifact | Channel | What it is | Where |
+|---|---|---|---|
+| `hugr-fastapi` | PyPI wheel | framework-free runtime primitives the generated app imports | `packaging/hugr-fastapi/` |
+| `hugr-arsenal` | Claude/opencode plugin | the skill + MCP surface (`mcp_server.py:main`) | `.claude-plugin/`, `opencode.json`, `.mcp.json` |
+| `claude-gateway` | Docker image + Helm | multi-provider LLM gateway | `gateway/Dockerfile`, `helm/claude-gateway/` |
+
+Wheel source is emitted, never hand-written: `PYTHONPATH=. .venv/bin/python
+-m engine.promotion.emit_wheel_source` harvests `core/venous/<ns>/<Name>/`
+impl + protocol into `packaging/hugr-fastapi/hugr_fastapi/<ns>/` (124
+primitives / 15 namespaces, `py.typed`, import-shim rewrites). The emitted
+tree is gitignored; CI regenerates it before every wheel build
+(`publish-wheel.yml`, `release.yml`). Promotion pipeline re-emits after each
+promote (`engine.promotion.execute`).
+
+Local entrypoint: `uv run python mcp_server.py` (stdio) or the `hugr-arsenal`
+console script. Progressive disclosure is intact over the wire: 8 tier-1 meta
++ 9 tree dispatchers always loaded, everything else via `meta_search` /
+`meta_describe`.
+
 ## Tool categories (adapt/extend)
 
 | Folder | Count | Example tools |
