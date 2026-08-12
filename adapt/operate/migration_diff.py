@@ -128,7 +128,7 @@ def migration_diff(
     if inp.dry_run:
         return ToolResult(
             status="success",
-            notes=[f"[dry_run] Would analyse {len(new_files)} migration(s)."],
+            notes=["[dry_run] Would analyse migrations (dry-run skips file operations)"],
             execution_time_ms=_ms(start),
         )
 

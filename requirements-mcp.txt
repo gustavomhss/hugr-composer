@@ -7,14 +7,17 @@
 #
 # Generated projects bring their own requirements.txt at generation time.
 
-# MCP protocol server
-fastmcp>=2.3.0
+# MCP protocol server (MCP 2026-07-28 protocol)
+fastmcp>=4.0.0b2
+mcp>=2.0.0
 
 # Data validation (used by all adapt tool ToolInput / ToolResult contracts)
 pydantic>=2.10.0
 
 # FastAPI stubs used by adapt tools that inspect generated FastAPI code
-fastapi>=0.115.0
+# Starlette 1.x breaks FastAPI <0.116 (on_startup removed). Pin to compatible version.
+fastapi>=0.115.0,<0.116.0
+starlette>=0.40.0,<0.42.0
 
 # HTTP client (used by adapt/extend/realtime/add_webhook_sender,
 # adapt/operate/error_rate_analyzer, and generated project code)

@@ -19,6 +19,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -32,6 +34,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure", "ml", "gpu"],
     "entry": "add_ml_gpu_inference",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -40,7 +45,7 @@ def add_ml_gpu_inference(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -57,7 +62,7 @@ def add_ml_gpu_inference(inp: ToolInput) -> ToolResult:
                 "These prerequisites cannot be auto-created.",
                 "Generate a base project first or ensure app/core/config.py exists.",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -67,7 +72,7 @@ def add_ml_gpu_inference(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["DeviceManager already present — GPU inference is already installed, skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -83,7 +88,7 @@ def add_ml_gpu_inference(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded)
@@ -145,7 +150,7 @@ def add_ml_gpu_inference(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     return ToolResult(
@@ -171,7 +176,7 @@ def add_ml_gpu_inference(inp: ToolInput) -> ToolResult:
             "Wrap your model with GPUPredictor(model) to get auto device + autocast.",
             "Restart the FastAPI app — GET /ml/gpu/status shows live device info.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 

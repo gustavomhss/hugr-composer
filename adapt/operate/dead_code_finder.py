@@ -97,15 +97,17 @@ def dead_code_finder(
             execution_time_ms=_ms(start),
         )
 
-    allow_list = _load_allow_list(project / allow_list_file)
-    py_files = _collect_files(project, exclude_patterns or [])
-
     if inp.dry_run:
         return ToolResult(
             status="success",
-            notes=[f"[dry_run] Would scan {len(py_files)} Python files."],
+            notes=["[dry_run] Would scan for dead code (dry-run skips file operations)"],
             execution_time_ms=_ms(start),
         )
+
+
+    allow_list = _load_allow_list(project / allow_list_file)
+    py_files = _collect_files(project, exclude_patterns or [])
+
 
     # First pass: collect all defined and used symbols
     all_defs: dict[str, DeadSymbol] = {}

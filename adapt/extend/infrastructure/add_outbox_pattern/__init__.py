@@ -29,6 +29,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -252,6 +254,3 @@ def _patch_models_init(
     models_init.write_text(content)
 
 
-def _elapsed_ms(start: float) -> int:
-    """Return elapsed milliseconds since *start* (from ``time.monotonic()``)."""
-    return int((time.monotonic() - start) * 1000)

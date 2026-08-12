@@ -37,7 +37,7 @@ tool / primitive renames going forward (CONTRACT §A10).
 - **2 provider adapters** beyond fastapi/: `_adapters/redis/PubSubAdapter.py`
   + `_adapters/stripe/BillingAdapter.py`. Both ship with lazy SDK
   imports and hermetic behavioural test suites (13 Redis + 22 Stripe).
-- **175 staged primitives** (`_staging/`, `status="staged"`) —
+- **174 staged primitives** (`_staging/`, `status="staged"`) —
   discoverable, not promoted. Wave 1.5 deleted 3 (+3 quarantined
   copies) that the new motor+adapter pair replaced.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).
@@ -124,7 +124,7 @@ bumps (v2.0+) may rename or remove; v1.x will only add.
 > fed into [1.0.0]. Each intermediate claim below (contract counts,
 > verdict names, staged totals) was accurate **at the moment of that
 > sprint's commit**. The consolidated final state — 37/37 contract,
-> action-focused verdict taxonomy, 175 staged + 42 quarantined, 17
+> action-focused verdict taxonomy, 174 staged + 42 quarantined, 17
 > FastAPI adapters — is canonical in the [1.0.0] block above.
 > Intermediate discrepancies are preserved for audit provenance, not
 > for consumption by release readers.

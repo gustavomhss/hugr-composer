@@ -34,6 +34,8 @@ from pathlib import Path
 
 from adapt._base import load_template, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
@@ -400,5 +402,3 @@ def _patch_routes_init(routes_init: Path) -> bool:
     return True
 
 
-def _elapsed_ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

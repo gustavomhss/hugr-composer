@@ -1,0 +1,16 @@
+"""Protocol for Billing — generated from Billing.py."""
+
+from __future__ import annotations
+
+from typing import Any, Optional, Protocol, runtime_checkable
+from collections.abc import Mapping
+
+@runtime_checkable
+class Billing(Protocol):
+    """The minimum billing gateway every provider adapter MUST honour."""
+
+    def create_customer(self, email: str, metadata: Mapping[str, str] | None) -> Customer: ...
+    def create_subscription(self, customer_id: str, price_id: str, trial_period_days: int | None) -> Subscription: ...
+    def cancel_subscription(self, subscription_id: str) -> Subscription: ...
+    def change_plan(self, subscription_id: str, new_price_id: str) -> Subscription: ...
+    def construct_webhook_event(self, payload: bytes, sig_header: str) -> Event: ...

@@ -31,6 +31,7 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -43,6 +44,9 @@ MCP_TOOL = {
     "description": "Add a generic batch request endpoint that fans out to multiple sub-requests.",
     "tags": ["extend", "api_design"],
     "entry": "add_batch_endpoint",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _PREREQ_NOTES = [
@@ -69,7 +73,7 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -83,7 +87,7 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=_PREREQ_NOTES,
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -95,7 +99,7 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["BatchCore already present — batch endpoints already enabled, skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     model_pairs = _discover_models(app_dir)
@@ -103,7 +107,7 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     pascal_names = [p for _, p in model_pairs]
@@ -117,7 +121,7 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -167,6 +171,19 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
     # Step 5: emit test
     _emit_project_test(project, files_created)
 
+    import ast
+    for fpath in files_created:
+        if fpath.endswith(".py"):
+            try:
+                ast.parse(Path(fpath).read_text())
+            except SyntaxError as e:
+                return ToolResult(
+                    status="error",
+                    error=f"Syntax error in {fpath}: {e}",
+                    files_created=[],
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -184,7 +201,7 @@ def add_batch_endpoint(inp: ToolInput) -> ToolResult:
             '{"items": [...], "mode": "best_effort", "strategy": "sequential"}',
             "Check response HTTP 207 for per-item status_code / error fields.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -294,6 +311,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    """Return elapsed milliseconds since *start*."""
-    return int((time.monotonic() - start) * 1000)

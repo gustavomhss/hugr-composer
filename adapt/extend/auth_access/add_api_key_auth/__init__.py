@@ -13,6 +13,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -29,6 +31,9 @@ MCP_TOOL = {
     "description": "Add API key authentication alongside the existing JWT auth.",
     "tags": ["extend", "auth_access"],
     "entry": "add_api_key_auth",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _NOTES_SUCCESS = [
@@ -75,7 +80,7 @@ def add_api_key_auth(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -91,7 +96,7 @@ def add_api_key_auth(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=_PREREQ_NOTES,
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = []
@@ -106,7 +111,7 @@ def add_api_key_auth(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["APIKey model already present — api-key auth is already enabled, skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -117,7 +122,7 @@ def add_api_key_auth(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -184,7 +189,7 @@ def add_api_key_auth(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     return ToolResult(
@@ -194,7 +199,7 @@ def add_api_key_auth(inp: ToolInput) -> ToolResult:
         notes=_NOTES_SUCCESS,
         warnings=_WARNINGS_SUCCESS,
         next_steps=_NEXT_STEPS,
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -265,5 +270,3 @@ def _patch_env_example(env_example: Path) -> bool:
     return True
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

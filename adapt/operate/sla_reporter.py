@@ -147,7 +147,7 @@ def sla_reporter(
     if inp.dry_run:
         return ToolResult(
             status="success",
-            notes=[f"[dry_run] Would generate {output_format} report for {len(targets)} SLO targets."],
+            notes=["[dry_run] Would generate SLO report (dry-run skips file operations)"],
             execution_time_ms=_ms(start),
         )
 

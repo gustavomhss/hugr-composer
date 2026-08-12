@@ -1,94 +1,237 @@
-# HuGR Arsenal
+# Claude Code Gateway
 
-**Executable knowledge an LLM agent invokes to scaffold *and* customize
-production FastAPI backends — plus a harness that proves the agent writes
-better code with the toolset than without it.**
+> **Multi-provider gateway for Claude Code native model picker** — Zero friction, zero overhead, zero unnecessary complexity.
 
-Most "AI code generation" is a prompt and a hope. This is the opposite: a
-tool surface an agent drives through a disciplined MCP interface, a library
-of framework-free building blocks the generated code imports from, and a
-**blind A/B evaluation harness** that runs the same agent with and without
-the toolset and scores the emitted apps under concurrency and chaos. The
-toolset earns its place by measurement, not assertion.
+Enables Claude Code's `/model` picker and subagent `model:` frontmatter to spawn models from **6 independent providers** exactly like native fable/opus/sonnet/haiku.
 
-Built by orchestrating a fleet of code agents under a quality contract — see
-[**docs/HOW_I_BUILT_THIS.md**](docs/HOW_I_BUILT_THIS.md).
+## Providers
 
-## The idea in one diagram
+| Provider | Type | Translation | Quota/Keys |
+|----------|------|-------------|------------|
+| **OpenRouter** | Pass-through | Zero (Anthropic Skin) | Independent |
+| **Groq** | OpenAI-compat | Thin (Anthropic↔OpenAI) | Independent |
+| **Google AI Studio (Gemini)** | Gemini API | Thin (Anthropic↔Gemini) | Free tier (15 RPM) |
+| **NVIDIA NIM** | OpenAI-compat | Thin (Anthropic↔OpenAI) | Self-host/Cloud |
+| **Mistral** | OpenAI-compat | Thin (Anthropic↔OpenAI) | Free tier (500 RPM) |
+| **opencode-bridge** | OpenAI-compat | Thin (Anthropic↔OpenAI) | Uses opencode's auth.json |
 
-```mermaid
-flowchart LR
-    A["LLM agent"] -->|drives| M
-    subgraph SURFACE["Tool surface · progressive disclosure"]
-        M["8 tier-1 meta tools"] --> T["9 domain dispatchers"] --> C["202 catalog tools"]
-    end
-    C -->|emit| APP["FastAPI app · imports<br/>framework-free primitives"]
-    subgraph PROOF["Verification loop · earns the toolset"]
-        AUD["AST audit · 47 rules"]
-        EVAL["Blind A/B eval · 5-layer judge"]
-    end
-    APP --> AUD & EVAL
-    AUD & EVAL -.gate/score.-> C
+## Architecture
+
+```
+Claude Code ──(Anthropic Messages)──► Gateway ──► OpenRouter (pass-through)
+                                          ├──► Groq (Anthropic↔OpenAI)
+                                          ├──► Gemini (Anthropic↔Gemini)
+                                          ├──► NIM (Anthropic↔OpenAI)
+                                          ├──► Mistral (Anthropic↔OpenAI)
+                                          └──► opencode-bridge (per-provider instances)
 ```
 
-Rails-style three layers: a **macro scaffold** (the skill) lays the project
-down, **slice generators** add capabilities, and **primitives** (a
-framework-free library the agent composes) keep the output hand-editable.
+## Quick Start
 
-## What makes it real, not a demo
-
-- **Blind A/B eval harness** (`engine/bench/blind/`, ~2.6k LOC) — drives a live
-  agent *naked* vs *kit*, boots each emitted app on an ephemeral port, judges
-  it across five sealed layers (functional · property · concurrency · chaos ·
-  static-AST). Resumable, seed-controlled, concurrent; harvests SFT/DPO pairs.
-- **Progressive-disclosure MCP surface** (`mcp_tools/`) — 202 tools would drown
-  an agent (tool-use degrades past ~30–50), so it sees 8 tier-1 metas and
-  narrows through 9 dispatchers. Auto-discovered from a `MCP_TOOL` convention.
-- **AST contract audit** (`engine/audit/`) — 47 machine-checked rules gate every
-  change (no module-level state, init inside lifespan, authed admin routes, …).
-- **Governed promotion** (`engine/promotion/`) — atomic backup → promote →
-  re-verify → auto-rollback, with a human-reviewable ledger.
-
-## Try it
-
+### 1. Install
 ```bash
-# a self-contained example that proves the invariants of a generated app
-cd examples/01-todos-crud
-python -m pytest -q          # owner-scoping + keyset pagination, green
+cd claude-gateway
+pip install -e ".[dev]"
 ```
 
-Each of the 20 [`examples/`](examples/) is an agent-built illustration tied to
-a benchmark spec, with the `AGENT_SESSION.md` transcript that built it; the
-full production scaffold comes from `fastapi_generate_project` + the `add_*`
-tools. The blind A/B harness runs via
-`python -m engine.bench.blind.runner` (see [docs/DEMO.md](docs/DEMO.md)).
-
-## By the numbers (machine-verified)
-
-Regenerate with `python -m engine.inventory`; every doc reconciles against
-[`INVENTORY.md`](INVENTORY.md) or the audit fails.
-
-```
-Tools:      219 (202 catalog + 8 tier-1 + 9 tree)   Contract: 47/47 green
-Primitives: 124 (registered)   Staged: 175 (+41 quarantined)
-Examples:    20 agent-built apps · 18 FastAPI adapters · Benchmark 100.00
+### 2. Configure
+```bash
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
+Required keys (only for providers you use):
+- `OPENROUTER_API_KEY` — from https://openrouter.ai/keys
+- `GROQ_API_KEY` — from https://console.groq.com/keys
+- `GEMINI_API_KEY` — from https://aistudio.google.com/apikey
+- `MISTRAL_API_KEY` — from https://console.mistral.ai/api-keys
+- `NIM_BASE_URL` + `NIM_API_KEY` — for NVIDIA NIM
+
+### 3. Start opencode + bridges (for opencode providers)
+```bash
+# Terminal 1: opencode server (uses auth.json keys)
+opencode serve
+
+# Terminal 2: opencode-bridge instances (one per provider)
+docker run -d -p 5001:5000 \
+  -e OPENCODE_URL=http://host.docker.internal:4096 \
+  -e OPENCODE_PROVIDER_ID=groq \
+  crazyboy24/opencode-bridge
+
+docker run -d -p 5002:5000 \
+  -e OPENCODE_URL=http://host.docker.internal:4096 \
+  -e OPENCODE_PROVIDER_ID=gemini \
+  crazyboy24/opencode-bridge
+
+docker run -d -p 5003:5000 \
+  -e OPENCODE_URL=http://host.docker.internal:4096 \
+  -e OPENCODE_PROVIDER_ID=mistral \
+  crazyboy24/opencode-bridge
 ```
-core/venous/     # 124 primitives + 18 FastAPI adapters
-adapt/           # 135 tools (105 extend + 30 other)
-generators/      # 61 macro scaffold helpers
-mcp_tools/       # MCP server + 8 tier-1 metas + 9 tree dispatchers
-engine/          # audit · blind eval · promotion · extraction · inventory
+
+### 4. Start gateway
+```bash
+uvicorn gateway.main:app --host 127.0.0.1 --port 8787
 ```
 
-## More
+### 5. Configure Claude Code
+```bash
+# In your shell profile or .claude/settings.local.json
+export ANTHROPIC_BASE_URL="http://127.0.0.1:8787"
+export ANTHROPIC_AUTH_TOKEN="sk-or-<YOUR_OPENROUTER_KEY>"
+export ANTHROPIC_API_KEY=""
+export CLAUDE_CODE_ENABLE_GATEWAY_MODEL_DISCOVERY=1
+```
 
-- [docs/HOW_I_BUILT_THIS.md](docs/HOW_I_BUILT_THIS.md) — the agent-orchestration story
-- [PRODUCT.md](PRODUCT.md) · [CONTRACT.md](CONTRACT.md) · [core/venous/README.md](core/venous/README.md) · [ROADMAP.md](ROADMAP.md)
-- Install: `curl -fsSL https://raw.githubusercontent.com/humangr-labs/HuGR-Arsenal/main/install.sh | bash`
+### 6. Verify
+```bash
+claude
+> /status
+Auth token: ANTHROPIC_AUTH_TOKEN
+Anthropic base URL: http://127.0.0.1:8787
 
-**Status is not marketing** — every claim maps to a code location or a machine
-count; claim-vs-reality drift is a bug fixed the day it's found.
+> /model
+# Shows: fable, opus, sonnet, haiku + "From gateway" entries
+```
 
-Built and maintained by Gustavo Schneiter.
+## Usage
+
+### Model Picker
+```
+/model
+# Select any "From gateway" entry
+```
+
+### Subagents
+```markdown
+# .claude/agents/my-agent.md
+---
+name: my-agent
+description: Uses Groq for fast coding
+model: claude-groq-llama3
+tools: Read, Write, Edit, Bash
+---
+You are a coding assistant using Groq's Llama 3.
+```
+
+## Fallback Chains
+
+Configured in `gateway_config.yaml`:
+```yaml
+fallback_chains:
+  groq: ["groq", "openrouter-groq", "opencode-groq"]
+  gemini: ["gemini", "opencode-gemini", "openrouter-gemini"]
+  mistral: ["mistral", "opencode-mistral", "openrouter-mistral"]
+```
+
+When primary fails (timeout, 5xx, rate limit), gateway automatically tries next in chain.
+
+## Configuration
+
+### Environment Variables
+| Variable | Required | Default |
+|----------|----------|---------|
+| `GATEWAY_PORT` | No | 8787 |
+| `OPENROUTER_API_KEY` | Conditional | — |
+| `GROQ_API_KEY` | Conditional | — |
+| `GEMINI_API_KEY` | Conditional | — |
+| `MISTRAL_API_KEY` | Conditional | — |
+| `NIM_BASE_URL` | Conditional | — |
+| `NIM_API_KEY` | Conditional | — |
+| `OPENCODE_BRIDGE_ENDPOINTS` | No | See config |
+
+### Model Maps
+Edit `gateway_config.yaml` to add/change models:
+```yaml
+groq_model_map:
+  llama3: "llama-3.3-70b-versatile"
+  custom-model: "provider/custom-model"
+```
+
+## Development
+
+### Run Tests
+```bash
+pytest -v
+```
+
+### Lint & Type Check
+```bash
+ruff check .
+mypy gateway
+```
+
+### Code Structure
+```
+gateway/
+├── main.py                 # FastAPI app
+├── config.py               # Pydantic Settings + YAML
+├── router.py               # Routing + fallback
+├── discovery.py            # Model discovery + caching
+├── health.py               # Health checks
+├── backends/
+│   ├── base.py             # Backend protocol
+│   ├── openrouter.py       # Pass-through
+│   ├── groq.py             # OpenAI translation
+│   ├── gemini.py           # Gemini translation
+│   ├── nim.py              # OpenAI translation
+│   ├── mistral.py          # OpenAI translation
+│   └── opencode_bridge.py  # Multi-instance routing
+├── translators/
+│   ├── tool_schema.py      # Tool schema conversion
+│   ├── openai.py           # Anthropic↔OpenAI + SSE
+│   └── gemini.py           # Anthropic↔Gemini + SSE
+```
+
+## How It Works
+
+### Model Discovery
+1. Claude Code starts → queries `GET /v1/models?limit=1000`
+2. Gateway returns static config + live opencode-bridge models
+3. **Critical**: Only IDs containing `claude` or `anthropic` are shown
+4. Gateway uses `claude-*` prefix for all custom models
+
+### Request Flow
+```
+POST /v1/messages (model=claude-groq-llama3)
+         │
+         ▼
+   Router matches prefix
+         │
+         ▼
+   Groq Backend: Anthropic → OpenAI translation
+         │
+         ▼
+   POST https://api.groq.com/openai/v1/chat/completions
+         │
+         ▼
+   SSE stream → OpenAI→Anthropic translation → Client
+```
+
+### opencode-bridge Routing
+```
+model=claude-opencode-groq-llama3
+         │
+         ▼
+   Parse: provider=groq, model_key=llama3
+         │
+         ▼
+   Lookup endpoint: opencode_bridge_endpoints["groq"] → http://localhost:5001
+         │
+         ▼
+   POST http://localhost:5001/v1/chat/completions
+         │
+         ▼
+   opencode-bridge → opencode serve (uses auth.json keys)
+```
+
+## Limitations
+
+- **Non-Anthropic tool-use reliability**: Known caveat for Groq/Gemini/NIM/Mistral. Use OpenRouter (Anthropic models) for critical tool-use.
+- **Thinking blocks**: Dropped on non-Anthropic providers.
+- **Single gateway process**: No HA (local dev tool).
+- **opencode-bridge**: One provider per instance (run multiple containers).
+
+## License
+
+MIT

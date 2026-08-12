@@ -22,6 +22,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -34,6 +36,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_celery_beat",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -159,6 +164,19 @@ def add_celery_beat(inp: ToolInput) -> ToolResult:
 
     _emit_project_test(project, files_created)
 
+    import ast
+    for fpath in files_created:
+        if fpath.endswith(".py"):
+            try:
+                ast.parse(Path(fpath).read_text())
+            except SyntaxError as e:
+                return ToolResult(
+                    status="error",
+                    error=f"Syntax error in {fpath}: {e}",
+                    files_created=[],
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -234,6 +252,3 @@ def _patch_requirements(requirements_file: Path) -> None:
     requirements_file.write_text(src + trailing + "celery[redis]>=5.4.0\n")
 
 
-def _elapsed_ms(start: float) -> int:
-    """Return elapsed milliseconds since *start*."""
-    return int((time.monotonic() - start) * 1000)

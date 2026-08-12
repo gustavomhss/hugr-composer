@@ -36,6 +36,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -75,7 +77,7 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -94,7 +96,7 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = []
@@ -110,7 +112,7 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
                 "KeyValueBucket + SessionCache + DistributedLock primitives "
                 "already wired via app/cache/primitives.py — skipped."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -120,7 +122,7 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
                 "[dry_run] Would create app/cache/ package with primitives, core, decorator, invalidation, keys, stats."
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -203,7 +205,7 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="error",
             error=f"Primary glue {glue_file} has {glue_loc} logic lines (> 20).",
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     # Step 6: Emit project test
@@ -260,7 +262,7 @@ def add_cache_layer(inp: ToolInput) -> ToolResult:
             "ones (TTL-only fan-out is the default; explicit invalidation "
             "requires the subscriber).",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -303,8 +305,6 @@ def _patch_main(main_file: Path) -> None:
     main_file.write_text(src)
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)
 
 
 def _patch_env_example(env_example: Path) -> bool:

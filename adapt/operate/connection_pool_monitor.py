@@ -75,6 +75,15 @@ def connection_pool_monitor(
             execution_time_ms=_ms(start),
         )
 
+
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would create pool monitor files."],
+            execution_time_ms=_ms(start),
+        )
+
+
     # --- Prerequisite check ---------------------------------------------------
     from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
@@ -94,13 +103,6 @@ def connection_pool_monitor(
         return ToolResult(
             status="no_op",
             notes=["PoolMonitor already present — skipped."],
-            execution_time_ms=_ms(start),
-        )
-
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=["[dry_run] Would create pool monitor files."],
             execution_time_ms=_ms(start),
         )
 

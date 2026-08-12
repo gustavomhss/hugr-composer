@@ -1,0 +1,23 @@
+"""Protocol for BoundedContext — generated from BoundedContext.py."""
+
+from __future__ import annotations
+
+from typing import Any, Optional, Protocol, runtime_checkable
+from collections.abc import Iterable, Mapping
+
+@runtime_checkable
+class BoundedContext(Protocol):
+    """BoundedContext primitive — Evans/Vernon DDD model-and-language boundary."""
+
+    def name(self) -> str: ...
+    def language(self) -> Mapping[str, str]: ...
+    def owns(self, aggregate_type: type) -> bool: ...
+    def translator_to(self, other: BoundedContext) -> object: ...
+
+@runtime_checkable
+class AntiCorruptionLayer(Protocol):
+    """Translator surface between two BoundedContexts."""
+
+    def to_local(self, foreign: object) -> object: ...
+    def to_foreign(self, local: object) -> object: ...
+    def guard(self, foreign: object) -> None: ...

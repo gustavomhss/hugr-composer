@@ -74,6 +74,15 @@ def error_rate_analyzer(
             execution_time_ms=_ms(start),
         )
 
+
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would create error rate analyzer files."],
+            execution_time_ms=_ms(start),
+        )
+
+
     # --- Prerequisite check ---------------------------------------------------
     from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
@@ -93,13 +102,6 @@ def error_rate_analyzer(
         return ToolResult(
             status="no_op",
             notes=["ErrorRateMiddleware already present — skipped."],
-            execution_time_ms=_ms(start),
-        )
-
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=["[dry_run] Would create error rate analyzer files."],
             execution_time_ms=_ms(start),
         )
 

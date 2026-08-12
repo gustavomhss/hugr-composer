@@ -68,6 +68,20 @@ def generate_sdk(
     if err:
         return ToolResult(status="error", error=err)
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=[
+                f"[dry_run] languages={languages}",
+                f"[dry_run] Would generate SDKs in {output_dir}/",
+                "[dry_run] No files written.",
+                "[dry_run] Schema hash will be computed on real run.",
+            ],
+            next_steps=["Re-run without dry_run=True to generate SDKs."],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
         Prereq.CONFIG_SETTINGS,
@@ -100,18 +114,6 @@ def generate_sdk(
         )
 
     # dry_run check BEFORE any I/O (including schema extraction which imports app code)
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=[
-                f"[dry_run] languages={languages}",
-                f"[dry_run] Would generate SDKs in {output_dir}/",
-                "[dry_run] No files written.",
-                "[dry_run] Schema hash will be computed on real run.",
-            ],
-            next_steps=["Re-run without dry_run=True to generate SDKs."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     schema = _extract_schema(project)
     if schema is None:

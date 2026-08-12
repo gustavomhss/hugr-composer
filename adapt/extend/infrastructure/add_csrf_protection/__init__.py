@@ -21,6 +21,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.config_patcher import patch_settings_fields
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -31,6 +33,9 @@ MCP_TOOL = {
     "description": "Add CSRF token protection with double-submit cookie pattern to FastAPI.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_csrf_protection",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -39,7 +44,7 @@ def add_csrf_protection(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -56,7 +61,7 @@ def add_csrf_protection(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -67,7 +72,7 @@ def add_csrf_protection(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["CSRFProtection already present — CSRF protection already enabled, skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -78,7 +83,7 @@ def add_csrf_protection(inp: ToolInput) -> ToolResult:
                 "patch config.py and main.py."
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -135,7 +140,7 @@ def add_csrf_protection(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     _emit_project_test(project, files_created)
@@ -160,7 +165,7 @@ def add_csrf_protection(inp: ToolInput) -> ToolResult:
             "Frontend: fetch /csrf/token, store in cookie, send X-CSRF-Token header.",
             "Exempt webhook paths: CSRF_EXEMPT_PATHS=['/webhooks/stripe', '/webhooks/github'].",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -188,5 +193,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

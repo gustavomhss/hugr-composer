@@ -20,6 +20,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -32,6 +34,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "auth_access", "security"],
     "entry": "add_request_signing",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _NOTES_SUCCESS = [
@@ -55,7 +60,7 @@ def add_request_signing(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -70,7 +75,7 @@ def add_request_signing(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -81,7 +86,7 @@ def add_request_signing(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["Request signing already installed — skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -89,7 +94,7 @@ def add_request_signing(inp: ToolInput) -> ToolResult:
             status="success",
             notes=["[dry_run] Would install HMAC request signing."],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded)
@@ -129,7 +134,7 @@ def add_request_signing(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     return ToolResult(
@@ -138,7 +143,7 @@ def add_request_signing(inp: ToolInput) -> ToolResult:
         files_modified=files_modified,
         notes=_NOTES_SUCCESS,
         next_steps=_NEXT_STEPS,
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -179,5 +184,3 @@ def _patch_routes_init(routes_init: Path) -> None:
     routes_init.write_text(content)
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

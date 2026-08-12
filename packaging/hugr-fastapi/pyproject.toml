@@ -1,0 +1,52 @@
+# hugr-fastapi — the primitive library, as a standalone PyPI package.
+#
+# PROPOSAL SCAFFOLD (not wired into CI yet). See docs/PACKAGING.md for the
+# three-artifact split and the open build question this file raises.
+#
+# This is the RUNTIME dependency of a generated app — the code the agent
+# emits does `from hugr_fastapi.resiliency import CircuitBreaker`. It ships to
+# the target project, NOT to the agent's toolbelt. Deliberately framework-free
+# (§A1: no fastapi/sqlalchemy in the core impls) so it has ZERO required deps;
+# provider glue is opt-in via extras.
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hugr-fastapi"
+version = "0.1.0"
+description = "Framework-free production primitives (circuit breaker, outbox, idempotency, saga, retry budget, tamper-evident audit) that generated FastAPI apps import from."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Proprietary" }
+authors = [{ name = "Gustavo Schneiter" }]
+keywords = ["fastapi", "resiliency", "primitives", "production", "hugr"]
+
+# The core impls are pure-Python by contract — no runtime deps.
+dependencies = []
+
+[project.optional-dependencies]
+# Provider adapters (core/venous/_adapters/) pull their SDK only when used.
+fastapi = ["fastapi>=0.115.0", "sqlalchemy[asyncio]>=2.0.36"]
+redis   = ["redis>=5.0.0"]
+stripe  = ["stripe>=11.0.0"]
+
+[project.urls]
+Homepage = "https://github.com/humangr-labs/HuGR-Arsenal"
+
+# ---------------------------------------------------------------------------
+# OPEN BUILD QUESTION (honest — do not paper over):
+# The registered primitives live at core/venous/<ns>/<Name>/<Name>.py as
+# evidence bundles (impl + protocol + contract + spec + generated corpus),
+# with PascalCase dirs. That tree is NOT import-clean as-is. Publishing this
+# package requires a build step that harvests just the <Name>.py impls (+ the
+# .protocol.py interfaces) into an importable `hugr_fastapi/<ns>/` layout and
+# drops the test/chaos/metamorphic corpus. engine/extraction/ already does the
+# inverse (shell → staged); the promotion pipeline is the natural place to
+# also emit this flattened wheel source. Tracked, not solved.
+# ---------------------------------------------------------------------------
+
+[tool.hatch.build.targets.wheel]
+# Placeholder — points at the flattened source the build step will produce.
+packages = ["hugr_fastapi"]

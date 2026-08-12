@@ -1,3 +1,48 @@
+---
+spec_id: "TOOL-094"
+tool_name: "add_e2e_test_suite"
+generator: "generators/testing/test_suite.py"
+version: "1.0.0"
+status: "ratified"
+invariants:
+  - "INV-E2E-01"
+  - "INV-E2E-02"
+  - "INV-E2E-03"
+  - "INV-E2E-04"
+  - "INV-E2E-05"
+  - "INV-E2E-06"
+  - "INV-E2E-07"
+  - "INV-E2E-08"
+completeness_criteria:
+  - "CC-01"
+  - "CC-02"
+  - "CC-03"
+  - "CC-04"
+  - "CC-05"
+  - "CC-06"
+  - "CC-07"
+  - "CC-08"
+  - "CC-09"
+  - "CC-10"
+  - "CC-11"
+  - "CC-12"
+  - "CC-13"
+  - "CC-14"
+  - "CC-15"
+  - "CC-16"
+  - "CC-17"
+  - "CC-18"
+  - "CC-19"
+  - "CC-20"
+  - "CC-21"
+  - "CC-22"
+tags:
+  - "performance"
+  - "data"
+  - "realtime"
+  - "api"
+  - "testing"
+---
 # TOOL-094: `fastapi_add_e2e_test_suite`
 
 **Skill:** SKILL-001-fastapi-production

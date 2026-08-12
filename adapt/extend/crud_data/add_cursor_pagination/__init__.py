@@ -23,6 +23,8 @@ from adapt._base import (
     render_to,
 )
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -35,6 +37,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "crud_data"],
     "entry": "add_cursor_pagination",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _NOTES_SUCCESS_TAIL = [
@@ -57,7 +62,7 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -71,7 +76,7 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=_PREREQ_NOTES,
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -81,7 +86,7 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -95,7 +100,7 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
             notes=[
                 "get_multi_cursor + cursor core + emitted test all present — cursor pagination already enabled."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -107,7 +112,7 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     _write_core(probe, files_created)
@@ -117,6 +122,19 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
         _write_migrations(probe, models, files_created)
     _emit_project_test(project, models, files_created)
 
+    import ast
+    for fpath in files_created:
+        if fpath.endswith(".py"):
+            try:
+                ast.parse(Path(fpath).read_text())
+            except SyntaxError as e:
+                return ToolResult(
+                    status="error",
+                    error=f"Syntax error in {fpath}: {e}",
+                    files_created=[],
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     names = [m.class_name for m in models]
     return ToolResult(
         status="success",
@@ -124,7 +142,7 @@ def add_cursor_pagination(inp: ToolInput) -> ToolResult:
         files_modified=files_modified,
         notes=[f"Cursor pagination enabled for: {', '.join(names)}", *_NOTES_SUCCESS_TAIL],
         next_steps=_NEXT_STEPS,
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -216,8 +234,6 @@ def _emit_project_test(project: Path, models: list[DiscoveredModel], created: li
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)
 
 
 def _all_models_fully_patched(

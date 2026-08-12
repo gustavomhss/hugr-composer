@@ -69,19 +69,19 @@ def dependency_graph(
             execution_time_ms=_ms(start),
         )
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would generate dependency graph (dry-run skips file operations)"],
+            execution_time_ms=_ms(start),
+        )
+
+
     layer_rules = _load_layer_rules(project / layer_rules_file)
     graph = _build_graph(project)
     nodes = list(graph.keys())
     edges = [(src, dst) for src, dsts in graph.items() for dst in dsts]
 
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=[
-                f"[dry_run] Found {len(nodes)} modules, {len(edges)} edges.",
-            ],
-            execution_time_ms=_ms(start),
-        )
 
     # Cycle detection via Tarjan SCC
     cycles: list[list[str]] = []

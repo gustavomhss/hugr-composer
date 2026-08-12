@@ -20,6 +20,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -32,6 +34,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "testing_tools", "security", "supply-chain"],
     "entry": "add_sbom_guardian",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -50,7 +55,7 @@ def add_sbom_guardian(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -67,7 +72,7 @@ def add_sbom_guardian(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -78,7 +83,7 @@ def add_sbom_guardian(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["generate_sbom already present — SBOM guardian already enabled, skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -90,7 +95,7 @@ def add_sbom_guardian(inp: ToolInput) -> ToolResult:
                 "[dry_run] Would patch app/core/config.py with SBOM settings",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -122,7 +127,7 @@ def add_sbom_guardian(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     (project / "tests").mkdir(parents=True, exist_ok=True)
@@ -150,7 +155,7 @@ def add_sbom_guardian(inp: ToolInput) -> ToolResult:
             "Optionally add pip-audit for deeper OSV scanning: pip install pip-audit",
             "Store sbom.json as CI artifact for compliance audits (PCI DSS 4.0 Req 6.3).",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -166,5 +171,3 @@ def _patch_config(config_file: Path) -> None:
     )
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

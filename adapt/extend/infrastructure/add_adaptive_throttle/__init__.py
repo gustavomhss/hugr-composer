@@ -27,6 +27,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -41,6 +43,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure", "security"],
     "entry": "add_adaptive_throttle",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -50,7 +55,7 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     project = Path(inp.project_dir)
 
@@ -68,7 +73,7 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
                 "These prerequisites cannot be auto-created.",
                 "Generate a base project first with fastapi_generate_project(...).",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded)
@@ -79,7 +84,7 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["AdaptiveThrottleConfig already present — adaptive throttle already installed."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -91,7 +96,7 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
                 "app/api/routes/throttle_status.py."
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -129,6 +134,19 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
 
     _emit_project_test(project, files_created)
 
+    import ast
+    for fpath in files_created:
+        if fpath.endswith(".py"):
+            try:
+                ast.parse(Path(fpath).read_text())
+            except SyntaxError as e:
+                return ToolResult(
+                    status="error",
+                    error=f"Syntax error in {fpath}: {e}",
+                    files_created=[],
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -153,7 +171,7 @@ def add_adaptive_throttle(inp: ToolInput) -> ToolResult:
             "bare/untrusted peer (shared egress IP) fails OPEN — penalty escalation/bans "
             "are SKIPPED so a shared proxy IP cannot mass-ban every downstream user.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -236,5 +254,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

@@ -11,11 +11,13 @@ The tool is idempotent: a second run detects ``ExcelExporter`` in
 
 from __future__ import annotations
 
+import ast
 import time
 from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -28,6 +30,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_excel_export",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -46,7 +51,7 @@ def add_excel_export(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -66,7 +71,7 @@ def add_excel_export(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = []
@@ -83,7 +88,7 @@ def add_excel_export(inp: ToolInput) -> ToolResult:
             notes=[
                 "ExcelExporter already present in app/exports/__init__.py — Excel export already installed, skipped."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -95,7 +100,7 @@ def add_excel_export(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -137,6 +142,18 @@ def add_excel_export(inp: ToolInput) -> ToolResult:
 
     _emit_project_test(project, files_created)
 
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -152,7 +169,7 @@ def add_excel_export(inp: ToolInput) -> ToolResult:
             "Set EXCEL_MAX_ROWS and EXCEL_CHUNK_SIZE in .env if defaults need tuning.",
             "Restart the FastAPI app so the /exports/* routes are loaded.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -231,5 +248,3 @@ def _patch_requirements(requirements_file: Path) -> None:
     requirements_file.write_text(src + trailing + "openpyxl>=3.1.0\n")
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

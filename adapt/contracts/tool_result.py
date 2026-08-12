@@ -7,10 +7,16 @@ callers pattern-match on ``status`` without importing individual tools.
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
+
+
+def _elapsed_ms(start: float) -> int:
+    """Return elapsed milliseconds since *start*."""
+    return int((time.monotonic() - start) * 1000)
 
 
 def validate_project_dir(project_dir: str) -> str | None:

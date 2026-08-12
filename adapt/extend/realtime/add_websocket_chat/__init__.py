@@ -19,6 +19,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
@@ -31,6 +33,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "realtime"],
     "entry": "add_websocket_chat",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -60,7 +65,7 @@ def add_websocket_chat(
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -79,7 +84,7 @@ def add_websocket_chat(
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first: fastapi_generate_project(...)"],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -89,7 +94,7 @@ def add_websocket_chat(
         return ToolResult(
             status="no_op",
             notes=["WebSocketManager already present."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -100,7 +105,7 @@ def add_websocket_chat(
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -217,7 +222,7 @@ def add_websocket_chat(
             "Set REDIS_URL in .env.",
             "Restart the app; connect: ws://<host>/ws/chat/<room_id>?token=<JWT>",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -316,5 +321,3 @@ def _patch_main(main_file: Path) -> bool:
     return True
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

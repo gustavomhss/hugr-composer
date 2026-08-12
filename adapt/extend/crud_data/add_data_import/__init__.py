@@ -18,6 +18,8 @@ from pathlib import Path
 
 from adapt._base import render, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
@@ -27,6 +29,9 @@ MCP_TOOL = {
     "description": "Add CSV/Excel upload with async processing, validation and error reporting.",
     "tags": ["extend", "crud_data"],
     "entry": "add_data_import",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -36,7 +41,7 @@ def add_data_import(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -54,7 +59,7 @@ def add_data_import(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=_PREREQ_NOTES,
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -65,7 +70,7 @@ def add_data_import(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["ImportJob model already present — data import is already enabled."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -76,7 +81,7 @@ def add_data_import(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -132,7 +137,7 @@ def add_data_import(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     _emit_project_test(project, files_created)
@@ -154,7 +159,7 @@ def add_data_import(inp: ToolInput) -> ToolResult:
             "Call process_import_job() from your background task worker after upload.",
             "Restart the application.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 

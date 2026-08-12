@@ -28,6 +28,7 @@ from pathlib import Path
 
 from adapt._base.render import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -40,6 +41,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_api_replay_debugger",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _NOTES_SUCCESS = [
@@ -80,7 +84,7 @@ def add_api_replay_debugger(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -95,7 +99,7 @@ def add_api_replay_debugger(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=_PREREQ_NOTES,
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -106,7 +110,7 @@ def add_api_replay_debugger(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["RequestRecorder already present — replay debugger already enabled, skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -119,7 +123,7 @@ def add_api_replay_debugger(inp: ToolInput) -> ToolResult:
                 "[dry_run] Would patch app/core/config.py with DEBUG_RECORDER_* fields.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded)
@@ -167,13 +171,26 @@ def add_api_replay_debugger(inp: ToolInput) -> ToolResult:
 
     _emit_project_test(project, files_created)
 
+    import ast
+    for fpath in files_created:
+        if fpath.endswith(".py"):
+            try:
+                ast.parse(Path(fpath).read_text())
+            except SyntaxError as e:
+                return ToolResult(
+                    status="error",
+                    error=f"Syntax error in {fpath}: {e}",
+                    files_created=[],
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
         files_modified=files_modified,
         notes=_NOTES_SUCCESS,
         next_steps=_NEXT_STEPS,
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -245,5 +262,3 @@ def _patch_main(main_file: Path) -> None:
     main_file.write_text(src)
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

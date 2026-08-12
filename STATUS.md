@@ -37,7 +37,7 @@ surfaces are MCP-registered and JIT-discoverable via
 | agent-visible surface (catalog + tier-1 + tree) | 219 | 202 catalog + 8 tier-1 + 9 tree dispatchers |
 | Production primitives (registered) | 124 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
 | Production primitive directories | 124 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_staging*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
-| Staged primitives (PascalCase, promotable) | 175 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
+| Staged primitives (PascalCase, promotable) | 174 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
 | Quarantined primitives (rejected by extraction gate) | 41 | `find core/venous/_staging/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Provider adapters (`_adapters/{redis,stripe}/`) | 2 | `find core/venous/_adapters -maxdepth 2 -name '*Adapter.py' ! -path '*fastapi*' ! -name 'test_*' \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |

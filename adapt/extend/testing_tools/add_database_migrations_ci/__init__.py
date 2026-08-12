@@ -16,6 +16,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -25,6 +27,9 @@ MCP_TOOL = {
     "description": "Add Alembic CI runner with rollback safety and schema diff to FastAPI.",
     "tags": ["extend", "testing_tools"],
     "entry": "add_database_migrations_ci",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -42,7 +47,7 @@ def add_database_migrations_ci(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -60,7 +65,7 @@ def add_database_migrations_ci(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -71,7 +76,7 @@ def add_database_migrations_ci(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["MigrationCIRunner already present — migration CI already enabled, skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -82,7 +87,7 @@ def add_database_migrations_ci(inp: ToolInput) -> ToolResult:
                 "safety_checker.py, scripts/check_migrations.py, patch config.py."
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -121,7 +126,7 @@ def add_database_migrations_ci(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     (project / "tests").mkdir(parents=True, exist_ok=True)
@@ -150,7 +155,7 @@ def add_database_migrations_ci(inp: ToolInput) -> ToolResult:
             "Set MIGRATION_CI_FAIL_ON_DESTRUCTIVE=true in CI environment.",
             "alembic must be installed and DATABASE_URL set before running checks.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -166,5 +171,3 @@ def _patch_config(config_file: Path) -> None:
     )
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

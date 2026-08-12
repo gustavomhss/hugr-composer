@@ -47,6 +47,17 @@ def schema_coverage(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err)
 
+    app_dir = project / "app"
+    if inp.dry_run:
+        schemas = _discover_schemas(app_dir)
+        return ToolResult(
+            status="success",
+            notes=[f"[dry_run] Would analyze {len(schemas)} schema classes."],
+            next_steps=["Re-run without dry_run=True to apply changes."],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+
     from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.BASE_MODEL)
@@ -58,7 +69,6 @@ def schema_coverage(inp: ToolInput) -> ToolResult:
             execution_time_ms=_elapsed_ms(start),
         )
 
-    app_dir = project / "app"
 
     script = project / "scripts" / "schema_coverage.py"
     if script.exists() and "SchemaCoverageAnalyzer" in script.read_text():
@@ -72,14 +82,6 @@ def schema_coverage(inp: ToolInput) -> ToolResult:
 
     files_created: list[str] = []
 
-    if inp.dry_run:
-        schemas = _discover_schemas(app_dir)
-        return ToolResult(
-            status="success",
-            notes=[f"[dry_run] Would analyze {len(schemas)} schema classes."],
-            next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     (project / "scripts").mkdir(parents=True, exist_ok=True)
     render_to(_HERE, "orchestrator.py.tmpl", dest=script, substitutions={})

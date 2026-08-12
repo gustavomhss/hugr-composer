@@ -31,6 +31,8 @@ from pathlib import Path
 
 from adapt._base import load_template
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 from . import _helpers as helpers
 
@@ -60,11 +62,12 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "auth_access", "security", "bola", "idor"],
     "entry": "add_bola_guard",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
-def _elapsed_ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)
 
 
 def add_bola_guard(inp: ToolInput) -> ToolResult:
