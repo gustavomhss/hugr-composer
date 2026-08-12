@@ -7,4 +7,4 @@ jobs:
   probe:
     runs-on: [self-hosted, macOS, local]
     steps:
-      - run: echo "runner OK"
+      - run: echo "self-hosted OK"
