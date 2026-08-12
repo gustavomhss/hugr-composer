@@ -11,8 +11,6 @@ import asyncio
 import random
 import threading
 
-import pytest
-
 from RetryPolicy import (
     ExponentialBackoffRetryPolicy,
     RetryBudget,

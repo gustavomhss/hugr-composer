@@ -140,10 +140,8 @@ def test_partition_isolation_saturating_one_group_does_not_block_others() -> Non
             async with bh.acquire("a"):
                 raise AssertionError("a admitted despite saturation")
         # b must still admit three concurrent callers — two here + one nested.
-        async with bh.acquire("b"):
-            async with bh.acquire("b"):
-                async with bh.acquire("b"):
-                    assert bh.status()["b"]["active"] == 3
+        async with bh.acquire("b"), bh.acquire("b"), bh.acquire("b"):
+            assert bh.status()["b"]["active"] == 3
         release_a.set()
         await ta
 

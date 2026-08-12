@@ -42,7 +42,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from typing import Any, Final, Literal, Protocol, runtime_checkable
 
-
 __all__ = [
     "BillingError",
     "Customer",

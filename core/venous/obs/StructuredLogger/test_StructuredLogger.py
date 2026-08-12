@@ -5,12 +5,11 @@ from __future__ import annotations
 import json
 
 import pytest
-
 from StructuredLogger import (
     ALLOWED_LEVELS,
+    REDACTED,
     InMemoryStructuredLogger,
     LogInvariantError,
-    REDACTED,
     redact,
     validate_event_message,
     validate_level,
@@ -47,7 +46,7 @@ def test_inv_json_single_line_under_failure() -> None:
 
 # LOG_INV_02 — level taxonomy
 def test_inv_level_taxonomy_confirms() -> None:
-    assert ALLOWED_LEVELS == frozenset({"DEBUG", "INFO", "WARN", "ERROR"})
+    assert frozenset({"DEBUG", "INFO", "WARN", "ERROR"}) == ALLOWED_LEVELS
     for level in ALLOWED_LEVELS:
         validate_level(level)
 

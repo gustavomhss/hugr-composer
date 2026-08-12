@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "hugr-composer": {
+      "command": "uvx",
+      "args": ["--from", "hugr-composer", "hugr-composer-mcp"],
+      "env": {}
+    }
+  }
+}

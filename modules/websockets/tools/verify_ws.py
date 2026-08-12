@@ -17,7 +17,6 @@ MCP_TOOL = {
     'annotations': {'readOnlyHint': True, 'destructiveHint': False},
 }
 
-import ast
 import os
 import re
 import sys

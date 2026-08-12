@@ -20,6 +20,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -32,6 +34,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure", "security"],
     "entry": "add_cors_config",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -40,7 +45,7 @@ def add_cors_config(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -56,7 +61,7 @@ def add_cors_config(inp: ToolInput) -> ToolResult:
                 "These prerequisites cannot be auto-created.",
                 "Generate a base project first with fastapi_generate_project(...).",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -67,7 +72,7 @@ def add_cors_config(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["CORSConfigMiddleware already present — configurable CORS already installed."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -78,7 +83,7 @@ def add_cors_config(inp: ToolInput) -> ToolResult:
                 "app/api/routes/cors_debug.py, and patch config + main."
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -119,7 +124,7 @@ def add_cors_config(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     _emit_project_test(project, files_created)
@@ -142,7 +147,7 @@ def add_cors_config(inp: ToolInput) -> ToolResult:
             "Set CORS_MAX_AGE=3600 to increase preflight cache duration.",
             "Never use CORS_ALLOWED_ORIGINS=* in production — it defeats CORS protections.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -211,5 +216,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

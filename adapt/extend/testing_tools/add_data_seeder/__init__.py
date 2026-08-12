@@ -16,6 +16,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -25,6 +27,9 @@ MCP_TOOL = {
     "description": "Add a smart test data seeder that respects FK relationships via topological sort.",
     "tags": ["extend", "testing_tools"],
     "entry": "add_data_seeder",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -43,7 +48,7 @@ def add_data_seeder(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -61,7 +66,7 @@ def add_data_seeder(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -72,7 +77,7 @@ def add_data_seeder(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["DataSeeder already present — data seeder is already installed, skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -85,7 +90,7 @@ def add_data_seeder(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -134,7 +139,7 @@ def add_data_seeder(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     (project / "tests").mkdir(parents=True, exist_ok=True)
@@ -159,7 +164,7 @@ def add_data_seeder(inp: ToolInput) -> ToolResult:
             "Or via HTTP: POST /dev/seed?count=50 (dev only)",
             "SEEDER_DEFAULT_COUNT controls the default count (default: 10)",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -187,5 +192,3 @@ def _patch_config(config_file: Path) -> None:
     )
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

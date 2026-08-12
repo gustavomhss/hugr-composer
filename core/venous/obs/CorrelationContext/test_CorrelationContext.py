@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from CorrelationContext import (
     CorrelationInvariantError,
     InMemoryCorrelationContext,
@@ -70,9 +69,8 @@ def test_inv_activate_restores_prevents() -> None:
     outer = InMemoryCorrelationContext()
     inner = InMemoryCorrelationContext()
     try:
-        with outer.activate():
-            with inner.activate():
-                raise ValueError("boom")
+        with outer.activate(), inner.activate():
+            raise ValueError("boom")
     except ValueError:
         pass
     # After exception both activations are unwound — current is detached again.

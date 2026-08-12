@@ -25,6 +25,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -37,6 +39,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure", "security"],
     "entry": "add_dlp_shield",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -45,7 +50,7 @@ def add_dlp_shield(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -57,7 +62,7 @@ def add_dlp_shield(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -68,7 +73,7 @@ def add_dlp_shield(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["DLP shield already installed — skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -76,7 +81,7 @@ def add_dlp_shield(inp: ToolInput) -> ToolResult:
             status="success",
             notes=["[dry_run] Would install DLP shield middleware."],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -111,7 +116,7 @@ def add_dlp_shield(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     _emit_project_test(project, files_created)
@@ -140,7 +145,7 @@ def add_dlp_shield(inp: ToolInput) -> ToolResult:
             "Add app.add_middleware(DLPMiddleware) in app/main.py.",
             "Apply @sensitive(level='pci') to routes returning card data.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -176,5 +181,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

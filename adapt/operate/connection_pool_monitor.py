@@ -27,7 +27,6 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult
 
-
 MCP_TOOL = {
     "name": "fastapi_resiliency_analyze_connection_pool_monitor",
     "description": "Monitor SQLAlchemy connection pool utilization and detect pool exhaustion risk.",
@@ -76,8 +75,17 @@ def connection_pool_monitor(
             execution_time_ms=_ms(start),
         )
 
+
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would create pool monitor files."],
+            execution_time_ms=_ms(start),
+        )
+
+
     # --- Prerequisite check ---------------------------------------------------
-    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.CONFIG_SETTINGS)
     if prereq_errors:
@@ -95,13 +103,6 @@ def connection_pool_monitor(
         return ToolResult(
             status="no_op",
             notes=["PoolMonitor already present — skipped."],
-            execution_time_ms=_ms(start),
-        )
-
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=["[dry_run] Would create pool monitor files."],
             execution_time_ms=_ms(start),
         )
 

@@ -29,30 +29,31 @@ surfaces are MCP-registered and JIT-discoverable via
 
 | Surface | Count | Verify |
 |---|---:|---|
-| Slice tools under `adapt/extend/` | 100 | `find adapt/extend -name 'add_*.py' ! -name 'test_*' \| wc -l` |
-| Total tools in `adapt/` (all verbs + categories) | 127 | `find adapt -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
+| Slice tools under `adapt/extend/` | 105 | `PYTHONPATH=. .venv/bin/python -m engine.inventory` → §1 extend |
+| Total tools in `adapt/` (all verbs + categories) | 135 | `PYTHONPATH=. .venv/bin/python -m engine.inventory` → §1 adapt |
 | FastAPI adapters (`core/venous/_adapters/fastapi/`) | 18 | `find core/venous/_adapters/fastapi -maxdepth 1 -name '*Adapter.py' ! -name 'test_*' \| wc -l` |
-| Generator files (`generators/`) | 60 | `find generators -name '*.py' ! -name '__init__.py' ! -name 'test_*' \| wc -l` |
+| Generator files (`generators/`) | 61 | `PYTHONPATH=. .venv/bin/python -m engine.inventory` → §3 |
 | MCP-registered tools (catalog) | 202 | `jq '.tools \| length' engine/index/catalog.json` |
-| agent-visible surface (catalog + tier-1 + tree) | 218 | 202 catalog + 7 tier-1 + 9 tree dispatchers |
+| agent-visible surface (catalog + tier-1 + tree) | 219 | 202 catalog + 8 tier-1 + 9 tree dispatchers |
 | Production primitives (registered) | 124 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
 | Production primitive directories | 124 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_staging*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
-| Staged primitives (PascalCase, promotable) | 175 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
+| Staged primitives (PascalCase, promotable) | 174 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
 | Quarantined primitives (rejected by extraction gate) | 41 | `find core/venous/_staging/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Provider adapters (`_adapters/{redis,stripe}/`) | 2 | `find core/venous/_adapters -maxdepth 2 -name '*Adapter.py' ! -path '*fastapi*' ! -name 'test_*' \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
-| Contract items green | 37/37 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
-| Extend tools primitive-connected | 24/100 | `jq '[.tools[] \| select(.verb=="add" and (.module_path \| startswith("adapt/extend/")) and (.primitives_used \| length > 0))] \| length' engine/index/catalog.json` |
+| Contract items green | 47/47 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
+| Extend tools primitive-connected | 24/105 | `jq '[.tools[] \| select(.verb=="add" and (.module_path \| startswith("adapt/extend/")) and (.primitives_used \| length > 0))] \| length' engine/index/catalog.json` |
 | Benchmark score (plan-level, best-of ensemble) | 100.00 | `jq '.overall' benchmarks/latest_score.json` |
 | Benchmark score (code-level, 20/20 specs) | 100.00 | `jq '.overall' benchmarks/code_level_latest.json` |
 
-The 217 agent-visible surfaces decompose as: 201 auto-discovered catalog
-tools (100 `adapt/extend/` slice + 27 other `adapt/` tools across
-evolve/operate/verify/contracts/proactive + 60 generators + 9 module-tools
-+ remainder = audit/discovery helpers) + 7 tier-1 meta tools
-(`mcp_tools/tier1.py` + `mcp_tools/compose.py`) + 9 domain-tree
-dispatchers (`mcp_tools/tree/`). All auto-discovered via `MCP_TOOL`
-metadata scan — CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
+The 219 agent-visible surfaces are: 202 auto-discovered catalog tools
+(indexed in `engine/index/catalog.json`) + 8 tier-1 meta tools
+(`mcp_tools/tier1.py`) + 9 domain-tree dispatchers (`mcp_tools/tree/`).
+All auto-discovered via `MCP_TOOL` metadata scan — CONTRACT §B1.5 forbids
+manual `@mcp_app.tool` decorators. Note: the catalog count (202 indexed
+tools) and the file-based counts in `INVENTORY.md` §1 (135 adapt + 61
+generators) use different methods and are not meant to sum — INVENTORY is
+the single source of truth for each.
 
 ## agent workflow
 
@@ -63,9 +64,9 @@ metadata scan — CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
 2. **Scaffold.** agent calls a macro generator (e.g.
    `fastapi_generate_project`) to lay down the project tree.
 3. **Capability adds.** agent invokes one or more slice tools
-   (`fastapi_add_stripe_webhook`, `fastapi_add_rbac`, …). 64 of the
-   19 slice tools emit code that imports from `core.venous.*` —
-   the Rails-analogy connection is fully operative (Phase 1 complete).
+   (`fastapi_add_stripe_webhook`, `fastapi_add_rbac`, …). 24 of the
+   105 slice tools emit code that imports from `core.venous.*` (§B1.3,
+   floor 22) — the Rails-analogy connection is operative (Phase 1 complete).
 4. **Customize.** Where no slice tool fits exactly, agent composes
    primitives directly — `from core.venous.<ns>.<Name>` into the
    generated code. Every production primitive carries a
@@ -75,20 +76,16 @@ metadata scan — CONTRACT §B1.5 forbids manual `@mcp_app.tool` decorators.
 
 | Folder | Count | Example tools |
 |---|---:|---|
-| `auth_access/` | 15 | `add_rbac`, `add_oauth2_provider`, `add_mfa`, `add_social_login` |
-| `crud_data/` | 12 | `add_cursor_pagination`, `add_event_sourcing`, `add_soft_delete`, `add_audit_log` |
-| `api_design/` | 9 | `add_api_versioning`, `add_graphql`, `add_long_running_task` |
-| `infrastructure/` | 38 | `add_stripe_webhook`, `add_rate_limiting`, `add_saga`, `add_retry_budget`, `add_graceful_shutdown` |
-| `realtime/` | 8 | `add_sse`, `add_websocket_chat`, `add_webhook_receiver`, `add_presence` |
-| `testing_tools/` | 9 | `add_data_seeder`, `add_schema_evolution_guard`, `add_api_fuzzer` |
-| `performance/` + `proactive/` + others | 9 | `add_bulkhead`, `add_capacity_planner`, `add_n_plus_one_guard` |
+| `auth_access/` | 17 | `add_rbac`, `add_oauth2_provider`, `add_mfa`, `add_social_login` |
+| `crud_data/` | 11 | `add_cursor_pagination`, `add_event_sourcing`, `add_soft_delete`, `add_audit_log` |
+| `api_design/` | 7 | `add_api_versioning`, `add_graphql`, `add_long_running_task` |
+| `infrastructure/` | 53 | `add_stripe_webhook`, `add_rate_limiting`, `add_saga`, `add_retry_budget`, `add_graceful_shutdown` |
+| `realtime/` | 5 | `add_sse`, `add_websocket_chat`, `add_webhook_receiver`, `add_presence` |
+| `testing_tools/` | 12 | `add_data_seeder`, `add_schema_evolution_guard`, `add_api_fuzzer` |
 
-Exact per-folder counts:
-```bash
-for d in adapt/extend/*/; do
-  echo "$d $(find "$d" -name 'add_*.py' ! -name 'test_*' | wc -l)"
-done
-```
+Total: 105 extend tools. Exact per-folder counts are machine-generated —
+regenerate with `PYTHONPATH=. .venv/bin/python -m engine.inventory` (see
+`INVENTORY.md` §1, `adapt/extend/ sub-domains`).
 
 ## Primitives (`core/venous/<concern>/<Name>/`)
 
@@ -205,9 +202,9 @@ Local full CI (replicates GitHub Actions):
 
 ## Examples
 
-Five real agent-built examples live under `/examples/`, each
+20 real agent-built examples live under `/examples/`, each
 tied to a benchmark spec and passing pytest end-to-end
-(24/24 tests green). See `/examples/*/AGENT_SESSION.md` for
+(94 tests across 20 apps). See `/examples/*/AGENT_SESSION.md` for
 the plan-level transcript the agent used to build them.
 
 ---

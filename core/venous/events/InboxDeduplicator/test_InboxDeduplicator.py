@@ -5,7 +5,6 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-
 from InboxDeduplicator import (
     InboxDeduplicatorInvariantError,
     InMemoryInboxDeduplicator,
@@ -46,9 +45,8 @@ def test_inv_same_txn_record_under_failure() -> None:
     def bad_effect() -> None:
         raise RuntimeError("business logic exploded")
 
-    with pytest.raises(RuntimeError):
-        with inbox.handle("m-1", "c", bad_effect):
-            pass
+    with pytest.raises(RuntimeError), inbox.handle("m-1", "c", bad_effect):
+        pass
     # Effect failed → staged record MUST NOT be durable; seen stays False.
     assert inbox.seen("m-1", "c") is False
     assert inbox.store_snapshot == ()
@@ -97,10 +95,9 @@ def test_inv_deterministic_seen_under_failure() -> None:
     for _ in range(20):
         assert inbox.seen("m-1", "c") is True
     # And a second committed record for the same pair is FORBIDDEN.
-    with pytest.raises(InboxDeduplicatorInvariantError):
-        with inbox.begin() as scope:
-            inbox.record("m-1", "c")
-            scope.commit()
+    with pytest.raises(InboxDeduplicatorInvariantError), inbox.begin() as scope:
+        inbox.record("m-1", "c")
+        scope.commit()
 
 
 # ---------------------------------------------------------------------------

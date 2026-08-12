@@ -332,7 +332,7 @@ async def _run_guarded(
         )
     try:
         return await asyncio.wait_for(awaitable, timeout=timeout_s)
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return HealthReport(
             status=HealthStatus.DOWN,
             details={

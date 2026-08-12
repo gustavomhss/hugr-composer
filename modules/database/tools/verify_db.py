@@ -204,9 +204,9 @@ def _check_db02_pool_exceeds_max(
                 file_path=str(filepath),
                 line_number=node.lineno,
                 fix_suggestion=(
-                    f"Reduce pool_size or max_overflow. For 4 workers, 3 pods, "
-                    f"max_connections=200: budget = (200-20)/(4*3) = 15/process. "
-                    f"Use pool_size=5, max_overflow=10."
+                    "Reduce pool_size or max_overflow. For 4 workers, 3 pods, "
+                    "max_connections=200: budget = (200-20)/(4*3) = 15/process. "
+                    "Use pool_size=5, max_overflow=10."
                 ),
             )
 

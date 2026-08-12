@@ -19,6 +19,8 @@ from pathlib import Path
 
 from adapt._base import render, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -32,6 +34,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_dependency_health_map",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -224,6 +229,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _elapsed_ms(start: float) -> int:
-    """Return elapsed milliseconds since *start*."""
-    return int((time.monotonic() - start) * 1000)

@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 
 import pytest
-
 from LifecycleHook import (
     LifecycleHook,
     LifecycleInvariantError,

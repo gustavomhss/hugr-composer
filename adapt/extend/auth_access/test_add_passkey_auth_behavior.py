@@ -40,7 +40,6 @@ os.environ.pop("REDIS_URL", None)
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Module-level shared project
 # ---------------------------------------------------------------------------
@@ -59,9 +58,9 @@ def _build_project() -> Path:
     if _PROJECT_DIR is not None:
         return _PROJECT_DIR
 
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
     from adapt.extend.auth_access.add_passkey_auth import add_passkey_auth
+    from tests.common.fixture_factory import create_fixture_project
 
     _TMPDIR = tempfile.TemporaryDirectory()
     project_dir = create_fixture_project(
@@ -104,12 +103,12 @@ async def _make_sqlite_client(project_dir: Path):
     Returns:
         Tuple of (AsyncClient, AsyncSession, AsyncEngine, app).
     """
-    from sqlalchemy.ext.asyncio import (
-        create_async_engine,
-        async_sessionmaker,
-        AsyncSession,
-    )
     from httpx import ASGITransport, AsyncClient
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
 
     app = _load_app(project_dir)
     get_session_mod = importlib.import_module("app.core.session")
@@ -351,9 +350,9 @@ if __name__ == "__main__":
 
     tests = [
         test_beh_01_app_boots,
-        test_beh_02_register_begin_without_pywebauthn,
+        test_beh_02_register_begin_requires_auth,
         test_beh_03_login_begin_without_pywebauthn,
-        test_beh_04_register_complete_invalid_session,
+        test_beh_04_register_complete_requires_auth,
         test_beh_05_login_complete_invalid_session,
         test_beh_06_py_webauthn_lazy_import_verified,
         test_beh_07_all_functions_le_50_loc,

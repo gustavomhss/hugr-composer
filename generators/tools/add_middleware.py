@@ -37,10 +37,8 @@ MCP_TOOL = {
 
 import re
 import textwrap
-from pathlib import Path
 
 from generators.tools._layout import resolve_app_root
-
 
 # ---------------------------------------------------------------------------
 # Position anchors

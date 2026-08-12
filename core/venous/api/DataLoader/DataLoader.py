@@ -27,8 +27,8 @@ Invariant IDs (full text in ``DataLoader.md``):
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
-from typing import Generic, Hashable, Protocol, TypeVar, runtime_checkable
+from collections.abc import Awaitable, Callable, Hashable
+from typing import Generic, Protocol, TypeVar, runtime_checkable
 
 K = TypeVar("K", bound=Hashable)
 V = TypeVar("V")

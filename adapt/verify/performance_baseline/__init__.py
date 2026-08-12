@@ -46,6 +46,15 @@ def performance_baseline(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err)
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would generate performance baseline infrastructure."],
+            next_steps=["Re-run without dry_run=True to apply changes."],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+
     script = project / "scripts" / "perf_baseline.py"
     if script.exists() and "PerformanceBaselineRunner" in script.read_text():
         return ToolResult(
@@ -59,13 +68,6 @@ def performance_baseline(inp: ToolInput) -> ToolResult:
     files_created: list[str] = []
     files_modified: list[str] = []
 
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=["[dry_run] Would generate performance baseline infrastructure."],
-            next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     (project / "scripts").mkdir(parents=True, exist_ok=True)
     render_to(_HERE, "orchestrator.py.tmpl", dest=script, substitutions={})

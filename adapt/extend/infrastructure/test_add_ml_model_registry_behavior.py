@@ -48,7 +48,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_ml_model_registry import add_ml_model_registry
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------
@@ -265,7 +264,6 @@ async def test_b03_register_endpoint_exists(asgi_app: Any) -> None:
 
 def test_b04_migration_chains_to_head(project_dir: Path) -> None:
     """B-04: Migration file must exist and have a non-None down_revision."""
-    from adapt.contracts.migration_helper import find_migration_head
 
     versions_dir = project_dir / "alembic" / "versions"
     mig_file = versions_dir / "add_ml_model_registry.py"
@@ -565,7 +563,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print(f"TOOL-070 BEHAVIOR: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(_json.dumps(contract, indent=2))
 
     if failed:

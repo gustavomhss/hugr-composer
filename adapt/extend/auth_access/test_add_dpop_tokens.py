@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_dpop_tokens import add_dpop_tokens
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

@@ -95,6 +95,11 @@ ok "Dependencies installed"
 MCP_SERVER_PATH="${SKILL_DIR}/mcp_server.py"
 PY_PATH="${VENV}/bin/python"
 
+# Resolve absolute paths for the output (no variable references in user's config)
+ABS_PY_PATH=$(realpath "${PY_PATH}")
+ABS_MCP_SERVER_PATH=$(realpath "${MCP_SERVER_PATH}")
+ABS_SKILL_DIR=$(realpath "${SKILL_DIR}")
+
 cat <<EOF
 
 ${c_bold}${c_green}✓ HuGR Arsenal installed successfully${c_reset}
@@ -104,10 +109,10 @@ Add this to your ${c_bold}.mcp.json${c_reset} (Claude Code) or ${c_bold}MCP sett
 ${c_cyan}{
   "mcpServers": {
     "fastapi-production": {
-      "command": "${PY_PATH}",
-      "args": ["${MCP_SERVER_PATH}"],
+      "command": "${ABS_PY_PATH}",
+      "args": ["${ABS_MCP_SERVER_PATH}"],
       "env": {
-        "PYTHONPATH": "${SKILL_DIR}"
+        "PYTHONPATH": "${ABS_SKILL_DIR}"
       }
     }
   }
@@ -133,12 +138,12 @@ broader 258-file MCP_TOOL surface, which includes dispatcher entries and helpers
 that the catalog does not promote into tools/list.)
 
 ${c_bold}Quick test:${c_reset}
-  ${PY_PATH} ${MCP_SERVER_PATH} --list-tools
+  ${ABS_PY_PATH} ${ABS_MCP_SERVER_PATH} --list-tools
 
 ${c_bold}Full docs:${c_reset}
-  ${SKILL_DIR}/SKILL.md       (agent-facing entry point)
-  ${SKILL_DIR}/README.md      (skill overview + per-bucket counts)
-  ${SKILL_DIR}/STATUS.md      (release status + freeze cuts)
+  ${ABS_SKILL_DIR}/SKILL.md       (agent-facing entry point)
+  ${ABS_SKILL_DIR}/README.md      (skill overview + per-bucket counts)
+  ${ABS_SKILL_DIR}/STATUS.md      (release status + freeze cuts)
   ${INSTALL_DIR}/README.md    (repo-root product framing)
 
 EOF

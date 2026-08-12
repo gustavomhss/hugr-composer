@@ -1,0 +1,5798 @@
+{
+  "generated": "2026-08-11T16:51:11.329035+00:00",
+  "version": "1.0.0",
+  "summary": {
+    "total_entries": 288,
+    "specs_total": 124,
+    "tools_total": 125,
+    "primitives_total": 124,
+    "generators_total": 65,
+    "full_linkage": 23,
+    "partial_linkage": 101,
+    "spec_only": 0,
+    "tool_only": 1,
+    "primitive_only": 102,
+    "generator_only": 61,
+    "confidence_distribution": {
+      "high": 125,
+      "medium": 0,
+      "low": 0,
+      "none": 163
+    }
+  },
+  "entries": [
+    {
+      "spec_id": "TOOL-001",
+      "spec_path": "specs/TOOL-001-add_soft_delete.md",
+      "tool_name": "add_soft_delete",
+      "tool_module": "adapt/extend/crud_data/add_soft_delete",
+      "mcp_tool_name": "fastapi_data_add_soft_delete",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-002",
+      "spec_path": "specs/TOOL-002-add_cursor_pagination.md",
+      "tool_name": "add_cursor_pagination",
+      "tool_module": "adapt/extend/crud_data/add_cursor_pagination",
+      "mcp_tool_name": "fastapi_data_add_cursor_pagination",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-003",
+      "spec_path": "specs/TOOL-003-add_file_upload.md",
+      "tool_name": "add_file_upload",
+      "tool_module": "adapt/extend/crud_data/add_file_upload",
+      "mcp_tool_name": "fastapi_data_add_file_upload",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-004",
+      "spec_path": "specs/TOOL-004-add_search.md",
+      "tool_name": "add_search",
+      "tool_module": "adapt/extend/crud_data/add_search",
+      "mcp_tool_name": "fastapi_data_add_search",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-005",
+      "spec_path": "specs/TOOL-005-add_audit_log.md",
+      "tool_name": "add_audit_log",
+      "tool_module": "adapt/extend/crud_data/add_audit_log",
+      "mcp_tool_name": "fastapi_data_add_audit_log",
+      "primitive": {
+        "namespace": "compliance",
+        "name": "AuditEvent",
+        "path": "core.venous.compliance.AuditEvent"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-006",
+      "spec_path": "specs/TOOL-006-add_data_export.md",
+      "tool_name": "add_data_export",
+      "tool_module": "adapt/extend/crud_data/add_data_export",
+      "mcp_tool_name": "fastapi_data_add_data_export",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-007",
+      "spec_path": "specs/TOOL-007-add_bulk_operations.md",
+      "tool_name": "add_bulk_operations",
+      "tool_module": "adapt/extend/crud_data/add_bulk_operations",
+      "mcp_tool_name": "fastapi_data_add_bulk_operations",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-008",
+      "spec_path": "specs/TOOL-008-add_multi_tenancy.md",
+      "tool_name": "add_multi_tenancy",
+      "tool_module": "adapt/extend/auth_access/add_multi_tenancy",
+      "mcp_tool_name": "fastapi_auth_add_multi_tenancy",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-009",
+      "spec_path": "specs/TOOL-009-add_feature_flags.md",
+      "tool_name": "add_feature_flags",
+      "tool_module": "adapt/extend/auth_access/add_feature_flags",
+      "mcp_tool_name": "fastapi_auth_add_feature_flags",
+      "primitive": {
+        "namespace": "flags",
+        "name": "FeatureToggle",
+        "path": "core.venous.flags.FeatureToggle"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-010",
+      "spec_path": "specs/TOOL-010-add_api_key_auth.md",
+      "tool_name": "add_api_key_auth",
+      "tool_module": "adapt/extend/auth_access/add_api_key_auth",
+      "mcp_tool_name": "fastapi_auth_add_api_key_auth",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-011",
+      "spec_path": "specs/TOOL-011-add_oauth2_provider.md",
+      "tool_name": "add_oauth2_provider",
+      "tool_module": "adapt/extend/auth_access",
+      "mcp_tool_name": "fastapi_auth_add_oauth2_provider",
+      "primitive": {
+        "namespace": "auth",
+        "name": "TokenIntrospector",
+        "path": "core.venous.auth.TokenIntrospector"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-012",
+      "spec_path": "specs/TOOL-012-add_rbac.md",
+      "tool_name": "add_rbac",
+      "tool_module": "adapt/extend/auth_access/add_rbac",
+      "mcp_tool_name": "fastapi_auth_add_rbac",
+      "primitive": {
+        "namespace": "auth",
+        "name": "RequestGuard",
+        "path": "core.venous.auth.RequestGuard"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-013",
+      "spec_path": "specs/TOOL-013-add_mfa.md",
+      "tool_name": "add_mfa",
+      "tool_module": "adapt/extend/auth_access/add_mfa",
+      "mcp_tool_name": "fastapi_auth_add_mfa",
+      "primitive": {
+        "namespace": "auth",
+        "name": "TotpVerifier",
+        "path": "core.venous.auth.TotpVerifier"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-014",
+      "spec_path": "specs/TOOL-014-add_sse.md",
+      "tool_name": "add_sse",
+      "tool_module": "adapt/extend/realtime/add_sse",
+      "mcp_tool_name": "fastapi_realtime_add_sse",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "realtime"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-015",
+      "spec_path": "specs/TOOL-015-add_webhook_sender.md",
+      "tool_name": "add_webhook_sender",
+      "tool_module": "adapt/extend/realtime/add_webhook_sender",
+      "mcp_tool_name": "fastapi_realtime_add_webhook_sender",
+      "primitive": {
+        "namespace": "security",
+        "name": "SignatureVerifier",
+        "path": "core.venous.security.SignatureVerifier"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "realtime"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-016",
+      "spec_path": "specs/TOOL-016-add_webhook_receiver.md",
+      "tool_name": "add_webhook_receiver",
+      "tool_module": "adapt/extend/realtime/add_webhook_receiver",
+      "mcp_tool_name": "fastapi_realtime_add_webhook_receiver",
+      "primitive": {
+        "namespace": "security",
+        "name": "SignatureVerifier",
+        "path": "core.venous.security.SignatureVerifier"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "realtime"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-017",
+      "spec_path": "specs/TOOL-017-add_api_versioning.md",
+      "tool_name": "add_api_versioning",
+      "tool_module": "adapt/extend/api_design/add_api_versioning",
+      "mcp_tool_name": "fastapi_api_add_api_versioning",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "api_design"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-018",
+      "spec_path": "specs/TOOL-018-add_graphql.md",
+      "tool_name": "add_graphql",
+      "tool_module": "adapt/extend/api_design/add_graphql",
+      "mcp_tool_name": "fastapi_api_add_graphql",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "api_design"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-019",
+      "spec_path": "specs/TOOL-019-add_batch_endpoint.md",
+      "tool_name": "add_batch_endpoint",
+      "tool_module": "adapt/extend/api_design/add_batch_endpoint",
+      "mcp_tool_name": "fastapi_api_add_batch_endpoint",
+      "primitive": null,
+      "generator": "generators/tools/add_endpoint.py",
+      "tags": [
+        "extend",
+        "api_design"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "medium"
+      }
+    },
+    {
+      "spec_id": "TOOL-020",
+      "spec_path": "specs/TOOL-020-add_long_running_task.md",
+      "tool_name": "add_long_running_task",
+      "tool_module": "adapt/extend/api_design/add_long_running_task",
+      "mcp_tool_name": "fastapi_api_add_long_running_task",
+      "primitive": {
+        "namespace": "jobs",
+        "name": "WorkflowRun",
+        "path": "core.venous.jobs.WorkflowRun"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "api_design"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-021",
+      "spec_path": "specs/TOOL-021-add_cache_layer.md",
+      "tool_name": "add_cache_layer",
+      "tool_module": "adapt/extend/infrastructure/add_cache_layer",
+      "mcp_tool_name": "fastapi_resiliency_add_cache_layer",
+      "primitive": {
+        "namespace": "cache",
+        "name": "KeyValueBucket",
+        "path": "core.venous.cache.KeyValueBucket"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-022",
+      "spec_path": "specs/TOOL-022-add_circuit_breaker.md",
+      "tool_name": "add_circuit_breaker",
+      "tool_module": "adapt/extend/infrastructure/add_circuit_breaker",
+      "mcp_tool_name": "fastapi_resiliency_add_circuit_breaker",
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "CircuitBreaker",
+        "path": "core.venous.resiliency.CircuitBreaker"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-023",
+      "spec_path": "specs/TOOL-023-add_outbox_pattern.md",
+      "tool_name": "add_outbox_pattern",
+      "tool_module": "adapt/extend/infrastructure/add_outbox_pattern",
+      "mcp_tool_name": "fastapi_data_add_outbox_pattern",
+      "primitive": {
+        "namespace": "events",
+        "name": "TransactionalOutbox",
+        "path": "core.venous.events.TransactionalOutbox"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-024",
+      "spec_path": "specs/TOOL-024-add_saga.md",
+      "tool_name": "add_saga",
+      "tool_module": "adapt/extend/infrastructure/add_saga",
+      "mcp_tool_name": "fastapi_data_add_saga",
+      "primitive": {
+        "namespace": "events",
+        "name": "SagaOrchestrator",
+        "path": "core.venous.events.SagaOrchestrator"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-025",
+      "spec_path": "specs/TOOL-025-add_factory.md",
+      "tool_name": "add_factory",
+      "tool_module": "adapt/extend/testing_tools/add_factory",
+      "mcp_tool_name": "fastapi_testing_add_factory",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-026",
+      "spec_path": "specs/TOOL-026-add_contract_tests.md",
+      "tool_name": "add_contract_tests",
+      "tool_module": "adapt/extend/testing_tools/add_contract_tests",
+      "mcp_tool_name": "fastapi_testing_add_contract_tests",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-027",
+      "spec_path": "specs/TOOL-027-add_load_profile.md",
+      "tool_name": "add_load_profile",
+      "tool_module": "adapt/extend/testing_tools/add_load_profile",
+      "mcp_tool_name": "fastapi_testing_add_load_profile",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-028",
+      "spec_path": "specs/TOOL-028-detect_n_plus_one.md",
+      "tool_name": "detect_n_plus_one",
+      "tool_module": "adapt/verify/detect_n_plus_one",
+      "mcp_tool_name": "fastapi_resiliency_analyze_detect_n_plus_one",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "verify"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-029",
+      "spec_path": "specs/TOOL-029-security_scan.md",
+      "tool_name": "security_scan",
+      "tool_module": "adapt/verify/security_scan",
+      "mcp_tool_name": "fastapi_resiliency_analyze_security_scan",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "verify",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-030",
+      "spec_path": "specs/TOOL-030-dependency_audit.md",
+      "tool_name": "dependency_audit",
+      "tool_module": "adapt/verify/dependency_audit",
+      "mcp_tool_name": "fastapi_compliance_analyze_dependency_audit",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "verify"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-031",
+      "spec_path": "specs/TOOL-031-schema_coverage.md",
+      "tool_name": "schema_coverage",
+      "tool_module": "adapt/verify/schema_coverage",
+      "mcp_tool_name": "fastapi_resiliency_analyze_schema_coverage",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "verify"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-032",
+      "spec_path": "specs/TOOL-032-test_coverage_gaps.md",
+      "tool_name": "test_coverage_gaps",
+      "tool_module": "adapt/verify",
+      "mcp_tool_name": "fastapi_testing_verify_coverage_gaps",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "verify"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-033",
+      "spec_path": "specs/TOOL-033-api_spec_compliance.md",
+      "tool_name": "api_spec_compliance",
+      "tool_module": "adapt/verify/api_spec_compliance",
+      "mcp_tool_name": "fastapi_resiliency_analyze_api_spec_compliance",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "verify"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-034",
+      "spec_path": "specs/TOOL-034-performance_baseline.md",
+      "tool_name": "performance_baseline",
+      "tool_module": "adapt/verify/performance_baseline",
+      "mcp_tool_name": "fastapi_resiliency_analyze_performance_baseline",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "verify"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-035",
+      "spec_path": "specs/TOOL-035-blast_radius.md",
+      "tool_name": "blast_radius",
+      "tool_module": "adapt/operate",
+      "mcp_tool_name": "fastapi_resiliency_analyze_blast_radius",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "operate"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-036",
+      "spec_path": "specs/TOOL-036-migration_diff.md",
+      "tool_name": "migration_diff",
+      "tool_module": "adapt/operate",
+      "mcp_tool_name": "fastapi_resiliency_analyze_migration_diff",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "operate"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-037",
+      "spec_path": "specs/TOOL-037-dead_code_finder.md",
+      "tool_name": "dead_code_finder",
+      "tool_module": "adapt/operate",
+      "mcp_tool_name": "fastapi_resiliency_analyze_dead_code_finder",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "operate"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-038",
+      "spec_path": "specs/TOOL-038-api_changelog.md",
+      "tool_name": "api_changelog",
+      "tool_module": "adapt/operate",
+      "mcp_tool_name": "fastapi_observability_analyze_api_changelog",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "operate"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-039",
+      "spec_path": "specs/TOOL-039-dependency_graph.md",
+      "tool_name": "dependency_graph",
+      "tool_module": "adapt/operate",
+      "mcp_tool_name": "fastapi_resiliency_analyze_dependency_graph",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "operate"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-040",
+      "spec_path": "specs/TOOL-040-connection_pool_monitor.md",
+      "tool_name": "connection_pool_monitor",
+      "tool_module": "adapt/operate",
+      "mcp_tool_name": "fastapi_resiliency_analyze_connection_pool_monitor",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "operate"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-041",
+      "spec_path": "specs/TOOL-041-error_rate_analyzer.md",
+      "tool_name": "error_rate_analyzer",
+      "tool_module": "adapt/operate",
+      "mcp_tool_name": "fastapi_resiliency_analyze_error_rate_analyzer",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "operate"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-042",
+      "spec_path": "specs/TOOL-042-sla_reporter.md",
+      "tool_name": "sla_reporter",
+      "tool_module": "adapt/operate",
+      "mcp_tool_name": "fastapi_resiliency_analyze_sla_reporter",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "operate"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-043",
+      "spec_path": "specs/TOOL-043-add_migration_data.md",
+      "tool_name": "add_migration_data",
+      "tool_module": "adapt/evolve/add_migration_data",
+      "mcp_tool_name": "fastapi_resiliency_add_migration_data",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "evolve"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-044",
+      "spec_path": "specs/TOOL-044-refactor_model.md",
+      "tool_name": "refactor_model",
+      "tool_module": "adapt/evolve/refactor_model",
+      "mcp_tool_name": "fastapi_resiliency_analyze_refactor_model",
+      "primitive": null,
+      "generator": "generators/tools/add_model.py",
+      "tags": [
+        "evolve"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "medium"
+      }
+    },
+    {
+      "spec_id": "TOOL-045",
+      "spec_path": "specs/TOOL-045-extract_service.md",
+      "tool_name": "extract_service",
+      "tool_module": "adapt/evolve/extract_service",
+      "mcp_tool_name": "fastapi_resiliency_analyze_extract_service",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "evolve"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-046",
+      "spec_path": "specs/TOOL-046-add_event_driven.md",
+      "tool_name": "add_event_driven",
+      "tool_module": "adapt/evolve/add_event_driven",
+      "mcp_tool_name": "fastapi_data_add_event_driven",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "evolve"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-047",
+      "spec_path": "specs/TOOL-047-generate_sdk.md",
+      "tool_name": "generate_sdk",
+      "tool_module": "adapt/evolve/generate_sdk",
+      "mcp_tool_name": "fastapi_resiliency_generate_sdk",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "evolve"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-048",
+      "spec_path": "specs/TOOL-048-generate_admin_panel.md",
+      "tool_name": "generate_admin_panel",
+      "tool_module": "adapt/evolve/generate_admin_panel",
+      "mcp_tool_name": "fastapi_resiliency_generate_admin_panel",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "evolve"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-049",
+      "spec_path": "specs/TOOL-049-generate_docs.md",
+      "tool_name": "generate_docs",
+      "tool_module": "adapt/evolve/generate_docs",
+      "mcp_tool_name": "fastapi_resiliency_generate_docs",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "evolve"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-050",
+      "spec_path": "specs/TOOL-050-add_i18n.md",
+      "tool_name": "add_i18n",
+      "tool_module": "adapt/evolve/add_i18n",
+      "mcp_tool_name": "fastapi_resiliency_add_i18n",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "evolve"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-051",
+      "spec_path": "specs/TOOL-051-fastapi_doctor.md",
+      "tool_name": "fastapi_doctor",
+      "tool_module": "adapt/proactive",
+      "mcp_tool_name": "fastapi_resiliency_analyze_doctor",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "proactive"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-052",
+      "spec_path": "specs/TOOL-052-add_websocket_chat.md",
+      "tool_name": "add_websocket_chat",
+      "tool_module": "adapt/extend/realtime/add_websocket_chat",
+      "mcp_tool_name": "fastapi_realtime_add_websocket_chat",
+      "primitive": null,
+      "generator": "generators/tools/add_websocket.py",
+      "tags": [
+        "extend",
+        "realtime"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "medium"
+      }
+    },
+    {
+      "spec_id": "TOOL-053",
+      "spec_path": "specs/TOOL-053-add_arq_worker.md",
+      "tool_name": "add_arq_worker",
+      "tool_module": "adapt/extend/infrastructure/add_arq_worker",
+      "mcp_tool_name": "fastapi_resiliency_add_arq_worker",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-054",
+      "spec_path": "specs/TOOL-054-add_stripe_checkout.md",
+      "tool_name": "add_stripe_checkout",
+      "tool_module": "adapt/extend/infrastructure/add_stripe_checkout",
+      "mcp_tool_name": "fastapi_resiliency_add_stripe_checkout",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-055",
+      "spec_path": "specs/TOOL-055-add_email_templates.md",
+      "tool_name": "add_email_templates",
+      "tool_module": "adapt/extend/infrastructure/add_email_templates",
+      "mcp_tool_name": "fastapi_resiliency_add_email_templates",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-056",
+      "spec_path": "specs/TOOL-056-add_sqladmin.md",
+      "tool_name": "add_sqladmin",
+      "tool_module": "adapt/extend/infrastructure/add_sqladmin",
+      "mcp_tool_name": "fastapi_resiliency_add_sqladmin",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-057",
+      "spec_path": "specs/TOOL-057-add_rate_limiting.md",
+      "tool_name": "add_rate_limiting",
+      "tool_module": "adapt/extend/infrastructure/add_rate_limiting",
+      "mcp_tool_name": "fastapi_resiliency_add_rate_limiting",
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "RateLimiter",
+        "path": "core.venous.resiliency.RateLimiter"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-058",
+      "spec_path": "specs/TOOL-058-add_scheduled_tasks.md",
+      "tool_name": "add_scheduled_tasks",
+      "tool_module": "adapt/extend/infrastructure/add_scheduled_tasks",
+      "mcp_tool_name": "fastapi_resiliency_add_scheduled_tasks",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-059",
+      "spec_path": "specs/TOOL-059-add_celery_beat.md",
+      "tool_name": "add_celery_beat",
+      "tool_module": "adapt/extend/infrastructure/add_celery_beat",
+      "mcp_tool_name": "fastapi_resiliency_add_celery_beat",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-060",
+      "spec_path": "specs/TOOL-060-add_s3_storage.md",
+      "tool_name": "add_s3_storage",
+      "tool_module": "adapt/extend/infrastructure/add_s3_storage",
+      "mcp_tool_name": "fastapi_resiliency_add_s3_storage",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-061",
+      "spec_path": "specs/TOOL-061-add_health_deep.md",
+      "tool_name": "add_health_deep",
+      "tool_module": "adapt/extend/infrastructure/add_health_deep",
+      "mcp_tool_name": "fastapi_resiliency_add_health_deep",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-062",
+      "spec_path": "specs/TOOL-062-add_websocket_presence.md",
+      "tool_name": "add_websocket_presence",
+      "tool_module": "adapt/extend/realtime/add_websocket_presence",
+      "mcp_tool_name": "fastapi_realtime_add_websocket_presence",
+      "primitive": null,
+      "generator": "generators/tools/add_websocket.py",
+      "tags": [
+        "extend",
+        "realtime"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "medium"
+      }
+    },
+    {
+      "spec_id": "TOOL-063",
+      "spec_path": "specs/TOOL-063-add_notifications.md",
+      "tool_name": "add_notifications",
+      "tool_module": "adapt/extend/infrastructure/add_notifications",
+      "mcp_tool_name": "fastapi_resiliency_add_notifications",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-064",
+      "spec_path": "specs/TOOL-064-add_feature_toggles_api.md",
+      "tool_name": "add_feature_toggles_api",
+      "tool_module": "adapt/extend/auth_access/add_feature_toggles_api",
+      "mcp_tool_name": "fastapi_auth_add_feature_toggles_api",
+      "primitive": {
+        "namespace": "flags",
+        "name": "FeatureToggle",
+        "path": "core.venous.flags.FeatureToggle"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-065",
+      "spec_path": "specs/TOOL-065-add_stripe_subscription.md",
+      "tool_name": "add_stripe_subscription",
+      "tool_module": "adapt/extend/infrastructure/add_stripe_subscription",
+      "mcp_tool_name": "fastapi_resiliency_add_stripe_subscription",
+      "primitive": {
+        "namespace": "billing",
+        "name": "Billing",
+        "path": "core.venous.billing.Billing"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-066",
+      "spec_path": "specs/TOOL-066-add_stripe_refund_flow.md",
+      "tool_name": "add_stripe_refund_flow",
+      "tool_module": "adapt/extend/infrastructure/add_stripe_refund_flow",
+      "mcp_tool_name": "fastapi_resiliency_add_stripe_refund_flow",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-067",
+      "spec_path": "specs/TOOL-067-add_temporal_workflow.md",
+      "tool_name": "add_temporal_workflow",
+      "tool_module": "adapt/extend/infrastructure/add_temporal_workflow",
+      "mcp_tool_name": "fastapi_resiliency_add_temporal_workflow",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-068",
+      "spec_path": "specs/TOOL-068-add_ml_model_server.md",
+      "tool_name": "add_ml_model_server",
+      "tool_module": "adapt/extend/infrastructure/add_ml_model_server",
+      "mcp_tool_name": "fastapi_resiliency_add_ml_model_server",
+      "primitive": null,
+      "generator": "generators/tools/add_model.py",
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "medium"
+      }
+    },
+    {
+      "spec_id": "TOOL-069",
+      "spec_path": "specs/TOOL-069-add_ml_gpu_inference.md",
+      "tool_name": "add_ml_gpu_inference",
+      "tool_module": "adapt/extend/infrastructure/add_ml_gpu_inference",
+      "mcp_tool_name": "fastapi_resiliency_add_ml_gpu_inference",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "ml",
+        "gpu"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-070",
+      "spec_path": "specs/TOOL-070-add_ml_model_registry.md",
+      "tool_name": "add_ml_model_registry",
+      "tool_module": "adapt/extend/infrastructure/add_ml_model_registry",
+      "mcp_tool_name": "fastapi_resiliency_add_ml_model_registry",
+      "primitive": null,
+      "generator": "generators/tools/add_model.py",
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "medium"
+      }
+    },
+    {
+      "spec_id": "TOOL-071",
+      "spec_path": "specs/TOOL-071-add_cedar_policies.md",
+      "tool_name": "add_cedar_policies",
+      "tool_module": "adapt/extend/auth_access/add_cedar_policies",
+      "mcp_tool_name": "fastapi_auth_add_cedar_policies",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-072",
+      "spec_path": "specs/TOOL-072-add_opa_integration.md",
+      "tool_name": "add_opa_integration",
+      "tool_module": "adapt/extend/auth_access/add_opa_integration",
+      "mcp_tool_name": "fastapi_auth_add_opa_integration",
+      "primitive": null,
+      "generator": "generators/tools/add_integration.py",
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "medium"
+      }
+    },
+    {
+      "spec_id": "TOOL-073",
+      "spec_path": "specs/TOOL-073-add_graphql_subscriptions.md",
+      "tool_name": "add_graphql_subscriptions",
+      "tool_module": "adapt/extend/api_design/add_graphql_subscriptions",
+      "mcp_tool_name": "fastapi_api_add_graphql_subscriptions",
+      "primitive": {
+        "namespace": "events",
+        "name": "PubSub",
+        "path": "core.venous.events.PubSub"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "api_design",
+        "realtime"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-074",
+      "spec_path": "specs/TOOL-074-add_social_login.md",
+      "tool_name": "add_social_login",
+      "tool_module": "adapt/extend/auth_access/add_social_login",
+      "mcp_tool_name": "fastapi_auth_add_social_login",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-075",
+      "spec_path": "specs/TOOL-075-add_passkey_auth.md",
+      "tool_name": "add_passkey_auth",
+      "tool_module": "adapt/extend/auth_access/add_passkey_auth",
+      "mcp_tool_name": "fastapi_auth_add_passkey_auth",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-076",
+      "spec_path": "specs/TOOL-076-add_sms_otp.md",
+      "tool_name": "add_sms_otp",
+      "tool_module": "adapt/extend/auth_access/add_sms_otp",
+      "mcp_tool_name": "fastapi_auth_add_sms_otp",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-077",
+      "spec_path": "specs/TOOL-077-add_data_import.md",
+      "tool_name": "add_data_import",
+      "tool_module": "adapt/extend/crud_data/add_data_import",
+      "mcp_tool_name": "fastapi_data_add_data_import",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-078",
+      "spec_path": "specs/TOOL-078-add_data_versioning.md",
+      "tool_name": "add_data_versioning",
+      "tool_module": "adapt/extend/crud_data/add_data_versioning",
+      "mcp_tool_name": "fastapi_data_add_data_versioning",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-079",
+      "spec_path": "specs/TOOL-079-add_event_sourcing.md",
+      "tool_name": "add_event_sourcing",
+      "tool_module": "adapt/extend/crud_data/add_event_sourcing",
+      "mcp_tool_name": "fastapi_data_add_event_sourcing",
+      "primitive": {
+        "namespace": "events",
+        "name": "EventSourcedStore",
+        "path": "core.venous.events.EventSourcedStore"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-080",
+      "spec_path": "specs/TOOL-080-add_cqrs.md",
+      "tool_name": "add_cqrs",
+      "tool_module": "adapt/extend/api_design/add_cqrs",
+      "mcp_tool_name": "fastapi_api_add_cqrs",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "api_design"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-081",
+      "spec_path": "specs/TOOL-081-add_transactional_email.md",
+      "tool_name": "add_transactional_email",
+      "tool_module": "adapt/extend/infrastructure/add_transactional_email",
+      "mcp_tool_name": "fastapi_resiliency_add_transactional_email",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-082",
+      "spec_path": "specs/TOOL-082-add_push_notifications_native.md",
+      "tool_name": "add_push_notifications_native",
+      "tool_module": "adapt/extend/infrastructure/add_push_notifications_native",
+      "mcp_tool_name": "fastapi_resiliency_add_push_notifications_native",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-083",
+      "spec_path": "specs/TOOL-083-add_pdf_reports.md",
+      "tool_name": "add_pdf_reports",
+      "tool_module": "adapt/extend/infrastructure/add_pdf_reports",
+      "mcp_tool_name": "fastapi_resiliency_add_pdf_reports",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-084",
+      "spec_path": "specs/TOOL-084-add_excel_export.md",
+      "tool_name": "add_excel_export",
+      "tool_module": "adapt/extend/infrastructure/add_excel_export",
+      "mcp_tool_name": "fastapi_resiliency_add_excel_export",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-085",
+      "spec_path": "specs/TOOL-085-add_opentelemetry.md",
+      "tool_name": "add_opentelemetry",
+      "tool_module": "adapt/extend/infrastructure/add_opentelemetry",
+      "mcp_tool_name": "fastapi_observability_add_opentelemetry",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-086",
+      "spec_path": "specs/TOOL-086-add_prometheus_metrics.md",
+      "tool_name": "add_prometheus_metrics",
+      "tool_module": "adapt/extend/infrastructure/add_prometheus_metrics",
+      "mcp_tool_name": "fastapi_observability_add_prometheus_metrics",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "observability"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-087",
+      "spec_path": "specs/TOOL-087-add_structured_logging.md",
+      "tool_name": "add_structured_logging",
+      "tool_module": "adapt/extend/infrastructure/add_structured_logging",
+      "mcp_tool_name": "fastapi_observability_add_structured_logging",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "observability"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-088",
+      "spec_path": "specs/TOOL-088-add_cors_config.md",
+      "tool_name": "add_cors_config",
+      "tool_module": "adapt/extend/infrastructure/add_cors_config",
+      "mcp_tool_name": "fastapi_resiliency_add_cors_config",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-089",
+      "spec_path": "specs/TOOL-089-add_csrf_protection.md",
+      "tool_name": "add_csrf_protection",
+      "tool_module": "adapt/extend/infrastructure/add_csrf_protection",
+      "mcp_tool_name": "fastapi_resiliency_add_csrf_protection",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-090",
+      "spec_path": "specs/TOOL-090-add_input_sanitization.md",
+      "tool_name": "add_input_sanitization",
+      "tool_module": "adapt/extend/infrastructure/add_input_sanitization",
+      "mcp_tool_name": "fastapi_resiliency_add_input_sanitization",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-091",
+      "spec_path": "specs/TOOL-091-add_database_migrations_ci.md",
+      "tool_name": "add_database_migrations_ci",
+      "tool_module": "adapt/extend/testing_tools/add_database_migrations_ci",
+      "mcp_tool_name": "fastapi_testing_add_database_migrations_ci",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing_tools"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-092",
+      "spec_path": "specs/TOOL-092-add_docker_production.md",
+      "tool_name": "add_docker_production",
+      "tool_module": "adapt/extend/infrastructure/add_docker_production",
+      "mcp_tool_name": "fastapi_deployment_add_docker_production",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-093",
+      "spec_path": "specs/TOOL-093-add_kubernetes_manifests.md",
+      "tool_name": "add_kubernetes_manifests",
+      "tool_module": "adapt/extend/infrastructure/add_kubernetes_manifests",
+      "mcp_tool_name": "fastapi_resiliency_add_kubernetes_manifests",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-094",
+      "spec_path": "specs/TOOL-094-add_e2e_test_suite.md",
+      "tool_name": "add_e2e_test_suite",
+      "tool_module": "adapt/extend/testing_tools",
+      "mcp_tool_name": "fastapi_testing_add_e2e_test_suite",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-095",
+      "spec_path": "specs/TOOL-095-add_load_shedding.md",
+      "tool_name": "add_load_shedding",
+      "tool_module": "adapt/extend/infrastructure/add_load_shedding",
+      "mcp_tool_name": "fastapi_resiliency_add_load_shedding",
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "LoadShedder",
+        "path": "core.venous.resiliency.LoadShedder"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-096",
+      "spec_path": "specs/TOOL-096-add_adaptive_timeouts.md",
+      "tool_name": "add_adaptive_timeouts",
+      "tool_module": "adapt/extend/infrastructure/add_adaptive_timeouts",
+      "mcp_tool_name": "fastapi_resiliency_add_adaptive_timeouts",
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "TimeoutBudget",
+        "path": "core.venous.resiliency.TimeoutBudget"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-097",
+      "spec_path": "specs/TOOL-097-add_bulkhead_isolation.md",
+      "tool_name": "add_bulkhead_isolation",
+      "tool_module": "adapt/extend/infrastructure/add_bulkhead_isolation",
+      "mcp_tool_name": "fastapi_resiliency_add_bulkhead_isolation",
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "Bulkhead",
+        "path": "core.venous.resiliency.Bulkhead"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-098",
+      "spec_path": "specs/TOOL-098-add_retry_budget.md",
+      "tool_name": "add_retry_budget",
+      "tool_module": "adapt/extend/infrastructure/add_retry_budget",
+      "mcp_tool_name": "fastapi_resiliency_add_retry_budget",
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "RetryPolicy",
+        "path": "core.venous.resiliency.RetryPolicy"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-099",
+      "spec_path": "specs/TOOL-099-add_chaos_testing.md",
+      "tool_name": "add_chaos_testing",
+      "tool_module": "adapt/extend/infrastructure/add_chaos_testing",
+      "mcp_tool_name": "fastapi_testing_add_chaos_testing",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-100",
+      "spec_path": "specs/TOOL-100-add_graceful_shutdown.md",
+      "tool_name": "add_graceful_shutdown",
+      "tool_module": "adapt/extend/infrastructure/add_graceful_shutdown",
+      "mcp_tool_name": "fastapi_resiliency_add_graceful_shutdown",
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "GracefulShutdown",
+        "path": "core.venous.resiliency.GracefulShutdown"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-101",
+      "spec_path": "specs/TOOL-101-add_api_replay_debugger.md",
+      "tool_name": "add_api_replay_debugger",
+      "tool_module": "adapt/extend/infrastructure/add_api_replay_debugger",
+      "mcp_tool_name": "fastapi_resiliency_add_api_replay_debugger",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-102",
+      "spec_path": "specs/TOOL-102-add_anomaly_detector.md",
+      "tool_name": "add_anomaly_detector",
+      "tool_module": "adapt/extend/infrastructure/add_anomaly_detector",
+      "mcp_tool_name": "fastapi_resiliency_add_anomaly_detector",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-103",
+      "spec_path": "specs/TOOL-103-add_request_fingerprint.md",
+      "tool_name": "add_request_fingerprint",
+      "tool_module": "adapt/extend/infrastructure/add_request_fingerprint",
+      "mcp_tool_name": "fastapi_resiliency_add_request_fingerprint",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-104",
+      "spec_path": "specs/TOOL-104-add_schema_evolution_guard.md",
+      "tool_name": "add_schema_evolution_guard",
+      "tool_module": "adapt/extend/testing_tools/add_schema_evolution_guard",
+      "mcp_tool_name": "fastapi_testing_add_schema_evolution_guard",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing_tools"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-105",
+      "spec_path": "specs/TOOL-105-add_data_seeder.md",
+      "tool_name": "add_data_seeder",
+      "tool_module": "adapt/extend/testing_tools/add_data_seeder",
+      "mcp_tool_name": "fastapi_testing_add_data_seeder",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing_tools"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-106",
+      "spec_path": "specs/TOOL-106-add_api_deprecation.md",
+      "tool_name": "add_api_deprecation",
+      "tool_module": "adapt/extend/api_design/add_api_deprecation",
+      "mcp_tool_name": "fastapi_api_add_api_deprecation",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "api_design"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-107",
+      "spec_path": "specs/TOOL-107-add_request_signing.md",
+      "tool_name": "add_request_signing",
+      "tool_module": "adapt/extend/auth_access/add_request_signing",
+      "mcp_tool_name": "fastapi_auth_add_request_signing",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-108",
+      "spec_path": "specs/TOOL-108-add_dlp_shield.md",
+      "tool_name": "add_dlp_shield",
+      "tool_module": "adapt/extend/infrastructure/add_dlp_shield",
+      "mcp_tool_name": "fastapi_resiliency_add_dlp_shield",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-109",
+      "spec_path": "specs/TOOL-109-add_canary_tokens.md",
+      "tool_name": "add_canary_tokens",
+      "tool_module": "adapt/extend/infrastructure/add_canary_tokens",
+      "mcp_tool_name": "fastapi_resiliency_add_canary_tokens",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-110",
+      "spec_path": "specs/TOOL-110-add_sbom_guardian.md",
+      "tool_name": "add_sbom_guardian",
+      "tool_module": "adapt/extend/testing_tools/add_sbom_guardian",
+      "mcp_tool_name": "fastapi_testing_add_sbom_guardian",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing_tools",
+        "security",
+        "supply-chain"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-111",
+      "spec_path": "specs/TOOL-111-add_runtime_sentinel.md",
+      "tool_name": "add_runtime_sentinel",
+      "tool_module": "adapt/extend/infrastructure/add_runtime_sentinel",
+      "mcp_tool_name": "fastapi_resiliency_add_runtime_sentinel",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "security",
+        "rasp"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-112",
+      "spec_path": "specs/TOOL-112-add_bola_guard.md",
+      "tool_name": "add_bola_guard",
+      "tool_module": "adapt/extend/auth_access/add_bola_guard",
+      "mcp_tool_name": "fastapi_auth_add_bola_guard",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access",
+        "security",
+        "bola",
+        "idor"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-113",
+      "spec_path": "specs/TOOL-113-add_compliance_engine.md",
+      "tool_name": "add_compliance_engine",
+      "tool_module": "adapt/extend/infrastructure/add_compliance_engine",
+      "mcp_tool_name": "fastapi_resiliency_add_compliance_engine",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "compliance"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-114",
+      "spec_path": "specs/TOOL-114-add_secret_rotation.md",
+      "tool_name": "add_secret_rotation",
+      "tool_module": "adapt/extend/infrastructure/add_secret_rotation",
+      "mcp_tool_name": "fastapi_resiliency_add_secret_rotation",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-115",
+      "spec_path": "specs/TOOL-115-add_dpop_tokens.md",
+      "tool_name": "add_dpop_tokens",
+      "tool_module": "adapt/extend/auth_access/add_dpop_tokens",
+      "mcp_tool_name": "fastapi_auth_add_dpop_tokens",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "auth_access"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-116",
+      "spec_path": "specs/TOOL-116-add_adaptive_throttle.md",
+      "tool_name": "add_adaptive_throttle",
+      "tool_module": "adapt/extend/infrastructure/add_adaptive_throttle",
+      "mcp_tool_name": "fastapi_resiliency_add_adaptive_throttle",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-117",
+      "spec_path": "specs/TOOL-117-add_schema_enforcer.md",
+      "tool_name": "add_schema_enforcer",
+      "tool_module": "adapt/extend/testing_tools/add_schema_enforcer",
+      "mcp_tool_name": "fastapi_testing_add_schema_enforcer",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing_tools",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-118",
+      "spec_path": "specs/TOOL-118-add_response_armor.md",
+      "tool_name": "add_response_armor",
+      "tool_module": "adapt/extend/infrastructure/add_response_armor",
+      "mcp_tool_name": "fastapi_resiliency_add_response_armor",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure",
+        "security"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-119",
+      "spec_path": "specs/TOOL-119-add_api_monetization.md",
+      "tool_name": "add_api_monetization",
+      "tool_module": "adapt/extend/infrastructure/add_api_monetization",
+      "mcp_tool_name": "fastapi_resiliency_add_api_monetization",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-120",
+      "spec_path": "specs/TOOL-120-add_cost_tracker.md",
+      "tool_name": "add_cost_tracker",
+      "tool_module": "adapt/extend/infrastructure/add_cost_tracker",
+      "mcp_tool_name": "fastapi_resiliency_add_cost_tracker",
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "CostTracker",
+        "path": "core.venous.resiliency.CostTracker"
+      },
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "full",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-121",
+      "spec_path": "specs/TOOL-121-add_tenant_onboarding.md",
+      "tool_name": "add_tenant_onboarding",
+      "tool_module": "adapt/extend/infrastructure/add_tenant_onboarding",
+      "mcp_tool_name": "fastapi_resiliency_add_tenant_onboarding",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-122",
+      "spec_path": "specs/TOOL-122-add_request_tracing_ui.md",
+      "tool_name": "add_request_tracing_ui",
+      "tool_module": "adapt/extend/infrastructure/add_request_tracing_ui",
+      "mcp_tool_name": "fastapi_deployment_add_request_tracing_ui",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-123",
+      "spec_path": "specs/TOOL-123-add_dependency_health_map.md",
+      "tool_name": "add_dependency_health_map",
+      "tool_module": "adapt/extend/infrastructure/add_dependency_health_map",
+      "mcp_tool_name": "fastapi_resiliency_add_dependency_health_map",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "infrastructure"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": "TOOL-124",
+      "spec_path": "specs/TOOL-124-add_api_fuzzer.md",
+      "tool_name": "add_api_fuzzer",
+      "tool_module": "adapt/extend/testing_tools/add_api_fuzzer",
+      "mcp_tool_name": "fastapi_testing_add_api_fuzzer",
+      "primitive": null,
+      "generator": null,
+      "tags": [
+        "extend",
+        "testing_tools"
+      ],
+      "invariants": [],
+      "linkage": "partial",
+      "confidence": {
+        "tool": "high",
+        "primitive": "none",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": "add_read_model_projection",
+      "tool_module": "adapt/extend/crud_data/add_read_model_projection",
+      "mcp_tool_name": "fastapi_data_add_read_model_projection",
+      "primitive": {
+        "namespace": "data",
+        "name": "MaterializedView",
+        "path": "core.venous.data.MaterializedView"
+      },
+      "generator": "generators/tools/add_model.py",
+      "tags": [
+        "extend",
+        "crud_data"
+      ],
+      "invariants": [],
+      "linkage": "tool_only",
+      "confidence": {
+        "tool": "high",
+        "primitive": "high",
+        "generator": "medium"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "BatchCore",
+        "path": "core.venous.api.BatchCore"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "CommandBus",
+        "path": "core.venous.api.CommandBus"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "CommandQuerySeparator",
+        "path": "core.venous.api.CommandQuerySeparator"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "ContextMap",
+        "path": "core.venous.api.ContextMap"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "DataLoader",
+        "path": "core.venous.api.DataLoader"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "DeprecationEntry",
+        "path": "core.venous.api.DeprecationEntry"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "DeprecationRegistry",
+        "path": "core.venous.api.DeprecationRegistry"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "DeprecationReporter",
+        "path": "core.venous.api.DeprecationReporter"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "IdempotencyStore",
+        "path": "core.venous.api.IdempotencyStore"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "InboundVerifier",
+        "path": "core.venous.api.InboundVerifier"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "MemoryPubSubBackend",
+        "path": "core.venous.api.MemoryPubSubBackend"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "MiddlewarePipeline",
+        "path": "core.venous.api.MiddlewarePipeline"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "PersistedQueryRegistry",
+        "path": "core.venous.api.PersistedQueryRegistry"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "QueryBus",
+        "path": "core.venous.api.QueryBus"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "RequestContext",
+        "path": "core.venous.api.RequestContext"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "RouterPipeline",
+        "path": "core.venous.api.RouterPipeline"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "api",
+        "name": "ValueTransform",
+        "path": "core.venous.api.ValueTransform"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "auth",
+        "name": "AuthorizationCodeFlow",
+        "path": "core.venous.auth.AuthorizationCodeFlow"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "auth",
+        "name": "CurrentPrincipal",
+        "path": "core.venous.auth.CurrentPrincipal"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "auth",
+        "name": "FeatureFlagCache",
+        "path": "core.venous.auth.FeatureFlagCache"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "auth",
+        "name": "SessionStore",
+        "path": "core.venous.auth.SessionStore"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "auth",
+        "name": "WebAuthnAuthenticator",
+        "path": "core.venous.auth.WebAuthnAuthenticator"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "cache",
+        "name": "DistributedLock",
+        "path": "core.venous.cache.DistributedLock"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "cache",
+        "name": "SessionCache",
+        "path": "core.venous.cache.SessionCache"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "compliance",
+        "name": "BreachNotificationQueue",
+        "path": "core.venous.compliance.BreachNotificationQueue"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "compliance",
+        "name": "ConsentLedger",
+        "path": "core.venous.compliance.ConsentLedger"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "compliance",
+        "name": "DataSubjectRequest",
+        "path": "core.venous.compliance.DataSubjectRequest"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "compliance",
+        "name": "ProcessingRecord",
+        "path": "core.venous.compliance.ProcessingRecord"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "compliance",
+        "name": "RetentionPolicy",
+        "path": "core.venous.compliance.RetentionPolicy"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "compliance",
+        "name": "TamperEvidentAuditLog",
+        "path": "core.venous.compliance.TamperEvidentAuditLog"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "Aggregate",
+        "path": "core.venous.data.Aggregate"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "AntiCorruptionLayer",
+        "path": "core.venous.data.AntiCorruptionLayer"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "BoundedContext",
+        "path": "core.venous.data.BoundedContext"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "ChangeDataCapture",
+        "path": "core.venous.data.ChangeDataCapture"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "ConfigBinding",
+        "path": "core.venous.data.ConfigBinding"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "DataMapper",
+        "path": "core.venous.data.DataMapper"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "DiContainer",
+        "path": "core.venous.data.DiContainer"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "IdentityMap",
+        "path": "core.venous.data.IdentityMap"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "LegalHold",
+        "path": "core.venous.data.LegalHold"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "LifetimeScope",
+        "path": "core.venous.data.LifetimeScope"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "OptimisticConcurrency",
+        "path": "core.venous.data.OptimisticConcurrency"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "PiiClassification",
+        "path": "core.venous.data.PiiClassification"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "Repository",
+        "path": "core.venous.data.Repository"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "ShardedCounter",
+        "path": "core.venous.data.ShardedCounter"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "Specification",
+        "path": "core.venous.data.Specification"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "TransactionalBatch",
+        "path": "core.venous.data.TransactionalBatch"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "UnitOfWork",
+        "path": "core.venous.data.UnitOfWork"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "data",
+        "name": "ValueObject",
+        "path": "core.venous.data.ValueObject"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "CausalReorderBuffer",
+        "path": "core.venous.events.CausalReorderBuffer"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "DeadLetterRoute",
+        "path": "core.venous.events.DeadLetterRoute"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "DomainEvent",
+        "path": "core.venous.events.DomainEvent"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "EventEnvelope",
+        "path": "core.venous.events.EventEnvelope"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "EventStream",
+        "path": "core.venous.events.EventStream"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "IdempotentConsumer",
+        "path": "core.venous.events.IdempotentConsumer"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "InboxDeduplicator",
+        "path": "core.venous.events.InboxDeduplicator"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "StreamSubject",
+        "path": "core.venous.events.StreamSubject"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "events",
+        "name": "TopicBus",
+        "path": "core.venous.events.TopicBus"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "extras",
+        "name": "OutboundBinding",
+        "path": "core.venous.extras.OutboundBinding"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "extras",
+        "name": "RequestShape",
+        "path": "core.venous.extras.RequestShape"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "extras",
+        "name": "RpcInterceptor",
+        "path": "core.venous.extras.RpcInterceptor"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "extras",
+        "name": "SchemaComparator",
+        "path": "core.venous.extras.SchemaComparator"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "extras",
+        "name": "VirtualActor",
+        "path": "core.venous.extras.VirtualActor"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "jobs",
+        "name": "ActivityCall",
+        "path": "core.venous.jobs.ActivityCall"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "jobs",
+        "name": "DurableTimer",
+        "path": "core.venous.jobs.DurableTimer"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "llm",
+        "name": "InputGuardrail",
+        "path": "core.venous.llm.InputGuardrail"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "llm",
+        "name": "OutputGuardrail",
+        "path": "core.venous.llm.OutputGuardrail"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "llm",
+        "name": "PromptInjectionFilter",
+        "path": "core.venous.llm.PromptInjectionFilter"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "llm",
+        "name": "PromptTemplate",
+        "path": "core.venous.llm.PromptTemplate"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "AccessLog",
+        "path": "core.venous.obs.AccessLog"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "CardinalityGuard",
+        "path": "core.venous.obs.CardinalityGuard"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "CorrelationContext",
+        "path": "core.venous.obs.CorrelationContext"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "CorrelationId",
+        "path": "core.venous.obs.CorrelationId"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "ErrorSink",
+        "path": "core.venous.obs.ErrorSink"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "EventBus",
+        "path": "core.venous.obs.EventBus"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "HealthProbe",
+        "path": "core.venous.obs.HealthProbe"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "HistogramBuckets",
+        "path": "core.venous.obs.HistogramBuckets"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "LifecycleHook",
+        "path": "core.venous.obs.LifecycleHook"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "LlmTrace",
+        "path": "core.venous.obs.LlmTrace"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "MetricMeter",
+        "path": "core.venous.obs.MetricMeter"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "ResourceDescriptor",
+        "path": "core.venous.obs.ResourceDescriptor"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "SamplingPolicy",
+        "path": "core.venous.obs.SamplingPolicy"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "SemanticAttributes",
+        "path": "core.venous.obs.SemanticAttributes"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "StructuredLogger",
+        "path": "core.venous.obs.StructuredLogger"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "TelemetryExporter",
+        "path": "core.venous.obs.TelemetryExporter"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "obs",
+        "name": "Tracer",
+        "path": "core.venous.obs.Tracer"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "policy",
+        "name": "CorsPolicy",
+        "path": "core.venous.policy.CorsPolicy"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "policy",
+        "name": "DataResidencyPolicy",
+        "path": "core.venous.policy.DataResidencyPolicy"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "policy",
+        "name": "EncryptionPolicy",
+        "path": "core.venous.policy.EncryptionPolicy"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "policy",
+        "name": "KeyRotationSchedule",
+        "path": "core.venous.policy.KeyRotationSchedule"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "ExcelExporter",
+        "path": "core.venous.resiliency.ExcelExporter"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "HeterogeneousWorkerPool",
+        "path": "core.venous.resiliency.HeterogeneousWorkerPool"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "ModelRegistry",
+        "path": "core.venous.resiliency.ModelRegistry"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "Redactor",
+        "path": "core.venous.resiliency.Redactor"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "RetryBudget",
+        "path": "core.venous.resiliency.RetryBudget"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "resiliency",
+        "name": "TracingBuffer",
+        "path": "core.venous.resiliency.TracingBuffer"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "security",
+        "name": "ContentSecurityPolicy",
+        "path": "core.venous.security.ContentSecurityPolicy"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "security",
+        "name": "CryptoEnvelope",
+        "path": "core.venous.security.CryptoEnvelope"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "security",
+        "name": "CsrfGuard",
+        "path": "core.venous.security.CsrfGuard"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "security",
+        "name": "InputValidator",
+        "path": "core.venous.security.InputValidator"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "security",
+        "name": "OutputEncoder",
+        "path": "core.venous.security.OutputEncoder"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "security",
+        "name": "PasswordHasher",
+        "path": "core.venous.security.PasswordHasher"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": {
+        "namespace": "security",
+        "name": "SecretsVault",
+        "path": "core.venous.security.SecretsVault"
+      },
+      "generator": null,
+      "tags": [],
+      "invariants": [],
+      "linkage": "primitive_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "high",
+        "generator": "none"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/database/alembic.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/database/alembic_migration.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/observability/alerting.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/observability/alerting__impl1.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/observability/alerting__impl2.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/observability/alerting__impl3.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/observability/alerting__impl4.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/app.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/tools/add_background_job.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/middleware/body_size.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/config.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/testing/conftest.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/middleware/correlation.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/middleware/cors.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/database/crud.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/database/crud_base.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/endpoints/crud_routes.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/auth/deps.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/deployment/docker_compose.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/dockerfile.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/deployment/dockerfile_lint.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/email.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/database/encryption.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/database/engine.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/env_example.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/endpoints/errors.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/deployment/github_actions.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/gitignore.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/auth/hasher.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/endpoints/health.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/middleware/idempotency.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/initial_data.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/schemas/input_schema.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/auth/jwt.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/deployment/k6_loadtest.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/deployment/k8s.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/schemas/list_response.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/logging.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/tools/add_middleware.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/orchestrator.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/orchestrator__impl1.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/orchestrator__impl2.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/orchestrator__impl3.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/orchestrator__impl4.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/observability/otel.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/schemas/output_schema.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/precommit.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/prestart.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/observability/prometheus.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/auth/rate_limit.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/infra/readme.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/middleware/request_logging.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/database/rls.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/auth/routes.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/scaffold_venous.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/auth/schemas.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/middleware/security_headers.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/database/session.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/middleware/stack.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/testing/test_suite.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    },
+    {
+      "spec_id": null,
+      "spec_path": null,
+      "tool_name": null,
+      "tool_module": null,
+      "mcp_tool_name": null,
+      "primitive": null,
+      "generator": "generators/endpoints/user_routes.py",
+      "tags": [],
+      "invariants": [],
+      "linkage": "generator_only",
+      "confidence": {
+        "tool": "none",
+        "primitive": "none",
+        "generator": "high"
+      }
+    }
+  ]
+}

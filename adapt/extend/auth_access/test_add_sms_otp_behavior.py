@@ -42,7 +42,6 @@ os.environ.pop("REDIS_URL", None)
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Module-level shared project
 # ---------------------------------------------------------------------------
@@ -61,9 +60,9 @@ def _build_project() -> Path:
     if _PROJECT_DIR is not None:
         return _PROJECT_DIR
 
-    from tests.common.fixture_factory import create_fixture_project
     from adapt.contracts import ToolInput
     from adapt.extend.auth_access.add_sms_otp import add_sms_otp
+    from tests.common.fixture_factory import create_fixture_project
 
     _TMPDIR = tempfile.TemporaryDirectory()
     project_dir = create_fixture_project(
@@ -107,12 +106,12 @@ async def _make_sqlite_client(project_dir: Path, patch_send_sms: bool = True):
     Returns:
         Tuple of (AsyncClient, AsyncSession, AsyncEngine, app).
     """
-    from sqlalchemy.ext.asyncio import (
-        create_async_engine,
-        async_sessionmaker,
-        AsyncSession,
-    )
     from httpx import ASGITransport, AsyncClient
+    from sqlalchemy.ext.asyncio import (
+        AsyncSession,
+        async_sessionmaker,
+        create_async_engine,
+    )
 
     app = _load_app(project_dir)
     get_session_mod = importlib.import_module("app.core.session")
@@ -244,7 +243,7 @@ async def test_beh_04_verify_correct_code_returns_200() -> None:
         await client.post("/api/v1/auth/sms/send", json={"phone": "+15555550102"})
 
         # Read the code directly from the DB
-        from sqlalchemy import select, text
+        from sqlalchemy import text
         result = await session.execute(
             text("SELECT code FROM otp_codes WHERE phone='+15555550102' LIMIT 1")
         )

@@ -23,6 +23,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -34,6 +36,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_s3_storage",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -51,7 +56,7 @@ def add_s3_storage(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -70,7 +75,7 @@ def add_s3_storage(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = []
@@ -87,7 +92,7 @@ def add_s3_storage(inp: ToolInput) -> ToolResult:
             notes=[
                 "S3Client already present in app/storage/client.py — S3 storage is already installed, skipped."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -100,7 +105,7 @@ def add_s3_storage(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -167,7 +172,7 @@ def add_s3_storage(inp: ToolInput) -> ToolResult:
             "Create the bucket: aws s3 mb s3://<bucket>  (or via MinIO console)",
             "Configure bucket CORS to allow PUT from your frontend origin.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -260,5 +265,3 @@ def _patch_requirements(requirements_file: Path) -> None:
     requirements_file.write_text(src + trailing + "boto3>=1.35.0\n")
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

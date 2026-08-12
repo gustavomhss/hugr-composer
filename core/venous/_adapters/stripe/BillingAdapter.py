@@ -49,7 +49,6 @@ from core.venous.billing.Billing import (
     UnknownSubscription,
 )
 
-
 __all__ = [
     "StripeBillingAdapter",
     "StripeNotInstalled",

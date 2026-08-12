@@ -1,0 +1,16 @@
+"""Protocol for KeyValueBucket — generated from KeyValueBucket.py."""
+
+from __future__ import annotations
+
+from typing import Any, Optional, Protocol, runtime_checkable
+from collections.abc import AsyncIterator
+
+@runtime_checkable
+class KeyValueBucket(Protocol):
+    """KeyValueBucket primitive — compare-and-swap bucket with watch channel."""
+
+    async def create(self, key: str, value: bytes) -> KvEntry: ...
+    async def update(self, key: str, value: bytes, revision: int) -> KvEntry: ...
+    async def get(self, key: str) -> KvEntry | None: ...
+    async def delete(self, key: str, revision: int | None) -> None: ...
+    def watch(self, key: str) -> AsyncIterator[KvEntry]: ...

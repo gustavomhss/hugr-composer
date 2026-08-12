@@ -6,7 +6,6 @@ import hashlib
 import threading
 
 import pytest
-
 from WebAuthnAuthenticator import (
     ChallengeStore,
     CredentialStore,

@@ -16,8 +16,6 @@ Run with::
 
 from __future__ import annotations
 
-import asyncio
-
 
 def test_adapter_imports_cleanly() -> None:
     """Importing the adapter module must succeed without side effects."""

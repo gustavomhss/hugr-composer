@@ -1,3 +1,53 @@
+---
+spec_id: "TOOL-090"
+tool_name: "add_input_sanitization"
+version: "1.0.0"
+status: "ratified"
+invariants:
+  - "INV-SAN-01"
+  - "INV-SAN-02"
+  - "INV-SAN-03"
+  - "INV-SAN-04"
+  - "INV-SAN-05"
+  - "INV-SAN-06"
+  - "INV-SAN-07"
+  - "INV-SAN-08"
+completeness_criteria:
+  - "CC-01"
+  - "CC-02"
+  - "CC-03"
+  - "CC-04"
+  - "CC-05"
+  - "CC-06"
+  - "CC-07"
+  - "CC-08"
+  - "CC-09"
+  - "CC-10"
+  - "CC-11"
+  - "CC-12"
+  - "CC-13"
+  - "CC-14"
+  - "CC-15"
+  - "CC-16"
+quality_standards:
+  - "QS-1"
+  - "QS-10"
+  - "QS-11"
+  - "QS-2"
+  - "QS-3"
+  - "QS-4"
+  - "QS-5"
+  - "QS-6"
+  - "QS-7"
+  - "QS-8"
+  - "QS-9"
+tags:
+  - "performance"
+  - "data"
+  - "realtime"
+  - "compliance"
+  - "testing"
+---
 # TOOL-090: add_input_sanitization
 
 > **Status**: SPEC v1 (rigorous)

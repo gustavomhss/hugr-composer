@@ -12,13 +12,11 @@ from __future__ import annotations
 
 import ast
 import sys
-import tempfile
 from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.verify.detect_n_plus_one import detect_n_plus_one
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Helpers

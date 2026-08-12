@@ -11,16 +11,13 @@ import json
 import sys
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock
 
 from adapt.contracts import ToolInput
 from adapt.operate.connection_pool_monitor import (
-    connection_pool_monitor,
-    _render_dashboard,
     _render_alerts,
-    _ms,
+    _render_dashboard,
+    connection_pool_monitor,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -32,7 +32,6 @@ from typing import Any
 
 from core.venous.events.PubSub import PubSubClosed, PubSubInvariantError
 
-
 __all__ = [
     "PubSubRedisNotInstalled",
     "RedisPubSubBackend",

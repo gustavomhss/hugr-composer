@@ -19,7 +19,6 @@ from pathlib import Path
 from adapt.contracts import ToolInput
 from adapt.evolve.add_event_driven import add_event_driven
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

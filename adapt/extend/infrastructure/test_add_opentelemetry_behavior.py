@@ -50,7 +50,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_opentelemetry import add_opentelemetry
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------

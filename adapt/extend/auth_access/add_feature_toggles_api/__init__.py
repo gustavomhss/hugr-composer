@@ -18,6 +18,8 @@ from pathlib import Path
 
 from adapt._base import load_template
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -191,5 +193,3 @@ def add_feature_toggles_api(inp: ToolInput) -> ToolResult:
     )
 
 
-def _elapsed_ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

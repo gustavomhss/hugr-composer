@@ -30,7 +30,6 @@ from typing import Any
 
 from adapt.contracts import ToolInput, ToolResult
 
-
 # ---------------------------------------------------------------------------
 # Data models
 # ---------------------------------------------------------------------------
@@ -131,7 +130,7 @@ def sla_reporter(
         )
 
     # --- Prerequisite check ---------------------------------------------------
-    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.CONFIG_SETTINGS)
     if prereq_errors:
@@ -148,7 +147,7 @@ def sla_reporter(
     if inp.dry_run:
         return ToolResult(
             status="success",
-            notes=[f"[dry_run] Would generate {output_format} report for {len(targets)} SLO targets."],
+            notes=["[dry_run] Would generate SLO report (dry-run skips file operations)"],
             execution_time_ms=_ms(start),
         )
 

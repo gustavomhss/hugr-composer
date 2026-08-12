@@ -8,7 +8,7 @@ license: Proprietary
 
 ## Overview
 
-Turns a plain-English backend spec into a running, tested, production-grade FastAPI service. Emits idiomatic code that imports from a curated library of 124 registered + 175 staged framework-free primitives (the "venous system"), so generated output survives hand-editing. Ships 202 MCP tools behind 7 tier-1 meta tools + 9 domain-tree dispatchers — drive the skill exclusively through those, never by listing the full catalog.
+Turns a plain-English backend spec into a running, tested, production-grade FastAPI service. Emits idiomatic code that imports from a curated library of 124 registered + 174 staged framework-free primitives (the "venous system"), so generated output survives hand-editing. Ships 202 MCP tools behind 8 tier-1 meta tools + 9 domain-tree dispatchers — drive the skill exclusively through those, never by listing the full catalog.
 
 ## When to use
 
@@ -72,7 +72,7 @@ invariants:
 | `fastapi_meta_compose` | Wire primitives into `app/compositions/<slug>.py` exporting `install(app)`. | Compose phase, when no slice fits exactly. |
 | `fastapi_meta_audit` | Run `engine.audit.contract_check` on the skill tree (37 §A/§B rules). Skill-kit integrity ONLY; does not validate emitted projects. | Before declaring the kit sound; NOT as the sole gate on a generated project. |
 | `fastapi_meta_verify` | 10-tier primitive quality gate on the registry. Skill-kit integrity ONLY. | After adding / editing a primitive in the kit. |
-| `fastapi_auth` | Tree dispatcher for 15 auth slice tools (bundle / slice / primitive granularities). | Any auth-related request. |
+| `fastapi_auth` | Tree dispatcher for 17 auth slice tools (bundle / slice / primitive granularities). | Any auth-related request. |
 
 All other tools (~185) are discovered on demand via `fastapi_meta_search`.
 
@@ -122,7 +122,7 @@ RESULT  {mode: "recipe_template", files: ["app/compositions/stripe_webhook.py"]}
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()        # skill-kit integrity
-RESULT  {37/37 green}
+RESULT  {47/47 green}
 # Emitted-project integrity — run the generated pytest suite:
 SHELL   cd /workspace/myapp && pytest -q
 RESULT  passed
@@ -168,7 +168,7 @@ ASSISTANT  "Adjusting the rate-limit window from the default 60s to your
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()        # skill-kit integrity
-RESULT  {37/37 green}
+RESULT  {47/47 green}
 # Emitted-project integrity — rerun the project's test suite:
 SHELL   cd /workspace/store && pytest -q
 RESULT  passed
@@ -215,7 +215,7 @@ STEP 5  → business (agent adds audit calls inside existing handlers)
 
 STEP 6  → audit
 TOOL    fastapi_meta_audit()        # skill-kit integrity
-RESULT  {37/37 green}
+RESULT  {47/47 green}
 # Emitted-project integrity — rerun the project's test suite:
 SHELL   cd /workspace/app && pytest -q
 RESULT  passed
@@ -230,7 +230,7 @@ ASSISTANT  "Login via Google OAuth at /auth/login; every route now
 - Do not skip `fastapi_meta_home`. It's the catalog map the rest of the workflow steers from.
 - Do not treat `fastapi_meta_audit` as validation of the generated project. It audits the skill kit's own tree (§A/§B rules). For emitted-project validation, run `pytest` inside the output directory.
 - Do not call `fastapi_meta_scaffold` twice in one session. Not idempotent.
-- Do not list all 15 auth tools. Always go through `fastapi_auth`.
+- Do not list all 17 auth tools. Always go through `fastapi_auth`.
 - Do not write business-logic code inline that duplicates a primitive — always `describe` first to check.
 - Do not mark a session "done" before `fastapi_meta_verify` returns green.
 - Do not ask more than three clarify questions. If three are not enough, scaffold with sensible defaults and let the user redirect.

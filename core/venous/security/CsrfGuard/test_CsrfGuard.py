@@ -6,7 +6,6 @@ import hmac
 import secrets
 
 import pytest
-
 from CsrfGuard import (
     MIN_SECRET_BYTES,
     TOKEN_NONCE_BYTES,

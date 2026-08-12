@@ -14,6 +14,8 @@ from pathlib import Path
 
 from adapt._base import render, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
@@ -23,6 +25,9 @@ MCP_TOOL = {
     "description": "Add draft/published/archived lifecycle with diff to any content type.",
     "tags": ["extend", "crud_data"],
     "entry": "add_data_versioning",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 

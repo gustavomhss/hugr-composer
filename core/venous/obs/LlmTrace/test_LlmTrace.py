@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from LlmTrace import (
     GEN_AI_PROMPT_FINGERPRINT,
     GEN_AI_REQUEST_MODEL,
@@ -34,9 +33,8 @@ def test_inv_one_span_per_call_confirms() -> None:
 
 def test_inv_one_span_per_call_prevents() -> None:
     tracer = InMemoryLlmTrace()
-    with pytest.raises(LlmTraceInvariantError):
-        with tracer.start("", "m", "fp"):
-            pass
+    with pytest.raises(LlmTraceInvariantError), tracer.start("", "m", "fp"):
+        pass
     with pytest.raises(LlmTraceInvariantError):
         validate_operation("   ")
 
@@ -103,9 +101,8 @@ def test_inv_prompt_fingerprint_confirms() -> None:
 
 def test_inv_prompt_fingerprint_prevents() -> None:
     tracer = InMemoryLlmTrace()
-    with pytest.raises(LlmTraceInvariantError):
-        with tracer.start("completion", "m", ""):
-            pass
+    with pytest.raises(LlmTraceInvariantError), tracer.start("completion", "m", ""):
+        pass
     with pytest.raises(LlmTraceInvariantError):
         validate_prompt_fingerprint("   ")
 
@@ -135,9 +132,8 @@ def test_inv_record_error_confirms() -> None:
 
 def test_inv_record_error_prevents() -> None:
     tracer = InMemoryLlmTrace()
-    with tracer.start("completion", "m", "fp") as span:
-        with pytest.raises(LlmTraceInvariantError):
-            span.record_error("", "empty code forbidden")
+    with tracer.start("completion", "m", "fp") as span, pytest.raises(LlmTraceInvariantError):
+        span.record_error("", "empty code forbidden")
 
 
 def test_inv_record_error_under_failure() -> None:

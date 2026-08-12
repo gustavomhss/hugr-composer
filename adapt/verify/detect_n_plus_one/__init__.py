@@ -49,6 +49,15 @@ def detect_n_plus_one(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err)
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would instrument project with N+1 query detection."],
+            next_steps=["Re-run without dry_run=True to apply changes."],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+
     from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.BASE_MODEL)
@@ -73,13 +82,6 @@ def detect_n_plus_one(inp: ToolInput) -> ToolResult:
     files_created: list[str] = []
     files_modified: list[str] = []
 
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=["[dry_run] Would instrument project with N+1 query detection."],
-            next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     listener_file = app_dir / "core" / "query_listener.py"
     render_to(_HERE, "query_listener.py.tmpl", dest=listener_file, substitutions={})

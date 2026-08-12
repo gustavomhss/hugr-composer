@@ -16,7 +16,6 @@ or::
 
 from __future__ import annotations
 
-import ast
 import json
 import sys
 import tempfile
@@ -36,7 +35,6 @@ from adapt.proactive.fastapi_doctor import (
     classify_finding,
     fastapi_doctor,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

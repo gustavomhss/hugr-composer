@@ -45,7 +45,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_api_monetization import add_api_monetization
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Shared patch content
 # ---------------------------------------------------------------------------
@@ -334,7 +333,6 @@ def _run_async_test(coro_fn: Any, *args: Any) -> None:
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    import traceback as _tb
 
     _pd, _app = _get_shared_app()
 
@@ -378,7 +376,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print(f"TOOL-119 BEHAVIOR: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(json.dumps(contract, indent=2))
 
     if failed:

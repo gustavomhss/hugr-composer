@@ -87,7 +87,7 @@ async def update_webhook(
     return WebhookEndpointPublic.model_validate(ep)
 
 
-@router.delete("/{webhook_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{webhook_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 async def delete_webhook(
     webhook_id: uuid.UUID,
     session: SessionDep,

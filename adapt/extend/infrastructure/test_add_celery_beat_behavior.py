@@ -39,7 +39,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_celery_beat import add_celery_beat
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Shared fixture — one project, one app, all tests reuse it
 # ---------------------------------------------------------------------------
@@ -372,7 +371,6 @@ def test_delivery_contract(behavior_project: Path) -> None:
     checked mechanically via ``ToolDelivery.validate_or_raise()``.
     """
     import sys as _sys
-    import os as _os
 
     skill_root = Path(__file__).resolve().parents[3]  # SKILL-001-fastapi-production/
     if str(skill_root) not in _sys.path:

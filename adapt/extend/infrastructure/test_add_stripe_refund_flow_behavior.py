@@ -46,7 +46,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_stripe_refund_flow import add_stripe_refund_flow
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------
@@ -421,8 +420,8 @@ if __name__ == "__main__":
          lambda: _run_async_test(test_b03_get_refund_without_auth_denied, _app)),
         ("B-04: POST /refunds/webhook/stripe no sig → 400/422",
          lambda: _run_async_test(test_b04_webhook_without_signature_returns_400, _app)),
-        ("B-05: refund model imports clean",
-         lambda: test_b05_refund_model_imports_without_crash(_pd)),
+        ("B-05: refund model AST structure",
+         lambda: test_b05_refund_model_ast_structure(_pd)),
         ("B-06: refund schemas import clean",
          lambda: test_b06_refund_schemas_import_without_crash(_pd)),
         ("B-07: config fields present",
@@ -471,7 +470,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print(f"TOOL-066 BEHAVIOR: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(json.dumps(contract, indent=2))
 
     if failed:

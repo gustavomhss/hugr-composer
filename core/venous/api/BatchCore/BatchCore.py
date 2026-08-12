@@ -1,8 +1,35 @@
 from __future__ import annotations
-from collections.abc import Awaitable
-from collections.abc import Callable
-from typing import Any
+
 import asyncio
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
+from enum import Enum
+from typing import Any
+
+
+class ProcessingStrategy(str, Enum):
+    """How the batch iterates its items."""
+
+    SEQUENTIAL = "sequential"
+    PARALLEL = "parallel"
+
+
+class IsolationMode(str, Enum):
+    """Failure-isolation policy for a batch run."""
+
+    ALL_OR_NOTHING = "all_or_nothing"
+    BEST_EFFORT = "best_effort"
+
+
+@dataclass
+class BatchItemResult:
+    """Outcome of one batch item, positionally aligned to the input list."""
+
+    index: int
+    status_code: int
+    data: Any = None
+    error: str | None = None
+    idempotency_key: str | None = None
 
 
 class BatchCore:
@@ -60,7 +87,7 @@ class BatchCore:
             try:
                 data = await asyncio.wait_for(self._handler(item), timeout=self._timeout)
                 return BatchItemResult(index=idx, status_code=201, data=data, idempotency_key=idempotency_key)
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 return BatchItemResult(index=idx, status_code=504, error='Per-item timeout exceeded.', idempotency_key=idempotency_key)
             except Exception as exc:
                 code = getattr(exc, 'status_code', 500)

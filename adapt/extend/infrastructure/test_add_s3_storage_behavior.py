@@ -38,10 +38,8 @@ os.environ.pop("REDIS_URL", None)
 import ast
 import importlib
 import importlib.util
-import json
 import sys
 import textwrap
-import traceback
 from pathlib import Path
 from typing import Any
 
@@ -52,7 +50,6 @@ import pytest
 from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_s3_storage import add_s3_storage
 from tests.common.fixture_factory import create_fixture_project
-
 
 # ---------------------------------------------------------------------------
 # Patch templates
@@ -550,7 +547,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*60}")
     print(f"TOOL-060 BEHAVIOR: {passed}/{total} passed")
-    print(f"\nDelivery contract JSON:")
+    print("\nDelivery contract JSON:")
     print(_json.dumps(contract, indent=2))
 
     if failed:

@@ -6,7 +6,6 @@ import asyncio
 from dataclasses import replace
 
 import pytest
-
 from DeadLetterRoute import (
     DeadLetterRoute,
     DeadLetterRouteInvariantError,

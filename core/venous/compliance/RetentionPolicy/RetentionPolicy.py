@@ -29,7 +29,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Final, Protocol, runtime_checkable
 
 ALLOWED_DELETION_MODES: Final[frozenset[str]] = frozenset(
@@ -127,7 +127,7 @@ class InMemoryRetentionEnforcer:
         self._records: list[_RecordRow] = []
         self._audit = audit_sink
         self._hold = hold_check
-        self._now = now or (lambda: datetime.now(timezone.utc))
+        self._now = now or (lambda: datetime.now(UTC))
 
     # ------------------------------------------------------------- Public API
     def bind(self, policy: RetentionPolicy) -> None:

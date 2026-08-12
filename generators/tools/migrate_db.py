@@ -28,8 +28,6 @@ MCP_TOOL = {
 import textwrap
 from pathlib import Path
 
-from generators.tools._layout import resolve_app_root
-
 
 def generate_migration(
     project_dir: str,

@@ -13,11 +13,13 @@ and returns ``status="no_op"``.
 
 from __future__ import annotations
 
+import ast
 import time
 from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -45,7 +47,7 @@ def add_retry_budget(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -58,7 +60,7 @@ def add_retry_budget(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first via fastapi_generate_project(...)."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -70,7 +72,7 @@ def add_retry_budget(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["Retry policy already wired via the FastAPI adapter."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -81,7 +83,7 @@ def add_retry_budget(inp: ToolInput) -> ToolResult:
                 "and write app/retry.py calling RetryPolicyAdapter.install(app, ...)."
             ],
             next_steps=["Re-run without dry_run=True to apply."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     from generators.scaffold_venous import ensure_primitives
@@ -117,6 +119,18 @@ def add_retry_budget(inp: ToolInput) -> ToolResult:
 
     _emit_project_test(project, files_created)
 
+    for path_str in files_created:
+        p = Path(path_str)
+        if p.suffix == ".py" and p.is_file():
+            try:
+                ast.parse(p.read_text())
+            except SyntaxError as exc:
+                return ToolResult(
+                    status="error",
+                    error=f"Generated file has syntax error: {p}: {exc}",
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -132,7 +146,7 @@ def add_retry_budget(inp: ToolInput) -> ToolResult:
             "Use `Depends(policy_dep)` on routes; call `await p.execute(fn, idempotent=True)`.",
             "Set RETRY_* in .env to override defaults (max_attempts=3, budget_ratio=0.1).",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -145,5 +159,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

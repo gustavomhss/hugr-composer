@@ -6,7 +6,6 @@ from collections.abc import Mapping
 from typing import Any
 
 import pytest
-
 from EventBus import (
     EventBusInvariantError,
     InMemoryEventBus,

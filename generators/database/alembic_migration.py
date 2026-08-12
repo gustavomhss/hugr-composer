@@ -116,7 +116,7 @@ def _table_block(
 ) -> str:
     """Render an ``op.create_table(...)`` block for a single model."""
     lines: list[str] = []
-    lines.append(f"    op.create_table(")
+    lines.append("    op.create_table(")
     lines.append(f'        "{table_name}",')
     lines.append(
         '        sa.Column("id", sa.Uuid(), nullable=False),'

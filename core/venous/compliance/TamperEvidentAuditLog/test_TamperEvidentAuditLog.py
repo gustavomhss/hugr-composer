@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import pytest
+from datetime import UTC
 
+import pytest
 from TamperEvidentAuditLog import (
     GENESIS_PREV_HASH,
     HmacReferenceSigner,
@@ -179,8 +180,8 @@ def test_inv_server_timestamp_under_failure() -> None:
 
 # Extra: canonical serialisation is deterministic across attribute insertion order.
 def test_canonical_bytes_order_insensitive() -> None:
-    from datetime import datetime, timezone
-    ts = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    from datetime import datetime
+    ts = datetime(2026, 1, 1, tzinfo=UTC)
     b1 = _canonical_bytes(seq=1, timestamp=ts, actor="a", action="READ",
                           resource="r", outcome="success",
                           attributes={"x": 1, "y": 2}, prev_hash=GENESIS_PREV_HASH)

@@ -11,7 +11,6 @@ from EventSourcedStore import (
     replay,
 )
 
-
 SCHEMA_PATH = Path(__file__).parent / "observability_schema.json"
 
 

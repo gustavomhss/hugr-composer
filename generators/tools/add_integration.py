@@ -36,7 +36,6 @@ from pathlib import Path
 
 from generators.tools._layout import resolve_app_root
 
-
 _SUPPORTED_SERVICES = ("stripe", "s3", "sendgrid", "redis")
 
 

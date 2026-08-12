@@ -57,6 +57,15 @@ def dependency_audit(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err)
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would generate dependency audit infrastructure."],
+            next_steps=["Re-run without dry_run=True to apply changes."],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+
     from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.REQUIREMENTS_TXT)
@@ -78,13 +87,6 @@ def dependency_audit(inp: ToolInput) -> ToolResult:
 
     files_created: list[str] = []
 
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=["[dry_run] Would generate dependency audit infrastructure."],
-            next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     (project / "scripts").mkdir(parents=True, exist_ok=True)
     render_to(_HERE, "orchestrator.py.tmpl", dest=orchestrator, substitutions={})

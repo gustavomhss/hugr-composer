@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import pytest
-
 from HistogramBuckets import (
+    MAX_BUCKETS,
     HistogramBuckets,
     HistogramBucketsInvariantError,
-    MAX_BUCKETS,
 )
 
 

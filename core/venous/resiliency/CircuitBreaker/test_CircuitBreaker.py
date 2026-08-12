@@ -7,7 +7,6 @@ import threading
 import time
 
 import pytest
-
 from CircuitBreaker import (
     CircuitOpenError,
     HalfOpenRejectedError,

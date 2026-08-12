@@ -34,6 +34,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -45,6 +47,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_kubernetes_manifests",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 # Template file names for the 7 manifests
@@ -75,7 +80,7 @@ def add_kubernetes_manifests(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -93,7 +98,7 @@ def add_kubernetes_manifests(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = []
@@ -107,7 +112,7 @@ def add_kubernetes_manifests(inp: ToolInput) -> ToolResult:
             notes=[
                 "HorizontalPodAutoscaler already present in k8s/hpa.yaml — K8s manifests already installed, skipped."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -122,7 +127,7 @@ def add_kubernetes_manifests(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -173,7 +178,7 @@ def add_kubernetes_manifests(inp: ToolInput) -> ToolResult:
             "kubectl apply -f k8s/",
             "kubectl rollout status deployment/fastapi-app -n ${K8S_NAMESPACE:-production}",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -220,5 +225,3 @@ def _patch_config(config_file: Path) -> None:
     config_file.write_text(content)
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

@@ -16,6 +16,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
@@ -25,6 +27,9 @@ MCP_TOOL = {
     "description": "Add a production-grade transactional email layer with Jinja2 templates, pluggable providers (Resend/Postmark/SMTP), and delivery audit.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_email_templates",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 # Tenant column blocks for the ORM model
@@ -100,7 +105,7 @@ def add_email_templates(
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -123,7 +128,7 @@ def add_email_templates(
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = []
@@ -140,7 +145,7 @@ def add_email_templates(
             notes=[
                 "TemplateName already present in app/email/__init__.py — email templates already installed, skipped."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     has_tenants = (app_dir / "models" / "tenant.py").exists()
@@ -161,7 +166,7 @@ def add_email_templates(
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -306,7 +311,7 @@ def add_email_templates(
             "Set EMAIL_FROM + provider API key in .env.",
             "Restart the FastAPI app so the /email/* routes are loaded.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -470,5 +475,3 @@ def _patch_env_example(env_example: Path) -> None:
     env_example.write_text(src + trailing + block)
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

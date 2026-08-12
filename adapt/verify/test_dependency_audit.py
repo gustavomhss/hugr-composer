@@ -18,7 +18,6 @@ from adapt.contracts import ToolInput
 from adapt.verify.dependency_audit import dependency_audit
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

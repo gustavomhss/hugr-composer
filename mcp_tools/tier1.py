@@ -259,7 +259,7 @@ def _bm25_score(
 MCP_TOOL_SEARCH = {
     "name": "fastapi_meta_search",
     "description": (
-        "Search the HuGR FastAPI catalog (202 tools + 299 primitives + "
+        "Search the HuGR FastAPI catalog (202 tools + 298 primitives + "
         "392 recipes) by natural language. Returns the top-K matching "
         "entries with synopsis, domain, verb, and next-step breadcrumbs. "
         "Use this when you know WHAT you need (e.g. 'exactly-once webhook', "

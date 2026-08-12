@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-
 from CurrentPrincipal import anonymous, authenticated
 from RequestContext import MutableRequestContext
 from RequestGuard import (

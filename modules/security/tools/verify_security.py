@@ -354,9 +354,7 @@ def _check_sec04_unbounded_strings(
             # Check if annotation is str
             is_str = False
             ann = item.annotation
-            if isinstance(ann, ast.Name) and ann.id == "str":
-                is_str = True
-            elif isinstance(ann, ast.Constant) and ann.value == "str":
+            if isinstance(ann, ast.Name) and ann.id == "str" or isinstance(ann, ast.Constant) and ann.value == "str":
                 is_str = True
             # str | None
             elif isinstance(ann, ast.BinOp) and isinstance(ann.op, ast.BitOr):

@@ -57,6 +57,8 @@ def test_missing_token_returns_401() -> None:
 
 
 def test_valid_jwt_returns_claims() -> None:
+    import time
+
     from fastapi import Depends, FastAPI
     from fastapi.testclient import TestClient
 
@@ -68,8 +70,6 @@ def test_valid_jwt_returns_claims() -> None:
         StaticJwksFetcher,
         make_hs256_jwt,
     )
-
-    import time
 
     secret = b"k" * 32
     issuers = {

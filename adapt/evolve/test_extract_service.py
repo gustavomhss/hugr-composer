@@ -20,7 +20,6 @@ from pathlib import Path
 from adapt.contracts import ToolInput
 from adapt.evolve.extract_service import extract_service
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

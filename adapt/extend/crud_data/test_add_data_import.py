@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.crud_data.add_data_import import add_data_import
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -426,7 +425,8 @@ def test_upload_route_checks_file_extension() -> None:
 
 def test_mcp_tool_entry_matches_function() -> None:
     """INV-10: MCP_TOOL['entry'] must match the actual function name."""
-    from adapt.extend.crud_data.add_data_import import MCP_TOOL, add_data_import as fn
+    from adapt.extend.crud_data.add_data_import import MCP_TOOL
+    from adapt.extend.crud_data.add_data_import import add_data_import as fn
     assert MCP_TOOL["entry"] == fn.__name__, (
         f"MCP_TOOL entry={MCP_TOOL['entry']!r} != function name={fn.__name__!r}"
     )

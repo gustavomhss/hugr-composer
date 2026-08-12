@@ -37,7 +37,6 @@ from pathlib import Path
 
 from generators.tools._layout import resolve_app_root
 
-
 # ---------------------------------------------------------------------------
 # Type mapping for inline request-body schemas
 # ---------------------------------------------------------------------------

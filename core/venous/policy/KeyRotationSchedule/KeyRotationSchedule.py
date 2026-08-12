@@ -24,7 +24,7 @@ from __future__ import annotations
 import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Protocol, runtime_checkable
 
 
@@ -80,7 +80,7 @@ class KeyRotator(Protocol):
     def active_key(self, key_alias: str, at: datetime) -> str: ...
 
 
-_EPOCH: datetime = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_EPOCH: datetime = datetime(1970, 1, 1, tzinfo=UTC)
 
 
 class InMemoryKeyRotator:
@@ -117,7 +117,7 @@ class InMemoryKeyRotator:
             new_version_id = f"v{len(versions) + 1}"
             # Use wall-clock "now" verbatim — never clamp to next_rotation_at.
             # Clamping would hide missed-rotation evidence (KRS_INV_01).
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             # Mark previous version as "retired" at now + overlap; after that it
             # becomes decrypt-only.
             if versions:

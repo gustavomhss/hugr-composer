@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import pytest
-
 from ResourceDescriptor import ALLOWED_ENVIRONMENTS, ResourceDescriptor, ResourceInvariantError
 
 

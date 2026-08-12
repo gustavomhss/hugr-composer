@@ -10,7 +10,6 @@ import json
 from datetime import date, timedelta
 
 import pytest
-
 from DeprecationEntry import DeprecationEntry
 
 

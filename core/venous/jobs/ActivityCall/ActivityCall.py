@@ -146,7 +146,7 @@ class InMemoryActivityExecutor:
                 await asyncio.sleep(retry_delay_s(call.retry, attempt_no - 1))
             try:
                 result = await asyncio.wait_for(handler(call.args), timeout=attempt_timeout)
-            except asyncio.TimeoutError as e:  # heartbeat-window / start_to_close exceeded
+            except TimeoutError as e:  # heartbeat-window / start_to_close exceeded
                 reason = "heartbeat_missed" if (
                     call.heartbeat_s is not None
                     and call.heartbeat_s <= call.start_to_close_s

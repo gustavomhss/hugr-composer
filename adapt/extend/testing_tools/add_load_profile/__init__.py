@@ -16,6 +16,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -25,6 +27,9 @@ MCP_TOOL = {
     "description": "Add k6 load test profiles (smoke, load, stress, soak) for the project's endpoints.",
     "tags": ["extend", "testing"],
     "entry": "add_load_profile",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -54,7 +59,7 @@ def add_load_profile(
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -70,7 +75,7 @@ def add_load_profile(
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -81,7 +86,7 @@ def add_load_profile(
         return ToolResult(
             status="no_op",
             notes=["tests/load/locustfile.py already present — skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -93,7 +98,7 @@ def add_load_profile(
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     slos = targets_p99_ms or {
@@ -149,7 +154,7 @@ def add_load_profile(
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     (project / "tests").mkdir(parents=True, exist_ok=True)
@@ -177,7 +182,7 @@ def add_load_profile(
             f"--spawn-rate {spawn_rate} --run-time 300s --headless",
             "Edit tests/load/slo_config.yaml to tune p99 targets per environment.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -339,5 +344,3 @@ def _write_ci_workflow(dest: Path, users: int, spawn_rate: int, duration: int) -
     dest.write_text(content)
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

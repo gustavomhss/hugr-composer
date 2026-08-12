@@ -269,7 +269,7 @@ def test_waiver_set_is_now_empty() -> None:
     """
     from engine.audit.contract_rules.r_no_module_state import _WAIVED_TOOLS
 
-    assert _WAIVED_TOOLS == frozenset(), (
+    assert frozenset() == _WAIVED_TOOLS, (
         f"Expected an empty B0.12 waiver set after W2 close-out; "
         f"still contains: {sorted(_WAIVED_TOOLS)}"
     )

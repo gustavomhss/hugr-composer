@@ -1,3 +1,48 @@
+---
+spec_id: "TOOL-092"
+tool_name: "add_docker_production"
+version: "1.0.0"
+status: "ratified"
+invariants:
+  - "INV-DOCK-01"
+  - "INV-DOCK-02"
+  - "INV-DOCK-03"
+  - "INV-DOCK-04"
+  - "INV-DOCK-05"
+  - "INV-DOCK-06"
+  - "INV-DOCK-07"
+  - "INV-DOCK-08"
+completeness_criteria:
+  - "CC-01"
+  - "CC-02"
+  - "CC-03"
+  - "CC-04"
+  - "CC-05"
+  - "CC-06"
+  - "CC-07"
+  - "CC-08"
+  - "CC-09"
+  - "CC-10"
+  - "CC-11"
+  - "CC-12"
+  - "CC-13"
+  - "CC-14"
+  - "CC-15"
+  - "CC-16"
+  - "CC-17"
+  - "CC-18"
+  - "CC-19"
+  - "CC-20"
+  - "CC-21"
+  - "CC-22"
+  - "CC-23"
+tags:
+  - "performance"
+  - "data"
+  - "resiliency"
+  - "realtime"
+  - "api"
+---
 # TOOL-092: `fastapi_add_docker_production`
 
 **Skill:** SKILL-001-fastapi-production

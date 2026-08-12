@@ -95,9 +95,7 @@ class ParentBasedHeadSampler:
             parent_sampled = False
             if parent_context is not None:
                 # Attempt duck-typed access; if it raises, fall back.
-                if hasattr(parent_context, "get"):
-                    parent_sampled = bool(parent_context.get("sampled"))
-                elif isinstance(parent_context, dict):
+                if hasattr(parent_context, "get") or isinstance(parent_context, dict):
                     parent_sampled = bool(parent_context.get("sampled"))
             if not self._parent_override and parent_sampled:
                 return SamplingDecision(True, {"sampler.reason": "parent"}, None)

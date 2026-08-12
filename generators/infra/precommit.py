@@ -84,7 +84,7 @@ def generate_precommit(
     return {
         "files_created": [str(file_path)],
         "notes": [
-            f"Generated .pre-commit-config.yaml with Ruff (lint + format) and pre-commit-hooks.",
+            "Generated .pre-commit-config.yaml with Ruff (lint + format) and pre-commit-hooks.",
             f"Default Python version: {python_version}. Install with: pre-commit install.",
         ],
     }

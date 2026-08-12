@@ -25,7 +25,6 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult
 
-
 MCP_TOOL = {
     "name": "fastapi_resiliency_analyze_error_rate_analyzer",
     "description": "Analyze application error rates from structured logs or Prometheus metrics.",
@@ -75,8 +74,17 @@ def error_rate_analyzer(
             execution_time_ms=_ms(start),
         )
 
+
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would create error rate analyzer files."],
+            execution_time_ms=_ms(start),
+        )
+
+
     # --- Prerequisite check ---------------------------------------------------
-    from adapt.contracts.prerequisites import check_prerequisites, Prereq
+    from adapt.contracts.prerequisites import Prereq, check_prerequisites
 
     prereq_errors = check_prerequisites(inp.project_dir, Prereq.CONFIG_SETTINGS)
     if prereq_errors:
@@ -94,13 +102,6 @@ def error_rate_analyzer(
         return ToolResult(
             status="no_op",
             notes=["ErrorRateMiddleware already present — skipped."],
-            execution_time_ms=_ms(start),
-        )
-
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=["[dry_run] Would create error rate analyzer files."],
             execution_time_ms=_ms(start),
         )
 

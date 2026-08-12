@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "6f030856",
-  "generated_at": "2026-06-09T14:01:56+00:00",
+  "kit_commit": "6c8d4b8c",
+  "generated_at": "2026-08-12T02:41:07+00:00",
   "verbs": [
     "add",
     "generate",
@@ -7458,15 +7458,6 @@
       "status": "staged"
     },
     {
-      "name": "TemplateName",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/TemplateName/",
-      "status": "staged"
-    },
-    {
       "name": "TemporalClientFactory",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -12020,10 +12011,10 @@
     "tools_total": 202,
     "tools_local": 202,
     "tools_federated": 0,
-    "primitives": 299,
+    "primitives": 298,
     "recipes": 392,
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "2e2a89699c65dcd6b669effadcb08c5c7532fb8504f0eb2a5ac830bee9899d78"
+  "stable_hash": "1291ae38075ab83a7c2ad2f15286ddb66f1662e750f54b42f2c9da7365607780"
 }

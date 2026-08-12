@@ -14,19 +14,17 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.operate.api_changelog import (
-    api_changelog,
-    _diff_specs,
-    _suggest_semver,
-    _render_section,
+    _ADDED,
+    _BREAKING,
+    _REMOVED,
     _change,
+    _diff_specs,
     _get_tag,
     _prepend_section,
-    _BREAKING,
-    _ADDED,
-    _CHANGED,
-    _REMOVED,
+    _render_section,
+    _suggest_semver,
+    api_changelog,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

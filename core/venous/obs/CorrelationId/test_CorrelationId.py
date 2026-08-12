@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 
 import pytest
-
 from CorrelationId import (
     CorrelationIdError,
     StatelessCorrelationIdProvider,

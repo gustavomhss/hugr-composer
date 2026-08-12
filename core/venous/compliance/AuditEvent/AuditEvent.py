@@ -50,7 +50,7 @@ import hashlib
 import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Final, Protocol, runtime_checkable
 
 ALLOWED_OUTCOMES: Final[frozenset[str]] = frozenset({"success", "failure", "denied"})
@@ -156,7 +156,7 @@ def build_event(
     preserves microsecond precision on supported platforms, satisfying the
     ≥ millisecond requirement of AUD-INV-05.
     """
-    ts = occurred_at or datetime.now(timezone.utc)
+    ts = occurred_at or datetime.now(UTC)
     temp = AuditEvent(
         event_id=event_id,
         occurred_at=ts,

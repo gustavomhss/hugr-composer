@@ -14,6 +14,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
@@ -27,6 +29,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "infrastructure"],
     "entry": "add_transactional_email",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -44,7 +49,7 @@ def add_transactional_email(inp: ToolInput) -> ToolResult:
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -66,7 +71,7 @@ def add_transactional_email(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded)
@@ -80,7 +85,7 @@ def add_transactional_email(inp: ToolInput) -> ToolResult:
             notes=[
                 "DeliveryTracker already present in app/email/delivery_tracker.py — transactional email layer already installed, skipped."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -94,7 +99,7 @@ def add_transactional_email(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -190,7 +195,7 @@ def add_transactional_email(inp: ToolInput) -> ToolResult:
             "Set the corresponding API key: RESEND_API_KEY / POSTMARK_API_KEY / SENDGRID_API_KEY.",
             "Configure webhook URLs in your email provider dashboard to POST to /email/webhook/{provider}.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -283,5 +288,3 @@ def _patch_routes_init(routes_init: Path) -> None:
     routes_init.write_text("\n".join(lines) + ("\n" if src.endswith("\n") else ""))
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

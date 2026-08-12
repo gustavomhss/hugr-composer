@@ -18,7 +18,6 @@ from pathlib import Path
 from adapt.contracts import ToolInput
 from adapt.evolve.generate_docs import generate_docs
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

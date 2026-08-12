@@ -20,6 +20,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -31,6 +33,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "realtime"],
     "entry": "add_websocket_presence",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -54,7 +59,7 @@ def add_websocket_presence(
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -72,7 +77,7 @@ def add_websocket_presence(
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first: fastapi_generate_project(...)"],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -82,7 +87,7 @@ def add_websocket_presence(
         return ToolResult(
             status="no_op",
             notes=["PresenceManager already present — skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -95,7 +100,7 @@ def add_websocket_presence(
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -182,7 +187,7 @@ def add_websocket_presence(
                 return ToolResult(
                     status="error",
                     error=f"Syntax error in {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     return ToolResult(
@@ -204,7 +209,7 @@ def add_websocket_presence(
             f'Client must send {{"type": "ping"}} every {heartbeat_seconds}s to stay online.',
             "Poll online users at GET /presence/online.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -288,5 +293,3 @@ def _requirements_need_redis(src: str) -> bool:
     return True
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

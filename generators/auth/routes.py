@@ -184,9 +184,9 @@ def generate_auth(output_dir: str, prefix: str = "/api/v1") -> dict:
     Includes DUMMY_HASH for timing-attack prevention and password-recovery
     that never reveals email existence.
     """
+    from generators.auth.deps import generate_auth_deps
     from generators.auth.hasher import generate_password_hasher
     from generators.auth.jwt import generate_jwt
-    from generators.auth.deps import generate_auth_deps
     from generators.auth.routes import generate_auth_routes as _gar
     from generators.auth.schemas import generate_auth_schemas
 

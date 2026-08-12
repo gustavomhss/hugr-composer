@@ -104,9 +104,9 @@ def _check_auth01_hardcoded_secret(
                         severity=Severity.CRITICAL,
                         title="Hardcoded JWT secret in jwt.encode() call",
                         description=(
-                            f"A string literal is passed directly to jwt.encode(). "
-                            f"Secrets must come from environment variables via settings, "
-                            f"never hardcoded in source code."
+                            "A string literal is passed directly to jwt.encode(). "
+                            "Secrets must come from environment variables via settings, "
+                            "never hardcoded in source code."
                         ),
                         file_path=str(filepath),
                         line_number=node.lineno,

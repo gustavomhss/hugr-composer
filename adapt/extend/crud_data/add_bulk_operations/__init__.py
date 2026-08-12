@@ -18,6 +18,8 @@ from pathlib import Path
 
 from adapt._base import render, render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
@@ -29,6 +31,9 @@ MCP_TOOL = {
     "description": "Add bulk create/update/delete endpoints for all models.",
     "tags": ["extend", "crud_data"],
     "entry": "add_bulk_operations",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _SKIP_MODELS: frozenset[str] = frozenset({"base", "user", "mixins", "__init__", "tenant"})
@@ -40,7 +45,7 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -58,7 +63,7 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=_PREREQ_NOTES,
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -69,7 +74,7 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["IdempotencyCache already present — bulk operations already enabled."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     model_names = _discover_models(app_dir)
@@ -77,7 +82,7 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -88,7 +93,7 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -151,7 +156,7 @@ def add_bulk_operations(inp: ToolInput) -> ToolResult:
             "Set REDIS_URL in your .env for idempotency cache support.",
             "Restart the application.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -375,5 +380,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

@@ -186,7 +186,7 @@ async def wait_for_timer(
     # silently, giving callers no signal that the timer was abandoned —
     # a subtle bug when composed with workflow step orchestration.
     current = service.status_of(timer.workflow_id, timer.timer_id)
-    raise asyncio.TimeoutError(
+    raise TimeoutError(
         f"DT-INV-02: wait_for_timer exhausted max_wait_s={max_wait_s}s without "
         f"timer {timer.timer_id!r} leaving SCHEDULED (status={current.name})."
     )

@@ -1,0 +1,16 @@
+"""Protocol for UnitOfWork — generated from UnitOfWork.py."""
+
+from __future__ import annotations
+
+from typing import Any, Optional, Protocol, runtime_checkable
+from collections.abc import Callable
+
+@runtime_checkable
+class UnitOfWork(Protocol):
+    """UnitOfWork primitive — Fowler PEAA transactional change-tracking boundary."""
+
+    def register_new(self, obj: object) -> None: ...
+    def register_dirty(self, obj: object) -> None: ...
+    def register_removed(self, obj: object) -> None: ...
+    def commit(self) -> None: ...
+    def rollback(self) -> None: ...

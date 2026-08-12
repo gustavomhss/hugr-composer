@@ -23,7 +23,6 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from core.models import Finding, Severity
 
-
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -248,9 +247,7 @@ def check_cache_health(redis_url: str = "redis://localhost:6379") -> dict:
 
         if severity_counts[Severity.CRITICAL] > 0:
             status = "unhealthy"
-        elif severity_counts[Severity.HIGH] > 0:
-            status = "degraded"
-        elif severity_counts[Severity.MEDIUM] > 0:
+        elif severity_counts[Severity.HIGH] > 0 or severity_counts[Severity.MEDIUM] > 0:
             status = "degraded"
         else:
             status = "healthy"

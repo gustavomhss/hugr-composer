@@ -17,6 +17,8 @@ from pathlib import Path
 
 from adapt._base import load_template
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 from . import _patches as patches
@@ -36,6 +38,9 @@ MCP_TOOL = {
     "description": "Add multi-tenancy support with schema-per-tenant or row-level isolation.",
     "tags": ["extend", "auth_access"],
     "entry": "add_multi_tenancy",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -44,8 +49,6 @@ def _emit(template_name: str, dest: Path) -> None:
     dest.write_text(load_template(_HERE, template_name).template)
 
 
-def _elapsed_ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)
 
 
 def add_multi_tenancy(inp: ToolInput) -> ToolResult:
@@ -198,6 +201,19 @@ def add_multi_tenancy(inp: ToolInput) -> ToolResult:
         down_rev = find_migration_head(versions_dir) or "0001_initial"
         migration_file = patches.write_migration(_HERE, versions_dir, model_names, down_rev)
         files_created.append(str(migration_file))
+
+    import ast
+    for fpath in files_created:
+        if fpath.endswith(".py"):
+            try:
+                ast.parse(Path(fpath).read_text())
+            except SyntaxError as e:
+                return ToolResult(
+                    status="error",
+                    error=f"Syntax error in {fpath}: {e}",
+                    files_created=[],
+                    execution_time_ms=_elapsed_ms(start),
+                )
 
     return ToolResult(
         status="success",

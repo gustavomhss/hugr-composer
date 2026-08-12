@@ -26,6 +26,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -55,7 +57,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -69,7 +71,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=["Generate a base project first via fastapi_generate_project(...)."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -85,7 +87,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["Long-running-task infra already wired via the FastAPI adapter."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -96,7 +98,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
                 "and write app/workflow.py + app/api/routes/tasks.py."
             ],
             next_steps=["Re-run without dry_run=True to apply."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     from generators.scaffold_venous import ensure_primitives
@@ -140,6 +142,19 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
     # Emit test
     _emit_project_test(project, files_created)
 
+    import ast
+    for fpath in files_created:
+        if fpath.endswith(".py"):
+            try:
+                ast.parse(Path(fpath).read_text())
+            except SyntaxError as e:
+                return ToolResult(
+                    status="error",
+                    error=f"Syntax error in {fpath}: {e}",
+                    files_created=[],
+                    execution_time_ms=_elapsed_ms(start),
+                )
+
     return ToolResult(
         status="success",
         files_created=files_created,
@@ -161,7 +176,7 @@ def add_long_running_task(inp: ToolInput) -> ToolResult:
             "POST /tasks with {workflow_id, workflow_type, task_queue, args} returns 202 + Location.",
             "Swap the reference InMemoryWorkflowClient for a Temporal/Cadence client in production.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -180,6 +195,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _ms(start: float) -> int:
-    """Return elapsed ms since *start* (from ``time.monotonic()``)."""
-    return int((time.monotonic() - start) * 1000)

@@ -47,7 +47,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_excel_export import add_excel_export
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Patch templates
 # ---------------------------------------------------------------------------

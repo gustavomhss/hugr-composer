@@ -27,7 +27,6 @@ MCP_TOOL = {
     'annotations': {'readOnlyHint': False},
 }
 
-import re
 import textwrap
 from pathlib import Path
 
@@ -439,7 +438,7 @@ def _ensure_config_field(
 
     field_line = f"    {field_name}: {field_def}"
     lines.insert(insert_idx, "")
-    lines.insert(insert_idx + 1, f"    # --- ARQ ---")
+    lines.insert(insert_idx + 1, "    # --- ARQ ---")
     lines.insert(insert_idx + 2, field_line)
 
     config_path.write_text("\n".join(lines))

@@ -31,7 +31,7 @@ import sys
 from pathlib import Path
 
 from adapt.contracts import ToolInput
-from adapt.extend.auth_access.add_rbac import MCP_TOOL, _WARN_NOT_AUTO_ENFORCED, add_rbac
+from adapt.extend.auth_access.add_rbac import _WARN_NOT_AUTO_ENFORCED, MCP_TOOL, add_rbac
 from tests.common.fixture_factory import create_fixture_project
 
 

@@ -24,11 +24,10 @@ from __future__ import annotations
 import ast
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from adapt.contracts import ToolInput, ToolResult
-
 
 # ---------------------------------------------------------------------------
 # Data model
@@ -98,15 +97,17 @@ def dead_code_finder(
             execution_time_ms=_ms(start),
         )
 
-    allow_list = _load_allow_list(project / allow_list_file)
-    py_files = _collect_files(project, exclude_patterns or [])
-
     if inp.dry_run:
         return ToolResult(
             status="success",
-            notes=[f"[dry_run] Would scan {len(py_files)} Python files."],
+            notes=["[dry_run] Would scan for dead code (dry-run skips file operations)"],
             execution_time_ms=_ms(start),
         )
+
+
+    allow_list = _load_allow_list(project / allow_list_file)
+    py_files = _collect_files(project, exclude_patterns or [])
+
 
     # First pass: collect all defined and used symbols
     all_defs: dict[str, DeadSymbol] = {}
@@ -175,7 +176,7 @@ def dead_code_finder(
 # Symbol collection
 # ---------------------------------------------------------------------------
 
-def _collect_defs(tree: ast.AST, rel: str, defs: dict[str, "DeadSymbol"]) -> None:
+def _collect_defs(tree: ast.AST, rel: str, defs: dict[str, DeadSymbol]) -> None:
     """Populate *defs* with top-level definitions from *tree*.
 
     Args:
@@ -294,7 +295,7 @@ def _is_pytest_fixture(node: ast.expr) -> bool:
 # Rendering
 # ---------------------------------------------------------------------------
 
-def _render_report(dead: list["DeadSymbol"]) -> str:
+def _render_report(dead: list[DeadSymbol]) -> str:
     """Render a Markdown dead code report.
 
     Args:

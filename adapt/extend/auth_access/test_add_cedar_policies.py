@@ -23,7 +23,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_cedar_policies import add_cedar_policies
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

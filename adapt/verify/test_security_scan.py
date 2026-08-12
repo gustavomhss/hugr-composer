@@ -18,7 +18,6 @@ from adapt.contracts import ToolInput
 from adapt.verify.security_scan import security_scan
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

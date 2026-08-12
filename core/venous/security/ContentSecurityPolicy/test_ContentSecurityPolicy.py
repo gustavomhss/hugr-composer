@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import pytest
-
 from ContentSecurityPolicy import (
+    _DEFAULT_REGISTRY,
     HEADER_ENFORCE,
     HEADER_REPORT_ONLY,
     CspDirectiveError,
@@ -14,7 +14,6 @@ from ContentSecurityPolicy import (
     Directive,
     PolicyDecorator,
     PolicyMode,
-    _DEFAULT_REGISTRY,
     _NonceRegistry,
     apply_decorator,
     generate_nonce,

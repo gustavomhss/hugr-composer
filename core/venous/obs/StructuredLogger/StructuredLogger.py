@@ -16,9 +16,9 @@ No I/O at import.
 
 from __future__ import annotations
 
+import contextvars
 import json
 import re
-import contextvars
 import threading
 import time
 from collections.abc import Mapping

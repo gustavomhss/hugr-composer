@@ -9,7 +9,6 @@ MCP_TOOL = {
     'entry': 'generate_model',
 }
 
-import textwrap
 from pathlib import Path
 
 from generators._pluralize import pluralize

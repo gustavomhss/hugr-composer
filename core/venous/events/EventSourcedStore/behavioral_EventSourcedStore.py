@@ -9,7 +9,6 @@ post-conditions: if any are violated, the scenario blows up loudly.
 from __future__ import annotations
 
 import pytest
-
 from EventSourcedStore import (
     ConcurrencyError,
     InMemoryEventSourcedStore,

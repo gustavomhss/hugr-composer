@@ -16,6 +16,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -24,6 +26,9 @@ MCP_TOOL = {
     "description": "Add a production-grade admin panel (SQLAdmin) with superuser-only auth and auto-generated model views.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_sqladmin",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -50,7 +55,7 @@ def add_sqladmin(
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -71,7 +76,7 @@ def add_sqladmin(
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = []
@@ -88,7 +93,7 @@ def add_sqladmin(
             notes=[
                 "setup_admin already present in app/admin/setup.py — SQLAdmin already installed, skipped."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     models_init = app_dir / "models" / "__init__.py"
@@ -108,7 +113,7 @@ def add_sqladmin(
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -180,7 +185,7 @@ def add_sqladmin(
             "Restart the FastAPI app so the admin panel is mounted.",
             f"Visit {admin_path} and log in with a superuser account.",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -382,5 +387,3 @@ def _patch_env_example(env_example: Path) -> None:
     env_example.write_text(src + trailing + block)
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

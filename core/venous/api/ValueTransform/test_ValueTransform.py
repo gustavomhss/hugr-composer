@@ -5,7 +5,6 @@ from __future__ import annotations
 from uuid import UUID
 
 import pytest
-
 from ValueTransform import (
     ArgumentMetadata,
     CoercionError,
@@ -18,7 +17,6 @@ from ValueTransform import (
     ValidationError,
     ValueTransformError,
 )
-
 
 META_INT = ArgumentMetadata(kind="param", metatype=int, data="id")
 META_BOOL = ArgumentMetadata(kind="query", metatype=bool, data="active")

@@ -50,7 +50,7 @@ import json
 import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any, Final, Protocol, runtime_checkable
 
 ALLOWED_OUTCOMES: Final[frozenset[str]] = frozenset({"success", "failure", "denied"})
@@ -218,7 +218,7 @@ class InMemoryTamperEvidentAuditLog:
             raise TamperEvidentAuditLogError("TEAL_INV_05: attributes MUST be a Mapping.")
 
         # TEAL_INV_06: server-side monotonic clock; no caller-supplied timestamp.
-        ts = datetime.now(timezone.utc)
+        ts = datetime.now(UTC)
         with self._lock:
             seq = len(self._entries) + 1
             prev_hash = self._entries[-1].entry_hash if self._entries else GENESIS_PREV_HASH

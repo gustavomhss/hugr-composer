@@ -14,15 +14,13 @@ from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.operate.dependency_graph import (
-    dependency_graph,
     _build_graph,
-    _tarjan_scc,
     _check_layer_violations,
-    _render_graph,
     _file_to_module,
-    _get_layer,
+    _render_graph,
+    _tarjan_scc,
+    dependency_graph,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

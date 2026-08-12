@@ -55,6 +55,14 @@ def extract_service(
     if err:
         return ToolResult(status="error", error=err)
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would extract service (dry-run skips file operations)"],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
         Prereq.BASE_MODEL,
@@ -95,19 +103,6 @@ def extract_service(
             execution_time_ms=_elapsed_ms(start),
         )
 
-    if inp.dry_run:
-        graph = _build_dep_graph(project)
-        dep_count = sum(len(v) for v in graph.values())
-        return ToolResult(
-            status="success",
-            notes=[
-                f"[dry_run] Would extract {len(module_paths)} module(s) → {new_service_name}",
-                f"[dry_run] Dependency graph: {len(graph)} modules, {dep_count} edges",
-                "[dry_run] No files written.",
-            ],
-            next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     files_modified: list[str] = []
     graph = _build_dep_graph(project)

@@ -22,13 +22,11 @@ MCP_TOOL = {
     'annotations': {'readOnlyHint': False, 'destructiveHint': False},
 }
 
-import json
 import sys
 import textwrap
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-from core.models import Finding, Severity
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +146,7 @@ def generate_k6_script(
     threshold_lines = [
         f"    http_req_duration: ['p(95)<{p95_threshold_ms}', 'p(99)<{p99_threshold_ms}'],",
         f"    http_req_failed: ['rate<{error_rate_threshold}'],",
-        f"    checks: ['rate>0.99'],",
+        "    checks: ['rate>0.99'],",
     ]
 
     # Add per-endpoint duration thresholds

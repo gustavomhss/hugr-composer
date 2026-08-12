@@ -7,23 +7,22 @@ Run with::
 
 from __future__ import annotations
 
+import ast
 import sys
 import tempfile
 from pathlib import Path
 
 from adapt.contracts import ToolInput
 from adapt.operate.dead_code_finder import (
-    dead_code_finder,
-    _collect_defs,
-    _collect_uses,
-    _collect_framework_live,
-    _is_route_decorator,
-    _is_pytest_fixture,
-    _render_report,
     DeadSymbol,
+    _collect_defs,
+    _collect_framework_live,
+    _collect_uses,
+    _is_pytest_fixture,
+    _is_route_decorator,
+    _render_report,
+    dead_code_finder,
 )
-import ast
-
 
 # ---------------------------------------------------------------------------
 # Helpers

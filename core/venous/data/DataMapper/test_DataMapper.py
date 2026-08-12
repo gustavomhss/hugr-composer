@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from typing import Any
 
 import pytest
-
 from DataMapper import (
     PAYLOAD_INSERT,
     PAYLOAD_UPDATE,

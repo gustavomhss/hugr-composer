@@ -51,6 +51,14 @@ def generate_admin_panel(
     if err:
         return ToolResult(status="error", error=err)
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would generate admin panel (dry-run skips file operations)"],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
         Prereq.BASE_MODEL,
@@ -95,17 +103,6 @@ def generate_admin_panel(
             execution_time_ms=_elapsed_ms(start),
         )
 
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=[
-                f"[dry_run] Would scaffold admin panel for: {', '.join(models)}",
-                f"[dry_run] mount_path={mount_path} read_only={read_only_models}",
-                "[dry_run] No files written.",
-            ],
-            next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     files_modified: list[str] = []
 

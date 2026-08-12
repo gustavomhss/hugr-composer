@@ -79,7 +79,8 @@ def test_inv_all_or_nothing_rollback_under_failure() -> None:
 # INV_03 -----------------------------------------------------------------
 def test_inv_parallelism_bounded_confirms() -> None:
     # Counter model: track active handlers, assert it never exceeds max_parallel.
-    import threading, time
+    import threading
+    import time
     max_parallel = 3
     sem = threading.Semaphore(max_parallel)
     active = [0]

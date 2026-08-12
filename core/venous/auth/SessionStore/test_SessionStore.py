@@ -6,7 +6,6 @@ import itertools
 import threading
 
 import pytest
-
 from SessionStore import (
     CookieConfig,
     InMemorySessionStore,

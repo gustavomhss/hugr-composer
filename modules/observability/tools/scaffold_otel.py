@@ -27,7 +27,6 @@ import textwrap
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
-from core.models import Finding, Severity
 
 
 # ---------------------------------------------------------------------------
@@ -408,7 +407,7 @@ def _metrics_py(with_prometheus: bool) -> str:
 def _logging_config_py(service_name: str) -> str:
     """Template for observability/logging_config.py -- structlog + OTel integration."""
 
-    return textwrap.dedent(f"""\
+    return textwrap.dedent("""\
         \"\"\"Structured logging with OpenTelemetry trace context injection.
 
         Configures structlog to produce JSON logs in production with trace_id
@@ -424,8 +423,8 @@ def _logging_config_py(service_name: str) -> str:
             logger.info("payment_processed", order_id="ORD-123", amount=99.99)
 
         Output (production JSON):
-            {{"event": "payment_processed", "trace_id": "4bf92f...", "span_id": "00f067...",
-             "order_id": "ORD-123", "amount": 99.99, "level": "info", "timestamp": "..."}}
+            {"event": "payment_processed", "trace_id": "4bf92f...", "span_id": "00f067...",
+             "order_id": "ORD-123", "amount": 99.99, "level": "info", "timestamp": "..."}
         \"\"\"
 
         from __future__ import annotations

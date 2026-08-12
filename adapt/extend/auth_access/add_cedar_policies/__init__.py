@@ -20,6 +20,8 @@ from pathlib import Path
 
 from adapt._base import load_template
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -32,6 +34,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "auth_access"],
     "entry": "add_cedar_policies",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 

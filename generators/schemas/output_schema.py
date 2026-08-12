@@ -9,7 +9,6 @@ MCP_TOOL = {
     'entry': 'generate_schemas',
 }
 
-import textwrap
 from pathlib import Path
 
 # Mapping from user-friendly type names to the Python annotation used in
@@ -251,8 +250,8 @@ def generate_schemas(output_dir: str, name: str, fields: dict[str, str]) -> dict
     hashed_password.
     """
     from generators.schemas.input_schema import generate_input_schema
-    from generators.schemas.output_schema import generate_output_schema as _gos
     from generators.schemas.list_response import generate_list_response
+    from generators.schemas.output_schema import generate_output_schema as _gos
 
     results: dict = {"files_created": [], "notes": []}
     for gen in [

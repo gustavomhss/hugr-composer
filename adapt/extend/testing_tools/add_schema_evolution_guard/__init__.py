@@ -23,6 +23,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -32,6 +34,9 @@ MCP_TOOL = {
     "description": "Add CI OpenAPI schema compatibility checker that detects breaking changes.",
     "tags": ["extend", "testing_tools"],
     "entry": "add_schema_evolution_guard",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _GITHUB_WORKFLOW = """\
@@ -85,7 +90,7 @@ def add_schema_evolution_guard(inp: ToolInput) -> ToolResult:
 
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -101,7 +106,7 @@ def add_schema_evolution_guard(inp: ToolInput) -> ToolResult:
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -112,7 +117,7 @@ def add_schema_evolution_guard(inp: ToolInput) -> ToolResult:
         return ToolResult(
             status="no_op",
             notes=["SchemaComparator already present — schema evolution guard already installed."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -125,7 +130,7 @@ def add_schema_evolution_guard(inp: ToolInput) -> ToolResult:
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -171,7 +176,7 @@ def add_schema_evolution_guard(inp: ToolInput) -> ToolResult:
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     (project / "tests").mkdir(parents=True, exist_ok=True)
@@ -201,7 +206,7 @@ def add_schema_evolution_guard(inp: ToolInput) -> ToolResult:
             "Run in CI: python scripts/check_schema_compat.py (exits 1 on breaking changes)",
             "Set SCHEMA_GUARD_FAIL_ON_BREAKING=false to warn-only (default is fail=true)",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -220,5 +225,3 @@ def _patch_config(config_file: Path) -> None:
     )
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

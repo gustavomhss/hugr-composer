@@ -6,7 +6,6 @@ import threading
 import uuid
 
 import pytest
-
 from DomainEvent import (
     AggregateEventStream,
     AggregateStreamError,
@@ -17,7 +16,6 @@ from DomainEvent import (
     SchemaRegistry,
     SchemaRegistryError,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers — synthetic UUID v7 generator (no real time dependency)

@@ -23,6 +23,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
@@ -33,6 +35,9 @@ MCP_TOOL = {
     "description": "Add a production-grade Stripe Checkout flow with Payment model, webhook receiver, and idempotent event processing.",
     "tags": ["extend", "infrastructure"],
     "entry": "add_stripe_checkout",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _PAYMENT_TENANT_COL_TENANTED = (
@@ -95,7 +100,7 @@ def add_stripe_checkout(
     start = time.monotonic()
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -112,7 +117,7 @@ def add_stripe_checkout(
             status="error",
             error="Prerequisites not met:\n" + "\n".join(f"  - {e}" for e in prereq_errors),
             notes=_PREREQ_NOTES,
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     project = Path(inp.project_dir)
@@ -125,7 +130,7 @@ def add_stripe_checkout(
             notes=[
                 "get_stripe already present in app/core/stripe_client.py — Stripe Checkout is already installed, skipped."
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     has_tenants = (app_dir / "models" / "tenant.py").exists()
@@ -143,7 +148,7 @@ def add_stripe_checkout(
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -226,7 +231,7 @@ def add_stripe_checkout(
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     notes = list(_SUCCESS_NOTES_TAIL) + [
@@ -240,7 +245,7 @@ def add_stripe_checkout(
         files_modified=files_modified,
         notes=notes,
         next_steps=_NEXT_STEPS,
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -333,5 +338,3 @@ def _patch_env_example(env_example: Path) -> None:
     )
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

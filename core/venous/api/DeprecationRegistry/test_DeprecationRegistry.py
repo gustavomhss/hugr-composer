@@ -5,7 +5,6 @@ import logging
 from datetime import date, timedelta
 
 import pytest
-
 from DeprecationRegistry import DeprecationRegistry
 
 

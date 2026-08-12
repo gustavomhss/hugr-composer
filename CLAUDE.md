@@ -24,18 +24,18 @@ HuGR_Arsenal/
 │       ├── SKILL.md                    # Entry point da skill (Anthropic Agent Skills format)
 │       ├── STATUS.md                   # Counts humanos + test matrix
 │       ├── INVENTORY.md                # Machine-verified counts (fonte única)
-│       ├── generators/                 # 56 code generators
-│       ├── adapt/                      # 126 tools (99 extend + 27 outros)
-│       │   ├── extend/                 # 99 feature tools (api_design, auth_access, crud_data, infrastructure, realtime, testing_tools)
+│       ├── generators/                 # 61 code generators
+│       ├── adapt/                      # 135 tools (105 extend + 30 outros)
+│       │   ├── extend/                 # 105 feature tools (api_design, auth_access, crud_data, infrastructure, realtime, testing_tools)
 │       │   ├── verify/                 # 6 validation tools
 │       │   ├── operate/                # 8 operations tools
 │       │   ├── evolve/                 # 8 evolution tools
 │       │   ├── contracts/              # 4 contract tools
-│       │   └── proactive/              # 1 proactive tool
+│       │   └── proactive/              # 4 proactive tools
 │       ├── modules/                    # 28 feature packages prontos
-│       ├── core/venous/                # 124 registered primitives + 18 FastAPI adapters (+1 redis, +1 stripe) + 175 staged em _staging/ (+41 quarantined)
+│       ├── core/venous/                # 124 registered primitives + 18 FastAPI adapters (+1 redis, +1 stripe) + 174 staged em _staging/ (+41 quarantined)
 │       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
-│       │   ├── tier1.py + compose.py   # 7 meta tools (home/search/describe/scaffold/compose/audit/verify)
+│       │   ├── tier1.py + compose.py   # 8 meta tools (home/search/describe/scaffold/list_bundle/activate_bundle/audit/verify)
 │       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
 │       ├── engine/                     # audit, index, bench, docs, extraction, inventory, promotion
 │       ├── specs/                      # 124 formal specifications
@@ -74,16 +74,16 @@ A skill principal. Convention over Configuration para FastAPI.
 213  arquivos definem MCP_TOOL   (superfície agent)
 202  tools indexados no catalog.json
 124  primitivos registrados      (core/venous/<ns>/<Name>/)
-175  primitivos staged           (PascalCase-filtered, +41 quarantined)
+174  primitivos staged           (PascalCase-filtered, +41 quarantined)
  18  FastAPI adapters            (production-wired; +1 Redis, +1 Stripe adapter outside fastapi/)
-126  adapt tools                 (99 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 1 proactive)
+135  adapt tools                 (105 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 4 proactive)
  24  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
- 56  generators
+ 61  generators
  28  modules/ packages           (auth, payments, caching, db, deployment, obs, security, background_jobs, websockets)
  20  examples/ apps completos    (5 baseline + 10 mid + 5 adversarial, repo-root /examples/)
  20  benchmark specs             (plan 100.00, code 100.00)
 124  specs formais
- 37  contract rules (37/37 green)
+ 47  contract items (47/47 green)
 ```
 
 ### Camadas do skill (arquitetura Rails-style)
@@ -91,16 +91,16 @@ A skill principal. Convention over Configuration para FastAPI.
 | Camada | Onde | Qtd | O que é |
 |---|---|---:|---|
 | Primitivos registrados | `core/venous/<ns>/<Name>/` | 124 | Peças framework-free |
-| Primitivos staged (PascalCase) | `core/venous/_staging/` | 175 | HuGR-shelled mas com REPLACE_ME, +41 quarantined |
+| Primitivos staged (PascalCase) | `core/venous/_staging/` | 174 | HuGR-shelled mas com REPLACE_ME, +41 quarantined |
 | Adapters FastAPI | `core/venous/_adapters/fastapi/` | 18 | Wiring production-grade |
 | Adapters Redis / Stripe | `core/venous/_adapters/{redis,stripe}/` | 2 | Provider glue sobre motores `events.PubSub` / `billing.Billing` |
-| EXTEND tools | `adapt/extend/` | 99 | Slice generators (add_*) |
-| Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 27 | Validação, ops, evolução |
-| Generators | `generators/` | 56 | Scaffolders de subsistemas (per `engine.inventory`; 60 .py files on disk incl. 3 top-level helpers + conftest) |
+| EXTEND tools | `adapt/extend/` | 105 | Slice generators (add_*) |
+| Outros adapt | `adapt/{verify,operate,evolve,contracts,proactive}/` | 30 | Validação, ops, evolução |
+| Generators | `generators/` | 61 | Scaffolders de subsistemas (per `engine.inventory`) |
 | Modules | `modules/` | 28 | Feature packages prontos |
-| Tier-1 meta | `mcp_tools/tier1.py` + `compose.py` | 7 | home/search/describe/scaffold/compose/audit/verify |
+| Tier-1 meta | `mcp_tools/tier1.py` + `compose.py` | 8 | home/search/describe/scaffold/list_bundle/activate_bundle/audit/verify |
 | Tree dispatchers | `mcp_tools/tree/` | 9 | auth, data, api, realtime, resiliency, obs, compliance, deployment, testing |
-| Examples | `examples/` | 5 | Apps completos de referência |
+| Examples | `examples/` | 20 | Apps completos de referência |
 
 ### Comandos
 

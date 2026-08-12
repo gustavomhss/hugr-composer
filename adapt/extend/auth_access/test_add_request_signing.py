@@ -22,7 +22,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.auth_access.add_request_signing import add_request_signing
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

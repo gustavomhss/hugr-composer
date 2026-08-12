@@ -114,7 +114,7 @@ class _GroupGate:
         self._partition = partition
         self._active: list[Any] = []
 
-    async def __aenter__(self) -> "_GroupGate":
+    async def __aenter__(self) -> _GroupGate:
         cm = self._partition.acquire()
         # ``acquire()`` is a @asynccontextmanager — driving it through
         # __aenter__ here raises BulkheadFull on saturation BEFORE we

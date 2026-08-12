@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 import pytest
-
 from AuditEvent import (
     ALLOWED_ACTIONS,
     ALLOWED_OUTCOMES,
@@ -118,8 +117,8 @@ def test_inv_actor_required_under_failure() -> None:
 
 # AUD_INV_05 — UTC timestamp required
 def test_inv_utc_timestamp_confirms() -> None:
-    e = _evt(occurred_at=datetime(2026, 1, 1, tzinfo=timezone.utc))
-    assert e.occurred_at.tzinfo is timezone.utc
+    e = _evt(occurred_at=datetime(2026, 1, 1, tzinfo=UTC))
+    assert e.occurred_at.tzinfo is UTC
 
 
 def test_inv_utc_timestamp_prevents() -> None:

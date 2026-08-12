@@ -26,10 +26,9 @@ def test_concurrent_serialized_writes_preserve_sequence_monotonicity() -> None:
 
     def writer(n: int) -> None:
         try:
-            with writer_lock:
-                with outbox.begin() as scope:
-                    outbox.enqueue("evt", {"n": n}, key="K")
-                    scope.commit()
+            with writer_lock, outbox.begin() as scope:
+                outbox.enqueue("evt", {"n": n}, key="K")
+                scope.commit()
         except BaseException as exc:
             with lock:
                 errors.append(exc)

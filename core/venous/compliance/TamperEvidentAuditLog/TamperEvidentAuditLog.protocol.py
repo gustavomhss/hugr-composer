@@ -1,0 +1,23 @@
+"""Protocol for TamperEvidentAuditLog — generated from TamperEvidentAuditLog.py."""
+
+from __future__ import annotations
+
+from typing import Any, Optional, Protocol, runtime_checkable
+from collections.abc import Mapping
+
+@runtime_checkable
+class Signer(Protocol):
+    """Out-of-process signer Protocol. The writer NEVER holds the private key."""
+
+    def sign(self, payload: bytes) -> str: ...
+    def verify(self, payload: bytes, signature: str) -> bool: ...
+    def key_id(self) -> str: ...
+
+@runtime_checkable
+class TamperEvidentAuditLog(Protocol):
+    """Catalog-defined Protocol (verbatim)."""
+
+    def append(self, actor: str, action: str, resource: str, outcome: str, attributes: Mapping[str, Any]) -> str: ...
+    def verify_chain(self, start_seq: int | None, end_seq: int | None) -> bool: ...
+    def get(self, seq: int) -> Mapping[str, Any]: ...
+    def export(self, since_seq: int) -> bytes: ...

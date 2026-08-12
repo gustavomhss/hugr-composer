@@ -45,6 +45,15 @@ def security_scan(inp: ToolInput) -> ToolResult:
     if err:
         return ToolResult(status="error", error=err)
 
+    if inp.dry_run:
+        return ToolResult(
+            status="success",
+            notes=["[dry_run] Would generate security scan infrastructure."],
+            next_steps=["Re-run without dry_run=True to apply changes."],
+            execution_time_ms=_elapsed_ms(start),
+        )
+
+
     orchestrator = project / "scripts" / "security_scan.py"
     if orchestrator.exists() and "SecurityScanOrchestrator" in orchestrator.read_text():
         return ToolResult(
@@ -55,13 +64,6 @@ def security_scan(inp: ToolInput) -> ToolResult:
 
     files_created: list[str] = []
 
-    if inp.dry_run:
-        return ToolResult(
-            status="success",
-            notes=["[dry_run] Would generate security scan infrastructure."],
-            next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_elapsed_ms(start),
-        )
 
     (project / "scripts").mkdir(parents=True, exist_ok=True)
     render_to(_HERE, "orchestrator.py.tmpl", dest=orchestrator, substitutions={})

@@ -17,6 +17,8 @@ from typing import Literal
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.prerequisites import Prereq, ensure_prerequisites
 
 _HERE = Path(__file__).parent
@@ -26,6 +28,9 @@ MCP_TOOL = {
     "description": "Add factory_boy fixtures for all models to accelerate test authoring.",
     "tags": ["extend", "testing"],
     "entry": "add_factory",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 
@@ -49,7 +54,7 @@ def add_factory(
     project = Path(inp.project_dir)
     err = validate_project_dir(inp.project_dir)
     if err:
-        return ToolResult(status="error", error=err, execution_time_ms=_ms(start))
+        return ToolResult(status="error", error=err, execution_time_ms=_elapsed_ms(start))
 
     prereq_errors, scaffolded = ensure_prerequisites(
         inp.project_dir,
@@ -65,7 +70,7 @@ def add_factory(
                 "Generate a base project first:",
                 "  fastapi_generate_project(output_dir='...', profile='api', models={...})",
             ],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_created: list[str] = list(scaffolded or [])
@@ -76,7 +81,7 @@ def add_factory(
         return ToolResult(
             status="no_op",
             notes=["tests/factories/ already contains factories — skipped."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     discovered = _discover_models(project / "app")
@@ -85,7 +90,7 @@ def add_factory(
         return ToolResult(
             status="error",
             error="No SQLAlchemy models found in app/models/. Generate models first.",
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     if inp.dry_run:
@@ -96,7 +101,7 @@ def add_factory(
                 "[dry_run] No files written.",
             ],
             next_steps=["Re-run without dry_run=True to apply changes."],
-            execution_time_ms=_ms(start),
+            execution_time_ms=_elapsed_ms(start),
         )
 
     files_modified: list[str] = []
@@ -125,7 +130,7 @@ def add_factory(
                 return ToolResult(
                     status="error",
                     error=f"Generated file has syntax error: {p}: {exc}",
-                    execution_time_ms=_ms(start),
+                    execution_time_ms=_elapsed_ms(start),
                 )
 
     (project / "tests").mkdir(parents=True, exist_ok=True)
@@ -147,7 +152,7 @@ def add_factory(
             f"pip install {'polyfactory faker' if backend == 'polyfactory' else 'factory-boy faker'}",
             "Import factories in tests: from tests.factories import FACTORY_REGISTRY",
         ],
-        execution_time_ms=_ms(start),
+        execution_time_ms=_elapsed_ms(start),
     )
 
 
@@ -306,5 +311,3 @@ def _patch_conftest(conftest_file: Path, model_names: list[str]) -> None:
     conftest_file.write_text(src + addition)
 
 
-def _ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

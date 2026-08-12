@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import threading
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from LegalHold import InMemoryLegalHoldRegistry, LegalHold
 
-
-UTC = timezone.utc
+UTC = UTC
 
 
 def test_concurrent_opens_distinct_holds() -> None:

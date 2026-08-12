@@ -93,7 +93,7 @@ the command says 125, the doc is wrong, not the command.
 | Registered primitives | 124 | `core/venous/<ns>/<Name>/` — framework-free, full shell |
 | FastAPI adapters | 18 | Production-wired in `core/venous/_adapters/fastapi/` |
 | Provider adapters | 2 | `_adapters/redis/PubSubAdapter.py` + `_adapters/stripe/BillingAdapter.py` |
-| Staged primitives | 175 | `_staging/<ns>/`, surfaced as `status="staged"` |
+| Staged primitives | 174 | `_staging/<ns>/`, surfaced as `status="staged"` |
 | Quarantined primitives | 41 | `_staging/_quarantine/`, hidden from catalog |
 | Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
@@ -1471,7 +1471,7 @@ Preserved + expanded from the old ROADMAP Part 3.
 | R2 | **Rails-analogy limits.** Rails had 20 years + human-first runtime. HuGR is LLM-first. Some ergonomic expectations won't transfer. | Treat analogy as design lodestar, not contract. Benchmark-driven iteration. |
 | R3 | **Framework churn.** FastAPI / Pydantic / SQLAlchemy breaking releases are real cost. | Pin versions per release; nightly CI against pinned stack; dep-MAJOR bumps require ADR. |
 | R4 | **Integration-discipline drift.** §B1.3 floor (currently 22; 24 Rails-connected) regresses if new tools ignore the rule. | Contract §B1.3 non-regression + §C6 phase-gate CI. |
-| R5 | **Staging pool temptation.** 175 staged primitives tempt preemptive promotion. | §A12 discipline + ledger classifier + §7.H/§7.G checklists. Wave-1.5 set the precedent: promote only on signal. |
+| R5 | **Staging pool temptation.** 174 staged primitives tempt preemptive promotion. | §A12 discipline + ledger classifier + §7.H/§7.G checklists. Wave-1.5 set the precedent: promote only on signal. |
 | R6 | **Drift between this doc and reality.** The doc becomes aspirational; the code is truth. | §B4.7 machine-check + §8.3 drift-fighting protocol. This doc freezes on ratification — amendments go through §8.5. |
 | R7 | **Per-primitive invariant drift.** §2.5 table can't keep up with 124 primitives. | Per-commit gate (checklist §7.A); proposed §B rule to AST-scan every `core/venous/*/*.py` for `INV_` prefix + diff against §2.5 — Wave-2 follow-up. Until that rule lands, §2.5 is a best-effort index of the 4 fully-documented families. |
 | R8 | **Dependency supply-chain compromise.** Lazy imports don't fully mitigate if a user installs the SDK. | Pin minor versions in `pyproject.toml`; security-alerts gate releases (§3.11). |

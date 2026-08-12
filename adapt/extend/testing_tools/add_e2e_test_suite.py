@@ -47,6 +47,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "testing"],
     "entry": "add_e2e_test_suite",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 

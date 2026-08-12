@@ -15,6 +15,8 @@ from pathlib import Path
 
 from adapt._base import render_to
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 
 _HERE = Path(__file__).parent
 
@@ -23,6 +25,9 @@ MCP_TOOL = {
     "description": "Add Server-Sent Events (SSE) endpoints for real-time push to browser clients.",
     "tags": ["extend", "realtime"],
     "entry": "add_sse",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 _NOTES_SUCCESS = [
@@ -295,5 +300,3 @@ def _patch_requirements(requirements_file: Path) -> None:
         requirements_file.write_text(src.rstrip("\n") + "\nredis[hiredis]>=5.0.0\n")
 
 
-def _elapsed_ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

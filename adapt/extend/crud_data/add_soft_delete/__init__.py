@@ -38,6 +38,8 @@ from adapt._base import (
     render_to,
 )
 from adapt.contracts import ToolInput, ToolResult, validate_project_dir
+from adapt.contracts.tool_result import _elapsed_ms
+from adapt.contracts.tool_result import _elapsed_ms
 from adapt.contracts.migration_helper import find_migration_head
 
 _HERE = Path(__file__).parent
@@ -52,6 +54,9 @@ MCP_TOOL = {
     ),
     "tags": ["extend", "crud_data"],
     "entry": "add_soft_delete",
+    "imports_primitives": [],
+    "imports_adapters": [],
+
 }
 
 # Fingerprint substring used to detect that ``app/crud/base.py`` has already
@@ -514,5 +519,3 @@ def _emit_project_test(project: Path, created: list[str]) -> None:
     created.append(str(emitted))
 
 
-def _elapsed_ms(start: float) -> int:
-    return int((time.monotonic() - start) * 1000)

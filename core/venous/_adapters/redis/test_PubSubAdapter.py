@@ -30,7 +30,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
 import sys
 from typing import Any
 
@@ -47,7 +46,7 @@ class _FakePubSubClient:
         self._queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         self._closed = False
 
-    async def __aenter__(self) -> "_FakePubSubClient":
+    async def __aenter__(self) -> _FakePubSubClient:
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:

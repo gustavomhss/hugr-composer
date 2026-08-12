@@ -49,7 +49,6 @@ from adapt.contracts import ToolInput
 from adapt.extend.infrastructure.add_cors_config import add_cors_config
 from tests.common.fixture_factory import create_fixture_project
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

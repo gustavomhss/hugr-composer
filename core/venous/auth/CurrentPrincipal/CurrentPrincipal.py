@@ -23,9 +23,9 @@ Invariant IDs cited by this module:
 
 from __future__ import annotations
 
+import dataclasses
 import unicodedata
 from collections.abc import Iterable, Mapping
-import dataclasses
 from dataclasses import dataclass, field
 from types import MappingProxyType
 from typing import Final, Protocol, runtime_checkable

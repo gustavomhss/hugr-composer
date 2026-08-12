@@ -1,8 +1,16 @@
 from __future__ import annotations
-from collections import OrderedDict
+
 import asyncio
 import json
 import time
+from collections import OrderedDict
+
+# Module-level tuning constants (see FeatureFlagCache.md). Feature-flag reads
+# vastly outnumber writes, so a short TTL bounds staleness while a capacity cap
+# bounds memory; invalidation messages arrive on a dedicated pubsub channel.
+CACHE_TTL_SECONDS: float = 300.0
+MAX_CACHE_SIZE: int = 1000
+INVALIDATION_CHANNEL: str = "feature_flags:invalidate"
 
 
 class FeatureFlagCache:
