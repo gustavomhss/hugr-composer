@@ -127,9 +127,15 @@ def _patch_project(project_dir: Path) -> None:
 
 def _load_app(project_dir: Path):
     key = str(project_dir)
-    # Remove ALL previous project dirs that contain an 'app' package so
-    # stale entries from prior scenarios don't shadow the current one.
-    sys.path[:] = [p for p in sys.path if not (p != key and Path(p, "app").is_dir())]
+    # Remove stale generated-project dirs from prior scenarios so they don't
+    # shadow the current one — but NEVER the skill repo root, which also ships
+    # an app/ package and whose removal breaks core.venous/adapt imports.
+    repo_root = Path(__file__).resolve().parent.parent
+    sys.path[:] = [
+        p
+        for p in sys.path
+        if p == key or not (Path(p, "app").is_dir() and Path(p) != repo_root)
+    ]
     if key not in sys.path:
         sys.path.insert(0, key)
     for m in list(sys.modules):

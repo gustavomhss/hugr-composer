@@ -137,11 +137,18 @@ async def flow_chat(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     )
 
     # WebSocket route must be registered on the app
-    ws_routes = [
-        rt
-        for rt in ctx.client._transport.app.routes
-        if getattr(rt, "path", "").startswith("/ws/chat/")
-    ]
+    # FastAPI 0.141+/Starlette 1.6 wraps included routers in lazy
+    # _IncludedRouter entries, so walk the route tree recursively.
+    def _iter_paths(routes):
+        for rt in routes:
+            path = getattr(rt, "path", None)
+            if path:
+                yield path
+            orig = getattr(rt, "original_router", None)
+            if orig is not None:
+                yield from _iter_paths(orig.routes)
+
+    ws_routes = [p for p in _iter_paths(ctx.client._transport.app.routes) if p.startswith("/ws/chat/")]
     ctx.record(
         "ws_route_registered", len(ws_routes) == 1, f"/ws/chat/{{room_id}} route: {len(ws_routes)}"
     )

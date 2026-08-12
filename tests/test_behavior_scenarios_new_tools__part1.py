@@ -376,8 +376,19 @@ async def flow_notifications_presence(ctx: ScenarioContext) -> None:
         ctx.record("notification_model_in_models_init", False, "app/models/__init__.py not found")
 
     # Presence HTTP routes registered (/api/v1/presence/online etc.)
+    # FastAPI 0.141+/Starlette 1.6 wraps included routers in lazy
+    # _IncludedRouter entries, so walk the route tree recursively.
+    def _iter_paths(routes):
+        for rt in routes:
+            path = getattr(rt, "path", None)
+            if path:
+                yield path
+            orig = getattr(rt, "original_router", None)
+            if orig is not None:
+                yield from _iter_paths(orig.routes)
+
     presence_routes = [
-        rt for rt in client._transport.app.routes if "/presence" in getattr(rt, "path", "")
+        p for p in _iter_paths(client._transport.app.routes) if "/presence" in p
     ]
     ctx.record(
         "presence_routes_registered",
