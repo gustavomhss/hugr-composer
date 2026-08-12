@@ -1,0 +1,83 @@
+name: Publish hugr-fastapi Wheel
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+  id-token: write  # Required for PyPI trusted publishing
+
+jobs:
+  build-wheel:
+    name: Build Wheel
+    runs-on: ubuntu-latest
+    outputs:
+      wheel-path: ${{ steps.build.outputs.wheel-path }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Regenerate wheel source from core/venous/
+        run: |
+          uvx -p 3.12 python -m engine.promotion.emit_wheel_source
+        env:
+          PYTHONPATH: .
+
+      - name: Build wheel
+        id: build
+        working-directory: packaging/hugr-fastapi
+        run: |
+          uv build --wheel
+          WHEEL=$(ls dist/*.whl | head -1)
+          echo "wheel-path=$WHEEL" >> $GITHUB_OUTPUT
+
+      - name: Verify wheel contents
+        working-directory: packaging/hugr-fastapi
+        run: |
+          python -c "
+          import zipfile
+          with zipfile.ZipFile('${{ steps.build.outputs.wheel-path }}') as z:
+              names = z.namelist()
+              print('Wheel contents:', len(names), 'files')
+              for name in names:
+                  print(f'  {name}')
+              assert any(n.endswith('py.typed') for n in names), 'py.typed missing'
+          "
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wheel
+          path: packaging/hugr-fastapi/dist/*.whl
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: build-wheel
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: wheel
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist
+          skip-existing: true
+          verbose: true

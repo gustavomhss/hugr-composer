@@ -30,6 +30,7 @@ Invariants:
 from __future__ import annotations
 
 import argparse
+from pathlib import Path
 
 from hugr_core.promotion.promote import (
     PromotionPlan,
@@ -47,13 +48,27 @@ from hugr_core.promotion.promote import (
 
 from engine.promotion.config import build_config
 
+
+def emit_wheel_source(primitive_name: str | None = None, target_dir: Path | None = None) -> int:
+    """Regenerate the flattened wheel source for `hugr_fastapi`.
+
+    Full, idempotent harvest of `core/venous/` into
+    `packaging/hugr-fastapi/hugr_fastapi/` with import-shim rewrites — see
+    :mod:`engine.promotion.emit_wheel_source`. Called post-promote so a newly
+    promoted primitive is always part of the next wheel build.
+    """
+    from engine.promotion.emit_wheel_source import emit
+
+    return emit(dry_run=False)
+
+
 __all__ = [
     "PromotionPlan",
-    "plan",
+    "_resolve_match",
     "execute",
     "execute_delete",
-    "_resolve_match",
     "main",
+    "plan",
 ]
 
 
@@ -69,7 +84,13 @@ def execute(
     is_quarantined: bool | None = None,
 ) -> int:
     """Execute the promotion — with automatic rollback on any failure."""
-    return _core_execute(build_config(), name, dry_run=dry_run, is_quarantined=is_quarantined)
+    result = _core_execute(build_config(), name, dry_run=dry_run, is_quarantined=is_quarantined)
+    if result == 0 and not dry_run:
+        # Emit wheel source for the promoted primitive
+        from engine.promotion.emit_wheel_source import emit
+
+        emit(dry_run=False)
+    return result
 
 
 def execute_delete(

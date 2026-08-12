@@ -1,0 +1,34 @@
+{
+  "$schema": "https://opencode.dev/schema.json",
+  "name": "hugr-arsenal",
+  "version": "0.1.0",
+  "description": "FastAPI production skill for opencode - 202 tools, 124 primitives, 61 generators",
+  "author": "Gustavo Schneiter",
+  "license": "Proprietary",
+  "repository": "https://github.com/humangr-labs/HuGR-Arsenal",
+  "homepage": "https://github.com/humangr-labs/HuGR-Arsenal",
+  "entry": "mcp_server.py",
+  "mcp": {
+    "enabled": true,
+    "servers": {
+      "hugr-arsenal": {
+        "command": "uv",
+        "args": ["run", "--directory", "${workspaceFolder}", "python", "mcp_server.py"],
+        "env": {
+          "HUGR_SKILL_PATH": "${workspaceFolder}/skills/SKILL-001-fastapi-production"
+        }
+      }
+    }
+  },
+  "tools": {
+    "discovery": {
+      "catalog": "engine/index/catalog.json",
+      "primitives": "core/venous/**/*.protocol.py",
+      "tools": "adapt/**/__init__.py"
+    }
+  },
+  "config": {
+    "skill_path": "skills/SKILL-001-fastapi-production",
+    "catalog_path": "engine/index/catalog.json"
+  }
+}

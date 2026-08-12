@@ -45,6 +45,7 @@ Required keys (only for providers you use):
 - `GROQ_API_KEY` — from https://console.groq.com/keys
 - `GEMINI_API_KEY` — from https://aistudio.google.com/apikey
 - `MISTRAL_API_KEY` — from https://console.mistral.ai/api-keys
+- `CEREBRAS_API_KEY` — from https://cloud.cerebras.ai (free tier ~5 RPM, 1M tokens/day)
 - `NIM_BASE_URL` + `NIM_API_KEY` — for NVIDIA NIM
 
 ### 3. Start opencode + bridges (for opencode providers)

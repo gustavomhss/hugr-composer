@@ -20,8 +20,9 @@ from mcp_tools.auth_gate import gate_enabled  # noqa: E402
 
 discover_and_register(mcp)
 
-# Entry point for `python mcp_server.py` or `fastmcp run mcp_server.py:mcp`
-if __name__ == "__main__":
+
+def main() -> int:
+    """Entry point for `hugr-arsenal` console script."""
     if gate_enabled():
         # Hosted mode: serve over HTTP so clients send their HuGR license as a
         # bearer token; the HugrTokenVerifier (wired in mcp_tools/server.py)
@@ -35,3 +36,9 @@ if __name__ == "__main__":
     else:
         # Local/dev/OSS: stdio, no auth.
         mcp.run()
+    return 0
+
+
+# Entry point for `python mcp_server.py` or `fastmcp run mcp_server.py:mcp`
+if __name__ == "__main__":
+    raise SystemExit(main())

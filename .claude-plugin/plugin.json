@@ -1,7 +1,7 @@
 {
   "name": "hugr-fastapi-production",
   "displayName": "HuGR FastAPI Production",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Executable knowledge an LLM agent invokes to scaffold and customize production FastAPI backends. Bundles the skill (how-to-use) with the composer MCP server (the tools).",
   "author": { "name": "Gustavo Schneiter" },
   "homepage": "https://github.com/humangr-labs/HuGR-Arsenal",
