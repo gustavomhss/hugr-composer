@@ -1,4 +1,8 @@
 # pyproject.toml for claude-gateway
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "claude-gateway"
 version = "0.1.0"
@@ -16,6 +20,16 @@ dependencies = [
     "tenacity>=8.2.3",
     "orjson>=3.9.0",
 ]
+
+[project.scripts]
+hugr-arsenal = "mcp_server:main"
+
+[tool.setuptools]
+py-modules = ["mcp_server"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["gateway*", "mcp_tools*", "engine*", "adapt*", "modules*", "generators*", "core*", "app*"]
 
 [project.optional-dependencies]
 dev = [
@@ -64,7 +78,7 @@ branch = true
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
-    "raise AssertionError",
+    "raise AssertError",
     "raise NotImplementedError",
     "if __name__ == .__main__.:",
 ]

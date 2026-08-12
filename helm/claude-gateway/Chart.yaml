@@ -1,0 +1,14 @@
+apiVersion: v2
+name: claude-gateway
+description: Multi-provider LLM Gateway for HuGR Arsenal
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - llm
+  - gateway
+  - ai
+  - fastapi
+maintainers:
+  - name: Gustavo Schneiter
+    email: gustavo@humangr.ai
