@@ -2,10 +2,7 @@
   "mcpServers": {
     "hugr-arsenal": {
       "command": "uv",
-      "args": ["run", "--directory", "${workspaceFolder}", "python", "mcp_server.py"],
-      "env": {
-        "HUGR_SKILL_PATH": "${workspaceFolder}/skills/SKILL-001-fastapi-production"
-      }
+      "args": ["run", "--directory", "${workspaceFolder}", "python", "mcp_server.py"]
     }
   }
 }
