@@ -110,8 +110,8 @@ async def init_cache(redis_url: str, default_ttl: int = 300) -> None:
         default_ttl: Default key expiration in seconds.
     """
     global _cache
-    from redis.asyncio import Redis
-    redis = Redis.from_url(redis_url, decode_responses=False)
+    from redis.asyncio import Redis as _Redis
+    redis = _Redis.from_url(redis_url, decode_responses=False)
     _cache = CacheBackend(redis, default_ttl=default_ttl)
 
 

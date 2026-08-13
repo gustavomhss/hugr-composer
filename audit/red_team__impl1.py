@@ -315,7 +315,7 @@ def _attack_permission_denied() -> dict:
 
 
 def _attack_symlink_loop() -> dict:
-    """Symlink loop directory must not hang or crash."""
+    """Symlink loop must not hang or crash. Pass the symlink itself as project_dir."""
     from adapt.extend.crud_data.add_soft_delete import add_soft_delete
 
     name = "symlink_loop"
@@ -328,7 +328,8 @@ def _attack_symlink_loop() -> dict:
     link_a.symlink_to(link_b)
     link_b.symlink_to(link_a)
     try:
-        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir=str(loop_dir))))
+        # Pass the symlink itself (link_a) to trigger symlink loop detection
+        result = _run_with_timeout(lambda: add_soft_delete(ToolInput(project_dir=str(link_a))))
         if _is_valid_tool_result(result) and result.status in ("error", "no_op"):
             return _make_result(name, "fuzzing", True, f"returned status={result.status}")
         return _make_result(
@@ -337,9 +338,9 @@ def _attack_symlink_loop() -> dict:
     except _TimeoutError:
         return _make_result(name, "fuzzing", False, "hung on symlink loop")
     except Exception as exc:  # noqa: BLE001
-        if isinstance(exc, (OSError, RecursionError)):
+        if isinstance(exc, (OSError, RecursionError, RuntimeError)):
             return _make_result(
-                name, "fuzzing", True, f"raised OS/recursion error cleanly: {type(exc).__name__}"
+                name, "fuzzing", True, f"raised error cleanly: {type(exc).__name__}"
             )
         return _make_result(
             name, "fuzzing", False, f"unhandled exception: {type(exc).__name__}: {exc}"

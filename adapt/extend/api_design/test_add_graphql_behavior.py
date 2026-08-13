@@ -5,13 +5,19 @@ import tempfile
 import shutil
 from pathlib import Path
 
+from tests.common.fixture_factory import create_fixture_project
+
 def test_add_graphql_dry_run_no_files():
     from adapt.extend.api_design.add_graphql import add_graphql
     from adapt.contracts import ToolInput
-    inp = ToolInput(project_dir=tempfile.mkdtemp(), dry_run=True)
-    result = add_graphql(inp)
-    assert result.status in ("success", "preview")
-    assert result.files_created == []
+    project_dir = create_fixture_project(name="graphql_dry_run")
+    try:
+        inp = ToolInput(project_dir=str(project_dir), dry_run=True)
+        result = add_graphql(inp)
+        assert result.status in ("success", "preview")
+        assert result.files_created == []
+    finally:
+        shutil.rmtree(project_dir)
 
 def test_add_graphql_creates_valid_python():
     from adapt.extend.api_design.add_graphql import add_graphql

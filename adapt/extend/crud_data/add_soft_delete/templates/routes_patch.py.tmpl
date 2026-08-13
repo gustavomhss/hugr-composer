@@ -9,15 +9,8 @@
 #   GET    /deleted/        — list soft-deleted rows (superuser only).
 #   POST   /{id}/restore    — clear all three deletion columns (superuser).
 #   DELETE /{id}/permanent  — hard-delete a row for good (superuser).
-from app.crud.$STEM import (
-    hard_delete as _sd_hard_delete,
-    list_deleted as _sd_list_deleted,
-    restore as _sd_restore,
-)
-from app.schemas.$STEM import (
-    ${MODEL}DeletedPublic,  # noqa: F401
-    ${MODEL}sDeletedPublic,
-)
+from app.crud.$STEM import hard_delete as _sd_hard_delete, list_deleted as _sd_list_deleted, restore as _sd_restore
+from app.schemas.$STEM import ${MODEL}DeletedPublic, ${MODEL}sDeletedPublic
 
 
 @router.get("/deleted/", response_model=${MODEL}sDeletedPublic)

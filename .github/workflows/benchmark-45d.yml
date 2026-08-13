@@ -1,8 +1,8 @@
-name: benchmark-nightly
+name: benchmark-45d
 
 on:
   schedule:
-    - cron: "17 3 * * *"     # 03:17 UTC daily
+    - cron: "17 3 * * *"     # daily check; actual run gated to every ~45 days
   workflow_dispatch:
     inputs:
       adapter:
@@ -39,18 +39,44 @@ jobs:
       - name: Install minimal deps
         run: python -m pip install pyyaml anthropic
 
+      # Scheduled runs are gated to every ~45 days: read `generated_at` from the
+      # last published score and skip unless it is ≥45 days old (or the run was
+      # dispatched manually, which always runs).
+      - name: Check last benchmark age
+        id: age
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "manually dispatched — always run"
+            echo "stale=1" >> "$GITHUB_OUTPUT"
+          elif [[ -f benchmarks/latest_score.json ]]; then
+            last=$(python -c "import json; print(json.load(open('benchmarks/latest_score.json'))['generated_at'])" 2>/dev/null)
+            last_epoch=$(date -d "$last" +%s 2>/dev/null || echo 0)
+            now_epoch=$(date +%s)
+            days=$(( (now_epoch - last_epoch) / 86400 ))
+            echo "last benchmark: $last ($days days ago)"
+            if [[ "$days" -ge 45 ]]; then
+              echo "stale=1" >> "$GITHUB_OUTPUT"
+            else
+              echo "stale=0" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "no published score — run"
+            echo "stale=1" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run benchmark (stub)
-        if: ${{ github.event_name == 'schedule' || inputs.adapter == 'stub' }}
+        if: ${{ steps.age.outputs.stale == '1' && (github.event_name == 'schedule' || inputs.adapter == 'stub') }}
         run: PYTHONPATH=. python -m engine.bench.runner --adapter stub --out benchmarks/latest_score.json
 
       - name: Run benchmark (Claude agent)
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.adapter == 'claude' }}
+        if: ${{ steps.age.outputs.stale == '1' && github.event_name == 'workflow_dispatch' && inputs.adapter == 'claude' }}
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           HUGR_MAESTRO_MODEL: ${{ inputs.model }}
         run: PYTHONPATH=. python -m engine.bench.run_claude --out benchmarks/latest_score.json
 
       - name: Publish score artifact
+        if: ${{ steps.age.outputs.stale == '1' }}
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-score
@@ -61,7 +87,7 @@ jobs:
       # above but must NEVER commit, or it clobbers the published score with a
       # degenerate stub number (this caused a B3.5 contract violation once).
       - name: Commit score on main
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.adapter == 'claude' && github.ref == 'refs/heads/main' }}
+        if: ${{ steps.age.outputs.stale == '1' && github.event_name == 'workflow_dispatch' && inputs.adapter == 'claude' && github.ref == 'refs/heads/main' }}
         run: |
           git config user.name "hugr-bench"
           git config user.email "bench@humangr.com"

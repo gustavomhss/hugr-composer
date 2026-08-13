@@ -38,5 +38,5 @@
     "POST:/signup",
     "POST:/{id}/restore"
   ],
-  "total_loc": 5561
+  "total_loc": 5554
 }

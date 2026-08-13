@@ -15,8 +15,8 @@ from pydantic import BaseModel, Field
 
 
 def _elapsed_ms(start: float) -> int:
-    """Return elapsed milliseconds since *start*."""
-    return int((time.monotonic() - start) * 1000)
+    """Return elapsed milliseconds since *start* (minimum 1ms)."""
+    return max(1, int((time.monotonic() - start) * 1000))
 
 
 def validate_project_dir(project_dir: str) -> str | None:
@@ -29,10 +29,18 @@ def validate_project_dir(project_dir: str) -> str | None:
         A human-readable error string when the path does not exist or is not a
         directory, or ``None`` when the path is valid.
     """
+    if not project_dir or not project_dir.strip():
+        return "project_dir must not be empty"
     p = Path(project_dir)
-    if not p.exists():
+    if not p.is_absolute():
+        return f"project_dir must be an absolute path: {project_dir}"
+    try:
+        resolved = p.resolve(strict=False)
+    except (OSError, RuntimeError) as e:
+        return f"project_dir cannot be resolved: {e}"
+    if not resolved.exists():
         return f"project_dir does not exist: {project_dir}"
-    if not p.is_dir():
+    if not resolved.is_dir():
         return f"project_dir is not a directory: {project_dir}"
     return None
 

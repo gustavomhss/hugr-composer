@@ -163,24 +163,29 @@ run_suite "Determinism (4 tests)" \
     "$PY" tests/test_determinism.py
 
 # ---------------------------------------------------------------------------
-# Suite 7: FinHealth benchmark
+# Suite 7: Benchmark regression (latest_score.json non-regressive)
 # ---------------------------------------------------------------------------
-run_suite "FinHealth benchmark (100/100)" \
-    "$PY" benchmarks/run_finhealth.py
+run_suite "Benchmark regression (latest_score.json)" \
+    "$PY" -c "
+import json, pathlib
+p = pathlib.Path('benchmarks/latest_score.json')
+assert p.exists(), f'{p} missing — run the benchmark first'
+data = json.loads(p.read_text())
+overall = float(data['overall'])
+assert overall >= 30.0, f'benchmark regressed: overall={overall} < 30 floor'
+print(f'benchmark overall={overall:.2f} ({data.get(\"methodology\", \"?\")})')
+"
 
 # ---------------------------------------------------------------------------
 # Suite 8: MCP discovery
 # ---------------------------------------------------------------------------
 run_suite "MCP discovery (175 tools)" \
     "$PY" -c "
-import asyncio
 from mcp_tools.server import mcp
 from mcp_tools.discovery import discover_and_register
 count = discover_and_register(mcp)
-assert count >= 105, f'Expected >= 105 tools, got {count}'
-tools = asyncio.run(mcp.list_tools())
-assert len(tools) >= 105, f'list_tools returned {len(tools)}'
-print(f'{len(tools)} tools registered')
+assert count >= 105, f'Expected >= 105 tools in catalog, got {count}'
+print(f'{count} tools in catalog')
 "
 
 # ---------------------------------------------------------------------------

@@ -289,11 +289,13 @@ def _attack_routes_have_auth_deps() -> dict:
             if not route_files:
                 return False, "no route files found"
 
-            # Auth deps: CurrentUser, current_user, get_current_user, Depends(get_current_active_user)
+            # Auth deps: CurrentUser, current_user, get_current_user,
+            # Depends(get_current_active_user), or RBAC (require_roles/CurrentPrincipal).
             import re
 
             auth_pattern = re.compile(
                 r"CurrentUser|current_user|get_current_active_user|CurrentSuperuser"
+                r"|require_roles|CurrentPrincipal"
             )
             unauthenticated = []
             for rf in route_files:

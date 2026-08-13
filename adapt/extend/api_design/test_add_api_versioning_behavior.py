@@ -16,6 +16,7 @@ Run with::
 from __future__ import annotations
 
 import ast
+from pathlib import Path
 import pytest
 
 from adapt.contracts import ToolInput
@@ -89,7 +90,7 @@ def test_b05_generated_files_ast_parse(tmp_path) -> None:
 
     for fpath in result.files_created:
         if fpath.endswith(".py"):
-            p = project / fpath if not fpath.startswith("/") else fpath
+            p = Path(fpath)
             try:
                 ast.parse(p.read_text())
             except SyntaxError as exc:

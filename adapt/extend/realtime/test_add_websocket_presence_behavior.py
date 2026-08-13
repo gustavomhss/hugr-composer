@@ -434,8 +434,11 @@ def test_b12_presence_rest_routes_registered_on_app(asgi_app: object) -> None:
     Replaces the previous "accept 200/404/500" laxness which would mask a
     regression that drops the routes entirely. We assert the routes exist
     in ``app.routes`` so a missing registration fails the suite.
+
+    FastAPI 0.141+/Starlette 1.6 wraps included routers in lazy
+    ``_IncludedRouter`` entries, so the route tree must be walked recursively.
     """
-    paths = {getattr(r, "path", None) for r in getattr(asgi_app, "routes", [])}
+    paths = set(_iter_route_paths(getattr(asgi_app, "routes", [])))
     # The scaffold mounts api_router under /api/v1, so the presence REST
     # routes appear as /api/v1/presence/* once the tool registers them.
     has_online = any(p and p.endswith("/presence/online") for p in paths)
@@ -458,10 +461,31 @@ def test_b12_presence_rest_routes_registered_on_app(asgi_app: object) -> None:
 # ---------------------------------------------------------------------------
 
 
+def _iter_route_paths(routes, prefix: str = "") -> list[str]:
+    """Flatten a FastAPI route tree into effective paths.
+
+    FastAPI 0.141+/Starlette 1.6 wraps included routers in lazy
+    ``_IncludedRouter`` entries whose ``include_context.prefix`` holds the mount
+    prefix and whose ``original_router`` holds the child routes. The child paths
+    are relative to that prefix, so the recursion accumulates it.
+    """
+    paths: list[str] = []
+    for rt in routes:
+        orig = getattr(rt, "original_router", None)
+        if orig is not None:
+            ic = getattr(rt, "include_context", None)
+            sub = getattr(ic, "prefix", "") if ic is not None else ""
+            paths.extend(_iter_route_paths(orig.routes, prefix + sub))
+            continue
+        path = getattr(rt, "path", None)
+        if path:
+            paths.append(prefix + path)
+    return paths
+
+
 def _registered_presence_path(asgi_app: object, suffix: str) -> str:
     """Return the booted app's effective path ending with *suffix*."""
-    for r in getattr(asgi_app, "routes", []):
-        p = getattr(r, "path", None)
+    for p in _iter_route_paths(getattr(asgi_app, "routes", [])):
         if p and p.endswith(suffix):
             return p
     raise AssertionError(f"no registered route ends with {suffix!r}")

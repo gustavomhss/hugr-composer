@@ -4,7 +4,7 @@
 # Cursor pagination route — added by add_cursor_pagination tool
 # ---------------------------------------------------------------------------
 from app.crud.$lower import get_multi_cursor as _get_multi_cursor
-from fastapi import HTTPException
+from fastapi import HTTPException as _HTTPException
 from fastapi import Query as _Query
 
 
@@ -36,7 +36,7 @@ async def list_${lower}s_cursor(
             owner_id=current_user.id,
         )
     except ValueError as exc:
-        raise HTTPException(
+        raise _HTTPException(
             status_code=400, detail=f"Invalid cursor: {exc}"
         ) from exc
     return $PublicList(**result)

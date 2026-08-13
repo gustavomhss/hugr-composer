@@ -5,13 +5,19 @@ import tempfile
 import shutil
 from pathlib import Path
 
+from tests.common.fixture_factory import create_fixture_project
+
 def test_add_circuit_breaker_dry_run_no_files():
     from adapt.extend.infrastructure.add_circuit_breaker import add_circuit_breaker
     from adapt.contracts import ToolInput
-    inp = ToolInput(project_dir=tempfile.mkdtemp(), dry_run=True)
-    result = add_circuit_breaker(inp)
-    assert result.status in ("success", "preview")
-    assert result.files_created == []
+    project_dir = create_fixture_project(name="circuit_breaker_dry_run")
+    try:
+        inp = ToolInput(project_dir=str(project_dir), dry_run=True)
+        result = add_circuit_breaker(inp)
+        assert result.status in ("success", "preview")
+        assert result.files_created == []
+    finally:
+        shutil.rmtree(project_dir)
 
 def test_add_circuit_breaker_creates_valid_python():
     from adapt.extend.infrastructure.add_circuit_breaker import add_circuit_breaker

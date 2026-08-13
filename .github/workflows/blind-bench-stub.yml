@@ -2,7 +2,7 @@ name: Blind Benchmark — stub + unit
 
 # Runs the harness unit tests AND a full stub end-to-end run on every push
 # + PR. Cheap (< 60s) — no Claude API calls. A real live naked-vs-kit run
-# is wired separately under `benchmark-nightly.yml` and only fires on
+# is wired separately under `benchmark-45d.yml` and only fires on
 # schedule / dispatch so API costs are controlled.
 
 # DISABLED 2026-05-28: this workflow runs on `ubuntu-latest` (GitHub-hosted),
