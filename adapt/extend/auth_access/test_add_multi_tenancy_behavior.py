@@ -1,13 +1,11 @@
 """Behavior tests for add_multi_tenancy."""
 
-import pytest
 import shutil
 from pathlib import Path
 
-from tests.common.fixture_factory import create_fixture_project
-
-from adapt.extend.auth_access.add_multi_tenancy import add_multi_tenancy
 from adapt.contracts import ToolInput
+from adapt.extend.auth_access.add_multi_tenancy import add_multi_tenancy
+from tests.common.fixture_factory import create_fixture_project
 
 
 def test_add_multi_tenancy_dry_run_no_files() -> None:
@@ -30,6 +28,7 @@ def test_add_multi_tenancy_creates_valid_python() -> None:
             for fpath in result.files_created:
                 if fpath.endswith(".py"):
                     import ast
+
                     ast.parse(Path(fpath).read_text())
     finally:
         shutil.rmtree(project_dir)

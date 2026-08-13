@@ -108,7 +108,12 @@ _MEMORY_RATE_LIMIT_PY = textwrap.dedent("""\
     from slowapi import Limiter
     from slowapi.util import get_remote_address
 
-    limiter = Limiter(key_func=get_remote_address, storage_uri="memory://", default_limits=[], enabled=False)
+    limiter = Limiter(
+        key_func=get_remote_address,
+        storage_uri="memory://",
+        default_limits=[],
+        enabled=False,
+    )
     __all__ = ["limiter"]
 """)
 
@@ -572,11 +577,11 @@ def test_b10_delivery_contract(behavior_project: Path) -> None:
     delivery.validate_or_raise()
 
     contract_json = delivery.model_dump()
-    print("\n" + "=" * 70)
-    print("DELIVERY CONTRACT — TOOL-062 add_websocket_presence")
-    print("=" * 70)
-    print(json.dumps(contract_json, indent=2, default=str))
-    print("=" * 70 + "\n")
+    print("\n" + "=" * 70)  # noqa: T201
+    print("DELIVERY CONTRACT — TOOL-062 add_websocket_presence")  # noqa: T201
+    print("=" * 70)  # noqa: T201
+    print(json.dumps(contract_json, indent=2, default=str))  # noqa: T201
+    print("=" * 70 + "\n")  # noqa: T201
 
     assert delivery.tests_failed == 0
     assert delivery.behavior.boot_test_passed is True

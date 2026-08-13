@@ -20,9 +20,7 @@ import os
 import sys
 import tempfile
 import textwrap
-import time
 import traceback
-import uuid
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -37,7 +35,6 @@ os.environ.setdefault("SECRET_KEY", "behavior-new-tools-secret-key-32+chars-ok!"
 os.environ.setdefault("MFA_FERNET_KEY", "L7gvXDh2v6syV65J0-iwLQMTYbVavNXO2vuXgntcFBo=")
 os.environ.pop("REDIS_URL", None)  # no Redis in these tests
 
-import asyncio
 
 import pytest
 
@@ -132,9 +129,7 @@ def _load_app(project_dir: Path):
     # an app/ package and whose removal breaks core.venous/adapt imports.
     repo_root = Path(__file__).resolve().parent.parent
     sys.path[:] = [
-        p
-        for p in sys.path
-        if p == key or not (Path(p, "app").is_dir() and Path(p) != repo_root)
+        p for p in sys.path if p == key or not (Path(p, "app").is_dir() and Path(p) != repo_root)
     ]
     if key not in sys.path:
         sys.path.insert(0, key)

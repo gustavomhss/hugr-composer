@@ -23,7 +23,7 @@ from tests.test_behavior_scenarios__shared import (
 
 async def flow_moderation(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Inbound reports → moderator actions → outbound webhooks → audit."""
-    from sqlalchemy import inspect, text
+    from sqlalchemy import inspect
 
     async with ctx.engine.connect() as conn:
         tables = await conn.run_sync(lambda sc: inspect(sc).get_table_names())
@@ -85,12 +85,12 @@ MODERATION = Scenario(
 
 async def flow_chat(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
     """Users create rooms, post messages via HTTP, load history, verify WS route."""
-    client, session = ctx.client, ctx.session
+    client = ctx.client
 
     alice = await _signup(
         client, "alice@chat.example.com", "AlicePass123!", "Alice", ctx.tenant_slug
     )
-    bob = await _signup(client, "bob@chat.example.com", "BobPass123!", "Bob", ctx.tenant_slug)
+    _bob = await _signup(client, "bob@chat.example.com", "BobPass123!", "Bob", ctx.tenant_slug)
 
     # Alice creates a public room
     r = await client.post(
@@ -148,7 +148,9 @@ async def flow_chat(ctx: ScenarioContext) -> list[tuple[str, bool, str]]:
             if orig is not None:
                 yield from _iter_paths(orig.routes)
 
-    ws_routes = [p for p in _iter_paths(ctx.client._transport.app.routes) if p.startswith("/ws/chat/")]
+    ws_routes = [
+        p for p in _iter_paths(ctx.client._transport.app.routes) if p.startswith("/ws/chat/")
+    ]
     ctx.record(
         "ws_route_registered", len(ws_routes) == 1, f"/ws/chat/{{room_id}} route: {len(ws_routes)}"
     )

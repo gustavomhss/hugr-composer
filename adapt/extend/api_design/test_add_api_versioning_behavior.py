@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import ast
 from pathlib import Path
+
 import pytest
 
 from adapt.contracts import ToolInput
@@ -81,8 +82,7 @@ def test_b05_generated_files_ast_parse(tmp_path) -> None:
     )
     (project / "app" / "routes").mkdir(parents=True)
     (project / "app" / "routes" / "__init__.py").write_text(
-        "from fastapi import APIRouter\n"
-        "api_router = APIRouter()\n"
+        "from fastapi import APIRouter\napi_router = APIRouter()\n"
     )
 
     result = add_api_versioning(ToolInput(project_dir=str(project)))

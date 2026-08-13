@@ -238,8 +238,10 @@ async def flow_celery_beat(ctx: ScenarioContext) -> None:
         try:
             tree = _ast.parse(celery_app_path.read_text())
             top_level_celery = any(
-                isinstance(n, (_ast.Import, _ast.ImportFrom))
-                and any(alias.name.startswith("celery") for alias in getattr(n, "names", []))
+                (
+                    isinstance(n, (_ast.Import, _ast.ImportFrom))
+                    and any(alias.name.startswith("celery") for alias in getattr(n, "names", []))
+                )
                 or (isinstance(n, _ast.ImportFrom) and (n.module or "").startswith("celery"))
                 for n in tree.body
             )
@@ -359,7 +361,8 @@ async def flow_notifications_presence(ctx: ScenarioContext) -> None:
     ctx.record(
         "presence_online_endpoint_exists",
         presence_code != 404,
-        f"GET /presence/online: {presence_code} (404 = route missing, 500/503 = Redis not running is OK)",
+        f"GET /presence/online: {presence_code} "
+        "(404 = route missing, 500/503 = Redis not running is OK)",
     )
 
     # notifications and/or presence models registered in app.models.__init__
@@ -387,9 +390,7 @@ async def flow_notifications_presence(ctx: ScenarioContext) -> None:
             if orig is not None:
                 yield from _iter_paths(orig.routes)
 
-    presence_routes = [
-        p for p in _iter_paths(client._transport.app.routes) if "/presence" in p
-    ]
+    presence_routes = [p for p in _iter_paths(client._transport.app.routes) if "/presence" in p]
     ctx.record(
         "presence_routes_registered",
         len(presence_routes) >= 1,

@@ -85,7 +85,7 @@ def _attack_ruff_clean_after_soft_delete() -> dict:
                 try:
                     rel = line.split(str(project))[-1]
                     violations.add(rel.strip())
-                except Exception:  # noqa: BLE001
+                except Exception:
                     violations.add(line.strip())
         return violations
 
@@ -108,12 +108,13 @@ def _attack_ruff_clean_after_soft_delete() -> dict:
                 )
             return (
                 True,
-                f"no new ruff E/F violations introduced by add_soft_delete (pre={len(before)}, post={len(after)})",
+                "no new ruff E/F violations introduced by add_soft_delete "
+                f"(pre={len(before)}, post={len(after)})",
             )
 
         ok, msg = _run_with_timeout(_run)
         return _make_result(name, "code_quality", ok, msg)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return _make_result(name, "code_quality", False, f"exception: {type(exc).__name__}: {exc}")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -160,7 +161,7 @@ def _attack_no_duplicate_imports_after_5_tools() -> dict:
 
         ok, msg = _run_with_timeout(_run)
         return _make_result(name, "code_quality", ok, msg)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return _make_result(name, "code_quality", False, f"exception: {type(exc).__name__}: {exc}")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -214,7 +215,7 @@ def _attack_no_fstring_sql() -> dict:
 
         ok, msg = _run_with_timeout(_run)
         return _make_result(name, "code_quality", ok, msg)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return _make_result(name, "code_quality", False, f"exception: {type(exc).__name__}: {exc}")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -257,7 +258,7 @@ def _attack_migrations_have_downgrade() -> dict:
 
         ok, msg = _run_with_timeout(_run)
         return _make_result(name, "code_quality", ok, msg)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return _make_result(name, "code_quality", False, f"exception: {type(exc).__name__}: {exc}")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -310,7 +311,7 @@ def _attack_routes_have_auth_deps() -> dict:
 
         ok, msg = _run_with_timeout(_run)
         return _make_result(name, "code_quality", ok, msg)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return _make_result(name, "code_quality", False, f"exception: {type(exc).__name__}: {exc}")
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -370,19 +371,19 @@ def run_red_team() -> dict:
     details: list[dict] = []
     for attack_fn in ALL_ATTACKS:
         label = attack_fn.__name__.removeprefix("_attack_")
-        print(f"  [{label}] ...", end="", flush=True)
+        print(f"  [{label}] ...", end="", flush=True)  # noqa: T201
         try:
             result = _run_with_timeout(attack_fn, timeout=ATTACK_TIMEOUT + 5)
         except _TimeoutError:
             result = _make_result(
                 label, "unknown", False, f"outer timeout after {ATTACK_TIMEOUT + 5}s"
             )
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             result = _make_result(
                 label, "unknown", False, f"runner exception: {type(exc).__name__}: {exc}"
             )
         icon = "PASS" if result["passed"] else "FAIL"
-        print(f" {icon} — {result['notes'][:100]}")
+        print(f" {icon} — {result['notes'][:100]}")  # noqa: T201
         details.append(result)
 
     passed = sum(1 for d in details if d["passed"])

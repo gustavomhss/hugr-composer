@@ -27,8 +27,8 @@ if str(SKILL_ROOT) not in sys.path:
     sys.path.insert(0, str(SKILL_ROOT))
 
 from adapt.contracts import ToolInput, ToolResult  # noqa: E402
-from tests.common.fixture_factory import (
-    create_fixture_project,  # noqa: E402,F401  (re-exported to impl2/impl3)
+from tests.common.fixture_factory import (  # noqa: E402
+    create_fixture_project,  # noqa: F401  (re-exported to impl2/impl3)
 )
 
 # ---------------------------------------------------------------------------
@@ -127,7 +127,7 @@ def _run_with_timeout(fn: Callable, timeout: int = ATTACK_TIMEOUT):
     def target():
         try:
             result_holder[0] = fn()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             exc_holder[0] = exc
 
     t = threading.Thread(target=target, daemon=True)
@@ -176,7 +176,7 @@ def _attack_path_traversal() -> dict:
         return _make_result(
             name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         # Pydantic validation error or any clean exception is acceptable —
         # the tool must not silently succeed or produce garbage output
         if "validation" in type(exc).__name__.lower() or "value" in type(exc).__name__.lower():
@@ -205,7 +205,7 @@ def _attack_nonexistent_dir() -> dict:
         return _make_result(
             name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if isinstance(exc, (FileNotFoundError, OSError, PermissionError)):
             return _make_result(
                 name, "fuzzing", True, f"raised OS-level error cleanly: {type(exc).__name__}"
@@ -229,7 +229,7 @@ def _attack_empty_string() -> dict:
         return _make_result(
             name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return _make_result(
             name, "fuzzing", True, f"raised exception cleanly: {type(exc).__name__}"
         )
@@ -249,7 +249,7 @@ def _attack_unicode_bomb() -> dict:
         return _make_result(
             name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         # ValueError / OSError for NUL bytes is correct and expected
         if isinstance(exc, (ValueError, OSError, TypeError)):
             return _make_result(name, "fuzzing", True, f"raised clean error: {type(exc).__name__}")
@@ -273,7 +273,7 @@ def _attack_very_long_path() -> dict:
         )
     except _TimeoutError:
         return _make_result(name, "fuzzing", False, "timed out on long path")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if isinstance(exc, (OSError, ValueError, FileNotFoundError)):
             return _make_result(
                 name, "fuzzing", True, f"raised OS error cleanly: {type(exc).__name__}"
@@ -301,7 +301,7 @@ def _attack_permission_denied() -> dict:
         return _make_result(
             name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if isinstance(exc, (PermissionError, OSError)):
             return _make_result(
                 name, "fuzzing", True, f"raised OS error cleanly: {type(exc).__name__}"
@@ -337,7 +337,7 @@ def _attack_symlink_loop() -> dict:
         )
     except _TimeoutError:
         return _make_result(name, "fuzzing", False, "hung on symlink loop")
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if isinstance(exc, (OSError, RecursionError, RuntimeError)):
             return _make_result(
                 name, "fuzzing", True, f"raised error cleanly: {type(exc).__name__}"
@@ -370,7 +370,7 @@ def _attack_file_instead_of_dir() -> dict:
         return _make_result(
             name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if isinstance(exc, (OSError, NotADirectoryError, ValueError)):
             return _make_result(name, "fuzzing", True, f"raised clean error: {type(exc).__name__}")
         return _make_result(
@@ -393,7 +393,7 @@ def _attack_null_bytes_in_path() -> dict:
         return _make_result(
             name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         if isinstance(exc, (ValueError, OSError, TypeError)):
             return _make_result(name, "fuzzing", True, f"raised clean error: {type(exc).__name__}")
         return _make_result(
@@ -413,7 +413,7 @@ def _attack_space_only_path() -> dict:
         return _make_result(
             name, "fuzzing", False, f"unexpected status={getattr(result, 'status', '?')}"
         )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         return _make_result(
             name, "fuzzing", True, f"raised exception cleanly: {type(exc).__name__}"
         )
