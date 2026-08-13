@@ -45,6 +45,8 @@ dev = [
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+
+[tool.ruff.lint]
 select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "T20", "PIE", "PT", "Q", "RUF", "SLF", "TRY"]
 ignore = ["S101", "TRY003"]
 per-file-ignores = { "tests/*" = ["S101", "SLF001"] }
