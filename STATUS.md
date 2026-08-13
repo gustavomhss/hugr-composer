@@ -231,6 +231,27 @@ tied to a benchmark spec and passing pytest end-to-end
 (94 tests across 20 apps). See `/examples/*/AGENT_SESSION.md` for
 the plan-level transcript the agent used to build them.
 
+## Lint policy (ruff, repo-wide)
+
+The CI lint gate is **diff-scoped** (`ruff check` + `ruff format --check`
+on changed files only — see `.github/workflows/skill-001-ci.yml`), so it
+only ever gates code you touch. A repo-wide `ruff check` reports ~5500
+findings, all **by design** and intentionally not fixed:
+
+| Rule | ~Count | Why it's intentional |
+|---|---:|---|
+| `T201` print | 1462 | CLI scripts and test harnesses legitimately print to stdout |
+| `E501` line too long | 1831 | Mostly long strings inside emitted templates/specs — wrapping would alter generated output |
+| `E402` import not at top | 262 | Lazy imports of optional SDKs are a **mandatory** repo convention (app must boot without Stripe/boto3/celery installed) |
+| `PT018`/`PT011`/`PT028` | ~405 | Behavior tests prioritize readability over ruff's assert-simplification rules |
+| `SLF001` private access | 299 | Tests inspect internals on purpose |
+| others (`F841`, `E741`, `SIM*`, …) | ~600 | Minor stylistic; fixed opportunistically per-file |
+
+Decision (2026-08-13): keep as documented debt. No per-file-ignores were
+added repo-wide; `N999` (PascalCase primitive modules are structural) is
+the single repo-wide ignore. Changed files must stay ruff-clean on the
+diff — see the CI gate.
+
 ---
 
 Signed: Gustavo Schneiter — v1.0.0 (Phase 5 complete, go-live 2026-06-05).
