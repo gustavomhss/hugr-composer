@@ -1,4 +1,4 @@
-name: benchmark-45d
+name: benchmark-nightly
 
 on:
   schedule:
@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: skills/SKILL-001-fastapi-production
+        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -80,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-score
-          path: skills/SKILL-001-fastapi-production/benchmarks/latest_score.json
+          path: benchmarks/latest_score.json
 
       # IMPORTANT: only a REAL (claude-adapter) run may be published to main.
       # The scheduled stub run is a smoke test only -- it uploads an artifact

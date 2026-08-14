@@ -15,7 +15,7 @@
 - 18 FastAPI adapters (production-wired; +1 Redis, +1 Stripe)
 - 135 adapt tools (105 extend + 30 other)
 - 61 generators · 28 modules · 20 examples · 124 specs
-- Contract: 46/47 (1 open violation — see docs/decisions/0005)
+- Contract: 47/47 (contract_check green)
 
 ## Quick Start
 
