@@ -62,6 +62,7 @@ class InMemoryDataLoader(Generic[K, V]):
         self._cache: dict[K, asyncio.Future[V]] = {}
         self._queue: list[tuple[K, asyncio.Future[V]]] = []
         self._scheduled = False
+        self._dispatch_task: asyncio.Task[None] | None = None
 
     # ------------------------------------------------------------------
     # Public Protocol surface
@@ -109,7 +110,7 @@ class InMemoryDataLoader(Generic[K, V]):
         self._scheduled = False
         if not queue:
             return
-        asyncio.ensure_future(self._dispatch(queue))
+        self._dispatch_task = asyncio.ensure_future(self._dispatch(queue))
 
     async def _dispatch(self, queue: list[tuple[K, asyncio.Future[V]]]) -> None:
         # DATALOADER_INV_05: split queue into chunks of max_batch_size.
@@ -118,7 +119,7 @@ class InMemoryDataLoader(Generic[K, V]):
             keys = [k for k, _ in chunk]
             try:
                 values = await self._batch_fn(keys)
-            except BaseException as exc:  # DATALOADER_INV_03
+            except BaseException as exc:  # noqa: BLE001 — DATALOADER_INV_03: batch fn may raise BaseException; every queued future MUST fail with it
                 for _, fut in chunk:
                     if not fut.done():
                         fut.set_exception(exc)
@@ -132,7 +133,7 @@ class InMemoryDataLoader(Generic[K, V]):
                         fut.set_exception(err)
                 continue
             # DATALOADER_INV_02: positional correspondence.
-            for (_, fut), val in zip(chunk, values):
+            for (_, fut), val in zip(chunk, values, strict=False):
                 if not fut.done():
                     fut.set_result(val)
 

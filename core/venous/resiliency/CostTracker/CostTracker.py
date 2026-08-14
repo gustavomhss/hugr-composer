@@ -94,7 +94,7 @@ class CostTracker:
                     estimate.s3_cost_usd += cost
                 elif estimator.component == "api":
                     estimate.api_cost_usd += cost
-            except Exception as exc:  # COST_TRACKER_INV_01 — fail-open
+            except Exception as exc:  # noqa: BLE001  # COST_TRACKER_INV_01 — fail-open; estimator is best-effort
                 logger.warning("Cost estimator %s failed: %s", estimator.component, exc)
         estimate.total_cost_usd = (
             estimate.db_cost_usd + estimate.s3_cost_usd + estimate.api_cost_usd
@@ -108,7 +108,7 @@ class CostTracker:
         """Return the most recent *limit* cost estimates."""
         return self._history[-limit:]
 
-    def get_by_endpoint(self, top_n: int = 10) -> list[dict]:
+    def get_by_endpoint(self, top_n: int = 10) -> list[dict[str, str | float | int]]:
         """Return top-N endpoints by total estimated cost (descending)."""
         aggregated: dict[str, float] = defaultdict(float)
         counts: dict[str, int] = defaultdict(int)
@@ -127,7 +127,7 @@ class CostTracker:
             for k, v in ranked[:top_n]
         ]
 
-    def get_summary(self) -> dict:
+    def get_summary(self) -> dict[str, float]:
         """Return daily/weekly/monthly cost totals."""
         now = time.time()
         day_s = 86_400
@@ -169,7 +169,7 @@ class S3CostEstimator:
         self._rate = rate_per_gb
 
     def estimate(self, ctx: RequestContext) -> float:
-        gb = ctx.s3_bytes_transferred / (1024 ** 3)
+        gb = ctx.s3_bytes_transferred / (1024**3)
         return gb * self._rate
 
 

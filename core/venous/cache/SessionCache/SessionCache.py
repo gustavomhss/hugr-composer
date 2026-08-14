@@ -125,7 +125,7 @@ class ReadThroughSessionCache:
             value = self._loader(token)
         except SessionCacheError:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             # Wrap unknown loader failures in the contract exception so
             # callers can distinguish miss (None) from error (raise).
             raise SessionCacheError(f"loader failed: {exc!r}") from exc

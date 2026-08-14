@@ -11,6 +11,7 @@ Invariants cited here:
   no value is torn under concurrent ``put`` calls; the internal lock
   is the atomicity boundary.
 """
+
 from __future__ import annotations
 
 import threading
@@ -25,7 +26,7 @@ class IdempotencyStore:
         _lock: Thread lock protecting concurrent access.
     """
 
-    __slots__ = ("_store", "_lock")
+    __slots__ = ("_lock", "_store")
 
     def __init__(self) -> None:
         self._store: dict[str, Any] = {}

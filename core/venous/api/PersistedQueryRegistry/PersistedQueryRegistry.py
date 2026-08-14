@@ -38,8 +38,8 @@ class PQRTamperError(PQRError):
 @runtime_checkable
 class PersistedQueryRegistry(Protocol):
     def register(self, query: str) -> str: ...
-    def get(self, id: str) -> str | None: ...
-    def contains(self, id: str) -> bool: ...
+    def get(self, query_id: str) -> str | None: ...
+    def contains(self, query_id: str) -> bool: ...
 
 
 SnapshotSink = Callable[[dict[str, str]], None]
@@ -79,9 +79,7 @@ class InMemoryPersistedQueryRegistry:
         return the same id and do NOT snapshot again.
         """
         if self._frozen:
-            raise PQRImmutableError(
-                "PQR_INV_03: registry is frozen; register() forbidden"
-            )
+            raise PQRImmutableError("PQR_INV_03: registry is frozen; register() forbidden")
         qid = self.hash_query(query)
         if self._store.get(qid) == query:
             return qid  # idempotent — no sink call
@@ -91,26 +89,26 @@ class InMemoryPersistedQueryRegistry:
             self._snapshot_sink(dict(self._store))
         return qid
 
-    def get(self, id: str) -> str | None:
-        """Return the query for ``id`` or ``None``.
+    def get(self, query_id: str) -> str | None:
+        """Return the query for ``query_id`` or ``None``.
 
         PQR_INV_02: the stored query is re-hashed; mismatch raises.
         PQR_INV_04: dict lookup is O(1).
         """
-        if not isinstance(id, str):
-            raise PQRError("id MUST be a str")
-        if id not in self._store:
+        if not isinstance(query_id, str):
+            raise PQRError("query_id MUST be a str")
+        if query_id not in self._store:
             return None
-        query = self._store[id]
+        query = self._store[query_id]
         recomputed = self.hash_query(query)
-        if recomputed != id:
+        if recomputed != query_id:
             raise PQRTamperError(
-                f"PQR_INV_02: stored query re-hashes to {recomputed!r}, not {id!r}"
+                f"PQR_INV_02: stored query re-hashes to {recomputed!r}, not {query_id!r}"
             )
         return query
 
-    def contains(self, id: str) -> bool:
-        return isinstance(id, str) and id in self._store
+    def contains(self, query_id: str) -> bool:
+        return isinstance(query_id, str) and query_id in self._store
 
     # ------------------------------------------------------------------
     # Mode control
@@ -129,8 +127,8 @@ class InMemoryPersistedQueryRegistry:
 
 __all__ = [
     "InMemoryPersistedQueryRegistry",
-    "PersistedQueryRegistry",
     "PQRError",
     "PQRImmutableError",
     "PQRTamperError",
+    "PersistedQueryRegistry",
 ]

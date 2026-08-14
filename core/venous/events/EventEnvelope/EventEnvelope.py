@@ -97,8 +97,7 @@ def validate_specversion(value: object) -> str:
     """EE_INV_03: specversion MUST equal '1.0'."""
     if value != CLOUDEVENTS_SPECVERSION:
         raise EventEnvelopeInvariantError(
-            f"EE_INV_03: specversion MUST equal {CLOUDEVENTS_SPECVERSION!r}, "
-            f"got {value!r}.",
+            f"EE_INV_03: specversion MUST equal {CLOUDEVENTS_SPECVERSION!r}, got {value!r}.",
         )
     return CLOUDEVENTS_SPECVERSION
 
@@ -113,12 +112,11 @@ def validate_time(value: str | None) -> str | None:
         )
     if not _RFC3339_UTC_RE.match(value):
         raise EventEnvelopeInvariantError(
-            f"EE_INV_05: time MUST be RFC 3339 UTC (ending 'Z' or '+00:00'), "
-            f"got {value!r}.",
+            f"EE_INV_05: time MUST be RFC 3339 UTC (ending 'Z' or '+00:00'), got {value!r}.",
         )
     # Extra belt-and-braces: it must parse.
     try:
-        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        datetime.fromisoformat(value)
     except ValueError as e:
         raise EventEnvelopeInvariantError(
             f"EE_INV_05: time {value!r} failed RFC 3339 parse: {e}",
@@ -138,8 +136,7 @@ def validate_extension_name(name: str) -> str:
         )
     if name in RESERVED_CORE_ATTRIBUTES:
         raise EventEnvelopeInvariantError(
-            f"EE_INV_04: extension name {name!r} collides with reserved core "
-            f"attribute.",
+            f"EE_INV_04: extension name {name!r} collides with reserved core attribute.",
         )
     return name
 
@@ -152,16 +149,14 @@ def validate_extensions(
         return None
     if not isinstance(extensions, Mapping):
         raise EventEnvelopeInvariantError(
-            f"EE_INV_04: extensions MUST be a Mapping or None, "
-            f"got {type(extensions).__name__}.",
+            f"EE_INV_04: extensions MUST be a Mapping or None, got {type(extensions).__name__}.",
         )
     out: dict[str, str] = {}
     for key, val in extensions.items():
         validate_extension_name(key)
         if not isinstance(val, str):
             raise EventEnvelopeInvariantError(
-                f"EE_INV_04: extension {key!r} value MUST be str, "
-                f"got {type(val).__name__}.",
+                f"EE_INV_04: extension {key!r} value MUST be str, got {type(val).__name__}.",
             )
         out[key] = val
     return out
@@ -195,7 +190,8 @@ class EventEnvelope:
         validate_required_string("type", self.type, _MAX_TYPE_LEN)
         validate_specversion(self.specversion)
         if self.datacontenttype is not None and not isinstance(
-            self.datacontenttype, str,
+            self.datacontenttype,
+            str,
         ):
             raise EventEnvelopeInvariantError(
                 "EE_INV_01 supporting: datacontenttype MUST be str or None.",

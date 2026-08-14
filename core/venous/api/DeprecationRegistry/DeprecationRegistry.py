@@ -14,6 +14,7 @@ Invariants cited here:
   sorted by sunset date ascending (nearest sunset first, so an
   admin dashboard surfaces urgent deprecations at the top).
 """
+
 from __future__ import annotations
 
 import logging
@@ -22,7 +23,9 @@ from typing import Any
 # Works both for tests (sys.path injection by conftest.py → bare name)
 # and for normal package consumers (fully-qualified path).
 try:  # pragma: no cover — import shim
-    from DeprecationEntry import DeprecationEntry  # type: ignore[import-not-found]
+    from DeprecationEntry import (  # type: ignore[import-not-found]  # DR_INV_05: import shim — bare name only resolves under pytest conftest; fully-qualified fallback below.
+        DeprecationEntry,
+    )
 except ImportError:  # pragma: no cover — import shim
     from core.venous.api.DeprecationEntry.DeprecationEntry import DeprecationEntry
 
@@ -52,7 +55,9 @@ class DeprecationRegistry:
         if entry.should_warn:
             _logger.warning(
                 "Deprecated endpoint %s sunsets in %d days -> %s",
-                key, entry.days_until_sunset, replacement,
+                key,
+                entry.days_until_sunset,
+                replacement,
             )
         return entry
 

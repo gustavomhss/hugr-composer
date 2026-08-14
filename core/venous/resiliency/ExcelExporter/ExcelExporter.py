@@ -14,19 +14,21 @@ class ExcelExporter:
     Attributes:
         chunk_size: Number of rows written per batch during streaming.
         max_rows: Maximum total rows allowed per export.
+
     """
 
-    def __init__(self, chunk_size: int=1000, max_rows: int=100000) -> None:
+    def __init__(self, chunk_size: int = 1000, max_rows: int = 100000) -> None:
         """Initialise the exporter with streaming parameters.
 
         Args:
             chunk_size: Rows per write batch.
             max_rows: Hard row limit; raises ValueError when exceeded.
+
         """
         self.chunk_size = chunk_size
         self.max_rows = max_rows
 
-    def create_workbook(self):
+    def create_workbook(self) -> Any:
         """Create and return a new openpyxl Workbook.
 
         Returns:
@@ -34,14 +36,15 @@ class ExcelExporter:
 
         Raises:
             ImportError: If openpyxl is not installed.
+
         """
         try:
-            import openpyxl
+            import openpyxl  # type: ignore[import-untyped]  # optional SDK; exporter boots without it, lazy-imported on first use
         except ImportError as exc:
-            raise ImportError('openpyxl is required: pip install openpyxl') from exc
+            raise ImportError("openpyxl is required: pip install openpyxl") from exc
         return openpyxl.Workbook()
 
-    def add_sheet(self, workbook, title: str, headers: list[str]):
+    def add_sheet(self, workbook: Any, title: str, headers: list[str]) -> Any:
         """Add a sheet with bold header row to a workbook.
 
         Args:
@@ -51,14 +54,18 @@ class ExcelExporter:
 
         Returns:
             The created worksheet.
+
         """
-        from app.exports.formatters import apply_header_style
+        from app.exports.formatters import (  # type: ignore[import-untyped]  # optional app formatter module: untyped in the SKILL repo (no py.typed); lazy import so the kit boots without it
+            apply_header_style,
+        )
+
         ws = workbook.create_sheet(title=title)
         ws.append(headers)
         apply_header_style(ws, row=1, num_cols=len(headers))
         return ws
 
-    def stream_rows(self, worksheet, rows: Iterable[list[Any]]) -> Iterator[None]:
+    def stream_rows(self, worksheet: Any, rows: Iterable[list[Any]]) -> Iterator[None]:
         """Write rows to a worksheet in chunks, yielding after each batch.
 
         Args:
@@ -70,13 +77,18 @@ class ExcelExporter:
 
         Raises:
             ValueError: When total rows exceeds max_rows.
+
         """
         from app.exports.formatters import auto_fit_columns
+
         count = 0
         batch: list[list[Any]] = []
         for row in rows:
             if count >= self.max_rows:
-                raise ValueError(f'Export exceeds EXCEL_MAX_ROWS={self.max_rows}. Add filters to reduce the dataset.')
+                raise ValueError(
+                    f"Export exceeds EXCEL_MAX_ROWS={self.max_rows}. "
+                    "Add filters to reduce the dataset."
+                )
             batch.append(row)
             count += 1
             if len(batch) >= self.chunk_size:
@@ -90,7 +102,7 @@ class ExcelExporter:
         logger.debug("Streamed %d rows to sheet '%s'", count, worksheet.title)
         yield
 
-    def to_bytes(self, workbook) -> bytes:
+    def to_bytes(self, workbook: Any) -> bytes:
         """Serialise a workbook to bytes for HTTP response or file storage.
 
         Args:
@@ -98,6 +110,7 @@ class ExcelExporter:
 
         Returns:
             Excel file content as bytes.
+
         """
         buf = io.BytesIO()
         workbook.save(buf)

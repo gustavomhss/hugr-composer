@@ -32,6 +32,7 @@ Invariants cited by this module:
   primitive MUST NOT echo email addresses, metadata values, or any
   caller-supplied payload fields. Tests assert this by pattern.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -43,6 +44,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any, Final, Literal, Protocol, runtime_checkable
 
 __all__ = [
+    "Billing",
     "BillingError",
     "Customer",
     "Event",
@@ -53,7 +55,6 @@ __all__ = [
     "SubscriptionStatus",
     "UnknownCustomer",
     "UnknownSubscription",
-    "Billing",
 ]
 
 
@@ -128,16 +129,25 @@ class BillingError(Exception):
     """Common base for billing-family errors."""
 
 
-class InvalidWebhookSignature(BillingError):
+class InvalidWebhookSignatureError(BillingError):
     """BILL_INV_01: raised when a webhook signature fails HMAC verification."""
 
 
-class UnknownCustomer(BillingError):
+InvalidWebhookSignature = InvalidWebhookSignatureError  # backward-compat alias
+
+
+class UnknownCustomerError(BillingError):
     """BILL_INV_04: referenced ``customer_id`` does not exist."""
 
 
-class UnknownSubscription(BillingError):
+UnknownCustomer = UnknownCustomerError  # backward-compat alias
+
+
+class UnknownSubscriptionError(BillingError):
     """BILL_INV_04: referenced ``subscription_id`` does not exist."""
+
+
+UnknownSubscription = UnknownSubscriptionError  # backward-compat alias
 
 
 class LifecycleInvariantError(BillingError):
@@ -152,7 +162,9 @@ class Billing(Protocol):
     """The minimum billing gateway every provider adapter MUST honour."""
 
     def create_customer(
-        self, email: str, metadata: Mapping[str, str] | None = None,
+        self,
+        email: str,
+        metadata: Mapping[str, str] | None = None,
     ) -> Customer: ...
 
     def create_subscription(
@@ -197,8 +209,13 @@ class InMemoryBilling:
     _DEFAULT_TOLERANCE_S: Final[int] = 300
 
     __slots__ = (
-        "_secret", "_tolerance_s", "_customers", "_subs", "_cust_seq",
-        "_sub_seq", "_evt_seq",
+        "_cust_seq",
+        "_customers",
+        "_evt_seq",
+        "_secret",
+        "_sub_seq",
+        "_subs",
+        "_tolerance_s",
     )
 
     def __init__(
@@ -227,7 +244,9 @@ class InMemoryBilling:
 
     # ---- customers --------------------------------------------------------
     def create_customer(
-        self, email: str, metadata: Mapping[str, str] | None = None,
+        self,
+        email: str,
+        metadata: Mapping[str, str] | None = None,
     ) -> Customer:
         if not isinstance(email, str) or "@" not in email:
             # BILL_INV_05: message does NOT echo the email.
@@ -293,7 +312,9 @@ class InMemoryBilling:
         return new_sub
 
     def set_status(
-        self, subscription_id: str, new_status: SubscriptionStatus,
+        self,
+        subscription_id: str,
+        new_status: SubscriptionStatus,
     ) -> Subscription:
         """Apply a status change (typically from a verified webhook event).
 
@@ -317,7 +338,9 @@ class InMemoryBilling:
         return self._subs[subscription_id]
 
     def _assert_transition(
-        self, current: SubscriptionStatus, new: SubscriptionStatus,
+        self,
+        current: SubscriptionStatus,
+        new: SubscriptionStatus,
     ) -> None:
         if new not in _ALLOWED_TRANSITIONS[current]:
             raise LifecycleInvariantError(
@@ -338,7 +361,9 @@ class InMemoryBilling:
         ts = int(timestamp if timestamp is not None else time.time())
         signed_payload = f"{ts}.".encode() + bytes(payload)
         v1 = hmac.new(
-            self._secret.encode(), signed_payload, hashlib.sha256,
+            self._secret.encode(),
+            signed_payload,
+            hashlib.sha256,
         ).hexdigest()
         return f"t={ts},v1={v1}"
 
@@ -357,7 +382,9 @@ class InMemoryBilling:
         ts, v1 = _parse_sig_header(sig_header)
         signed_payload = f"{ts}.".encode() + bytes(payload)
         expected = hmac.new(
-            self._secret.encode(), signed_payload, hashlib.sha256,
+            self._secret.encode(),
+            signed_payload,
+            hashlib.sha256,
         ).hexdigest()
         if not hmac.compare_digest(expected, v1):
             # BILL_INV_05: no payload echo in the error.
@@ -391,8 +418,8 @@ def _parse_sig_header(header: str) -> tuple[int, str]:
     malformed input — we never infer missing fields.
     """
     fields: dict[str, str] = {}
-    for part in header.split(","):
-        part = part.strip()
+    for raw_part in header.split(","):
+        part = raw_part.strip()
         if "=" not in part:
             continue
         k, v = part.split("=", 1)

@@ -41,7 +41,7 @@ import threading
 import time
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Final, Protocol, runtime_checkable
 
 MAX_RETRY_BACKOFF_S: Final[float] = 30.0
@@ -54,25 +54,31 @@ _AUTH_VALUE_PATTERNS: Final[tuple[str, ...]] = (
     r"(?i)\bBearer\s+[A-Za-z0-9\-._~+/]+=*",
     r"(?i)\bBasic\s+[A-Za-z0-9+/]+=*",
     r"(?i)\bAuthorization\s*[:=]\s*[^\s,\"'}]+",
-    r"\bsk-[A-Za-z0-9\-_]{20,}",        # OpenAI-style secret key
-    r"\bsk-ant-[A-Za-z0-9\-_]{20,}",    # Anthropic
-    r"\bghp_[A-Za-z0-9]{36}\b",         # GitHub PAT
-    r"\bAKIA[0-9A-Z]{16}\b",            # AWS access key
+    r"\bsk-[A-Za-z0-9\-_]{20,}",  # OpenAI-style secret key
+    r"\bsk-ant-[A-Za-z0-9\-_]{20,}",  # Anthropic
+    r"\bghp_[A-Za-z0-9]{36}\b",  # GitHub PAT
+    r"\bAKIA[0-9A-Z]{16}\b",  # AWS access key
 )
 
 
 def _scrub_auth_in_text(value: object) -> str:
     import re as _re  # local import — cheap, no module-level state required
+
     s = value if isinstance(value, str) else str(value)
     for pat in _AUTH_VALUE_PATTERNS:
         s = _re.sub(pat, REDACTED, s)
     return s
 
 
-AUTH_HEADER_NAMES: Final[frozenset[str]] = frozenset({
-    "authorization", "x-api-key", "x-auth-token", "bearer",
-    "proxy-authorization",
-})
+AUTH_HEADER_NAMES: Final[frozenset[str]] = frozenset(
+    {
+        "authorization",
+        "x-api-key",
+        "x-auth-token",
+        "bearer",
+        "proxy-authorization",
+    }
+)
 REDACTED: Final[str] = "[REDACTED]"
 
 
@@ -80,13 +86,13 @@ class TelemetryExporterInvariantError(ValueError):
     """Runtime invariant violation on a TelemetryExporter operation."""
 
 
-class Signal(str, Enum):
+class Signal(StrEnum):
     TRACES = "traces"
     METRICS = "metrics"
     LOGS = "logs"
 
 
-class ExportResult(str, Enum):
+class ExportResult(StrEnum):
     SUCCESS = "success"
     FAILURE = "failure"
     TIMEOUT = "timeout"

@@ -30,14 +30,14 @@ import re
 import time
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import Final, Protocol, runtime_checkable
 
 
 # ---------------------------------------------------------------------------
 # Public types (mirror the canonical merged spec byte-for-byte)
 # ---------------------------------------------------------------------------
-class HealthStatus(str, Enum):
+class HealthStatus(StrEnum):
     """Three-valued health signal per k8s + SRE Workbook convention."""
 
     UP = "up"
@@ -137,7 +137,7 @@ def sanitize_report(report: HealthReport) -> HealthReport:
 # ---------------------------------------------------------------------------
 #: Types of dependency registration. REQUIRED dependencies gate readiness;
 #: OPTIONAL dependencies are informational only (HEALTHPROBE-INV-02).
-class DependencyRequirement(str, Enum):
+class DependencyRequirement(StrEnum):
     REQUIRED = "required"
     OPTIONAL = "optional"
 
@@ -171,13 +171,9 @@ class BaseHealthProbe:
                 "HEALTHPROBE-INV-05 supporting: probe name MUST be non-empty string."
             )
         if timeout_s <= 0:
-            raise HealthProbeInvariantError(
-                "HEALTHPROBE-INV-03: timeout_s MUST be > 0."
-            )
+            raise HealthProbeInvariantError("HEALTHPROBE-INV-03: timeout_s MUST be > 0.")
         if debounce_s < 0:
-            raise HealthProbeInvariantError(
-                "HEALTHPROBE-INV-07: debounce_s MUST be >= 0."
-            )
+            raise HealthProbeInvariantError("HEALTHPROBE-INV-07: debounce_s MUST be >= 0.")
         self.name = name
         self.timeout_s: float = timeout_s
         self.debounce_s: float = debounce_s

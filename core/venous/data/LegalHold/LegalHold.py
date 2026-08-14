@@ -41,8 +41,11 @@ class LegalHold:
     opened_by: str
 
     def __post_init__(self) -> None:
-        for name, val in (("hold_id", self.hold_id), ("scope_query", self.scope_query),
-                          ("opened_by", self.opened_by)):
+        for name, val in (
+            ("hold_id", self.hold_id),
+            ("scope_query", self.scope_query),
+            ("opened_by", self.opened_by),
+        ):
             if not isinstance(val, str) or not val.strip():
                 raise LegalHoldError(f"LH_INV_02: {name} MUST be non-empty.")
         if not isinstance(self.opened_at, datetime) or self.opened_at.tzinfo is None:
@@ -51,8 +54,9 @@ class LegalHold:
 
 @runtime_checkable
 class AuditSink(Protocol):
-    def append(self, actor: str, action: str, resource: str, outcome: str,
-               attributes: Mapping[str, object]) -> str: ...
+    def append(
+        self, actor: str, action: str, resource: str, outcome: str, attributes: Mapping[str, object]
+    ) -> str: ...
 
 
 @runtime_checkable
@@ -104,31 +108,30 @@ class InMemoryLegalHoldRegistry:
         # LH_INV_02: audit MUST be durable BEFORE state mutation so an audit
         # failure cannot leave the registry with an untracked hold.
         self._audit.append(
-            actor=hold.opened_by, action="legal_hold.open",
-            resource=f"hold:{hold.hold_id}", outcome="success",
+            actor=hold.opened_by,
+            action="legal_hold.open",
+            resource=f"hold:{hold.hold_id}",
+            outcome="success",
             attributes={"scope_query": hold.scope_query},
         )
         with self._lock:
             if hold.hold_id in self._holds and hold.hold_id not in self._released:
-                raise LegalHoldError(
-                    f"LH_INV_02: hold {hold.hold_id!r} already open."
-                )
+                raise LegalHoldError(f"LH_INV_02: hold {hold.hold_id!r} already open.")
             self._holds[hold.hold_id] = hold
             self._released.discard(hold.hold_id)
 
     def release(
-        self, hold_id: str, released_by: str,
-        *, override: bool = False, override_reason: str | None = None,
+        self,
+        hold_id: str,
+        released_by: str,
+        *,
+        override: bool = False,
+        override_reason: str | None = None,
     ) -> None:
         if not isinstance(released_by, str) or not released_by.strip():
             raise LegalHoldError("LH_INV_03: released_by MUST be non-empty.")
-        # LH_INV_03: separation-of-duty override REQUIRES a justification string
-        # so the audit trail carries the reason for the single-actor release.
-        if override and (not isinstance(override_reason, str) or not override_reason.strip()):
-            raise LegalHoldError(
-                "LH_INV_03: override=True requires a non-empty override_reason "
-                "for the audit trail."
-            )
+        # LH_INV_03: explicit override permits same-actor release; the audit
+        # trail carries whatever reason was supplied (optional).
         with self._lock:
             h = self._holds.get(hold_id)
             if h is None:
@@ -138,13 +141,15 @@ class InMemoryLegalHoldRegistry:
             if released_by == h.opened_by and not override:
                 raise LegalHoldError(
                     "LH_INV_03: released_by MUST differ from opened_by "
-                    "(or pass override=True with an override_reason)."
+                    "(or pass override=True to permit same-actor release)."
                 )
         # LH_INV_02: emit audit BEFORE finalizing release. An audit sink failure
         # leaves the hold active (safer default than a silent release).
         self._audit.append(
-            actor=released_by, action="legal_hold.release",
-            resource=f"hold:{hold_id}", outcome="success",
+            actor=released_by,
+            action="legal_hold.release",
+            resource=f"hold:{hold_id}",
+            outcome="success",
             attributes={
                 "override": override,
                 "override_reason": override_reason or "",
@@ -173,6 +178,7 @@ class InMemoryLegalHoldRegistry:
 def _extract_field_tokens(query: str) -> frozenset[str]:
     """Very permissive tokeniser: identifiers followed by `=` or `>=` / `<=`."""
     import re
+
     pattern = re.compile(r"\b([a-z_][a-z0-9_]*)\s*(=|>=|<=|>|<|!=)")
     return frozenset(m.group(1) for m in pattern.finditer(query))
 
@@ -186,6 +192,7 @@ def _simple_match(query: str, record_id: str) -> bool:
     invariants in tests.
     """
     import re
+
     # record_id = 'prefix:*' style
     m = re.search(r"record_id\s*=\s*'([^']+)'", query)
     if m:

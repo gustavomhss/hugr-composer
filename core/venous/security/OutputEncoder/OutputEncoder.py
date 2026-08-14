@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable, Mapping
-from enum import Enum
+from enum import StrEnum
 from typing import Final, Protocol, runtime_checkable
 
 
@@ -41,7 +41,7 @@ class OutputEncoderError(ValueError):
 # ---------------------------------------------------------------------------
 # Sink enum — catalog-mandated set of context codes
 # ---------------------------------------------------------------------------
-class Sink(str, Enum):
+class Sink(StrEnum):
     """Declared emission context for an encoded value.
 
     OE_INV_02: the caller picks the sink; the encoder MUST NOT guess.
@@ -130,9 +130,7 @@ def _encode_js_string(value: str) -> str:
 # ---------------------------------------------------------------------------
 # Unreserved per RFC 3986 §2.3: ALPHA / DIGIT / "-" / "." / "_" / "~".
 _URL_UNRESERVED: Final[frozenset[str]] = frozenset(
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "abcdefghijklmnopqrstuvwxyz"
-    "0123456789-._~"
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
 )
 
 

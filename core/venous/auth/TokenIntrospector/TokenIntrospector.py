@@ -92,9 +92,7 @@ class IssuerConfig:
 
     def __post_init__(self) -> None:
         if not isinstance(self.issuer, str) or self.issuer == "":
-            raise TokenIntrospectorInvariantError(
-                "TI-INV-01: issuer MUST be a non-empty str."
-            )
+            raise TokenIntrospectorInvariantError("TI-INV-01: issuer MUST be a non-empty str.")
         if not isinstance(self.allowed_algorithms, frozenset):
             raise TokenIntrospectorInvariantError(
                 "TI-INV-01: allowed_algorithms MUST be a frozenset[str] so the "
@@ -113,8 +111,7 @@ class IssuerConfig:
             )
         if self.jwks_max_age_s <= 0:
             raise TokenIntrospectorInvariantError(
-                "TI-INV-04: jwks_max_age_s MUST be positive; got "
-                f"{self.jwks_max_age_s}."
+                f"TI-INV-04: jwks_max_age_s MUST be positive; got {self.jwks_max_age_s}."
             )
 
 
@@ -199,9 +196,7 @@ def _parse_jwt(token: str) -> tuple[dict[str, object], dict[str, object], bytes,
     return header, payload, signing_input, signature
 
 
-def _hs_verify(
-    algorithm: str, secret: bytes, signing_input: bytes, signature: bytes
-) -> bool:
+def _hs_verify(algorithm: str, secret: bytes, signing_input: bytes, signature: bytes) -> bool:
     """Constant-time HMAC verification for HS256/HS384/HS512.
 
     The reference implementation covers HMAC so the invariants can be tested
@@ -353,8 +348,7 @@ class CachingTokenIntrospector:
                 )
         if introspection_ttl_s <= 0:
             raise TokenIntrospectorInvariantError(
-                "TI-INV-06: introspection_ttl_s MUST be positive; got "
-                f"{introspection_ttl_s}."
+                f"TI-INV-06: introspection_ttl_s MUST be positive; got {introspection_ttl_s}."
             )
         self._issuers: dict[str, IssuerConfig] = dict(issuers)
         self._jwks_fetcher = jwks_fetcher
@@ -371,9 +365,7 @@ class CachingTokenIntrospector:
         if not isinstance(token, str) or token == "":
             raise InvalidTokenError("TI-INV-02: token MUST be a non-empty str.")
         if not isinstance(required_audience, str) or required_audience == "":
-            raise InvalidTokenError(
-                "TI-INV-02: required_audience MUST be a non-empty str."
-            )
+            raise InvalidTokenError("TI-INV-02: required_audience MUST be a non-empty str.")
         if token.count(".") == 2:
             return self._introspect_jwt(token, required_audience)
         # TI-INV-05: anything that is not a three-segment JWT is opaque and
@@ -410,9 +402,7 @@ class CachingTokenIntrospector:
         exp = self._enforce_time_bounds(payload, now)
         subject = payload.get("sub")
         if not isinstance(subject, str) or subject == "":
-            raise InvalidTokenError(
-                "TI-INV-03: JWT payload 'sub' MUST be a non-empty str."
-            )
+            raise InvalidTokenError("TI-INV-03: JWT payload 'sub' MUST be a non-empty str.")
         scopes = self._normalise_scopes(payload.get("scope"))
         return TokenClaims(
             subject=subject,
@@ -432,19 +422,13 @@ class CachingTokenIntrospector:
         if not isinstance(alg, str):
             raise InvalidTokenError("TI-INV-01: JWT header 'alg' MUST be a str.")
         if alg in FORBIDDEN_ALGORITHMS:
-            raise InvalidTokenError(
-                "TI-INV-01: the 'none' algorithm is FORBIDDEN; refusing token."
-            )
+            raise InvalidTokenError("TI-INV-01: the 'none' algorithm is FORBIDDEN; refusing token.")
         issuer = payload.get("iss")
         if not isinstance(issuer, str) or issuer == "":
-            raise InvalidTokenError(
-                "TI-INV-01: JWT payload 'iss' MUST be a non-empty str."
-            )
+            raise InvalidTokenError("TI-INV-01: JWT payload 'iss' MUST be a non-empty str.")
         cfg = self._issuers.get(issuer)
         if cfg is None:
-            raise InvalidTokenError(
-                f"TI-INV-01: unknown issuer {issuer!r}; no pinned policy."
-            )
+            raise InvalidTokenError(f"TI-INV-01: unknown issuer {issuer!r}; no pinned policy.")
         if alg not in cfg.allowed_algorithms:
             raise InvalidTokenError(
                 f"TI-INV-01: algorithm {alg!r} is not pinned for issuer "
@@ -464,26 +448,20 @@ class CachingTokenIntrospector:
         keys = self._resolve_jwks(cfg)
         kid = header.get("kid")
         if kid is not None and not isinstance(kid, str):
-            raise InvalidTokenError(
-                "TI-INV-01: JWT header 'kid' MUST be a str when present."
-            )
+            raise InvalidTokenError("TI-INV-01: JWT header 'kid' MUST be a str when present.")
         if not self._verify_signature(alg, keys, kid, signing_input, signature):
             raise InvalidTokenError(
                 "TI-INV-01: JWT signature verification FAILED against the "
                 "pinned key set for this issuer."
             )
 
-    def _enforce_time_bounds(
-        self, payload: Mapping[str, object], now: float
-    ) -> float:
+    def _enforce_time_bounds(self, payload: Mapping[str, object], now: float) -> float:
         """TI-INV-03: reject expired and not-yet-valid tokens, return exp."""
         exp = payload.get("exp")
         if not isinstance(exp, int | float):
             raise InvalidTokenError("TI-INV-03: JWT payload 'exp' MUST be numeric.")
         if now >= float(exp):
-            raise InvalidTokenError(
-                "TI-INV-03: token is expired; no claim surface is returned."
-            )
+            raise InvalidTokenError("TI-INV-03: token is expired; no claim surface is returned.")
         nbf = payload.get("nbf")
         if nbf is not None:
             if not isinstance(nbf, int | float):
@@ -492,8 +470,7 @@ class CachingTokenIntrospector:
                 )
             if now < float(nbf):
                 raise InvalidTokenError(
-                    "TI-INV-03: token is not yet valid (now < nbf); no claim "
-                    "surface is returned."
+                    "TI-INV-03: token is not yet valid (now < nbf); no claim surface is returned."
                 )
         return float(exp)
 
@@ -506,8 +483,7 @@ class CachingTokenIntrospector:
             )
         if self._revocations.contains(token):
             raise InvalidTokenError(
-                "TI-INV-06: token has been revoked; cached introspection "
-                "results are invalidated."
+                "TI-INV-06: token has been revoked; cached introspection results are invalidated."
             )
         now = self._clock()
         key = _hash_token(token)
@@ -530,8 +506,7 @@ class CachingTokenIntrospector:
             with self._lock:
                 self._introspection_cache.pop(key, None)
             raise InvalidTokenError(
-                "TI-INV-03: opaque token is expired per the authorization "
-                "server response."
+                "TI-INV-03: opaque token is expired per the authorization server response."
             )
         return claims
 
@@ -546,19 +521,14 @@ class CachingTokenIntrospector:
         fetched = self._jwks_fetcher.fetch(cfg.issuer)
         if not isinstance(fetched, list) or not fetched:
             raise InvalidTokenError(
-                f"TI-INV-04: JWKS fetch returned empty key set for issuer "
-                f"{cfg.issuer!r}."
+                f"TI-INV-04: JWKS fetch returned empty key set for issuer {cfg.issuer!r}."
             )
         for k in fetched:
             if not isinstance(k, SigningKey):
-                raise InvalidTokenError(
-                    "TI-INV-04: JwksFetcher MUST return SigningKey instances."
-                )
+                raise InvalidTokenError("TI-INV-04: JwksFetcher MUST return SigningKey instances.")
         frozen = tuple(fetched)
         with self._lock:
-            self._jwks_cache[cfg.issuer] = _JwksCacheEntry(
-                keys=frozen, fetched_at=now
-            )
+            self._jwks_cache[cfg.issuer] = _JwksCacheEntry(keys=frozen, fetched_at=now)
         return frozen
 
     def _verify_signature(
@@ -572,17 +542,12 @@ class CachingTokenIntrospector:
         candidates = [k for k in keys if k.algorithm == alg]
         if kid is not None:
             candidates = [k for k in candidates if k.kid == kid]
-        for k in candidates:
-            if _hs_verify(alg, k.secret, signing_input, signature):
-                return True
-        return False
+        return any(_hs_verify(alg, k.secret, signing_input, signature) for k in candidates)
 
     # ----- RFC 7662 parsing --------------------------------------------------
     def _claims_from_rfc7662(self, response: Mapping[str, object]) -> TokenClaims:
         if not isinstance(response, Mapping):
-            raise InvalidTokenError(
-                "TI-INV-05: introspection response MUST be a JSON object."
-            )
+            raise InvalidTokenError("TI-INV-05: introspection response MUST be a JSON object.")
         active = response.get(_RFC7662_ACTIVE)
         if active is not True:
             raise InvalidTokenError(
@@ -593,17 +558,11 @@ class CachingTokenIntrospector:
         iss = response.get("iss")
         exp = response.get("exp")
         if not isinstance(sub, str) or sub == "":
-            raise InvalidTokenError(
-                "TI-INV-05: introspection response missing non-empty 'sub'."
-            )
+            raise InvalidTokenError("TI-INV-05: introspection response missing non-empty 'sub'.")
         if not isinstance(iss, str) or iss == "":
-            raise InvalidTokenError(
-                "TI-INV-05: introspection response missing non-empty 'iss'."
-            )
+            raise InvalidTokenError("TI-INV-05: introspection response missing non-empty 'iss'.")
         if not isinstance(exp, int | float):
-            raise InvalidTokenError(
-                "TI-INV-05: introspection response missing numeric 'exp'."
-            )
+            raise InvalidTokenError("TI-INV-05: introspection response missing numeric 'exp'.")
         audience = self._normalise_audience(response.get("aud"))
         scopes = self._normalise_scopes(response.get("scope"))
         return TokenClaims(
@@ -626,9 +585,7 @@ class CachingTokenIntrospector:
                 return None
             return entry.claims
 
-    def _store_introspection(
-        self, key: str, claims: TokenClaims, now: float
-    ) -> None:
+    def _store_introspection(self, key: str, claims: TokenClaims, now: float) -> None:
         # TI-INV-06: TTL MUST be min(exp, now + introspection_ttl_s).
         ttl_end = now + self._introspection_ttl_s
         cached_until = min(float(claims.expires_at), ttl_end)
@@ -649,14 +606,10 @@ class CachingTokenIntrospector:
             out: set[str] = set()
             for item in raw:
                 if not isinstance(item, str) or item == "":
-                    raise InvalidTokenError(
-                        "TI-INV-02: aud list entries MUST be non-empty strs."
-                    )
+                    raise InvalidTokenError("TI-INV-02: aud list entries MUST be non-empty strs.")
                 out.add(item)
             return frozenset(out)
-        raise InvalidTokenError(
-            "TI-INV-02: aud claim MUST be a str or list[str]."
-        )
+        raise InvalidTokenError("TI-INV-02: aud claim MUST be a str or list[str].")
 
     @staticmethod
     def _normalise_scopes(raw: object) -> frozenset[str]:
@@ -668,9 +621,7 @@ class CachingTokenIntrospector:
             out: set[str] = set()
             for item in raw:
                 if not isinstance(item, str):
-                    raise InvalidTokenError(
-                        "TI-INV-02: scope list entries MUST be strs."
-                    )
+                    raise InvalidTokenError("TI-INV-02: scope list entries MUST be strs.")
                 if item:
                     out.add(item)
             return frozenset(out)
@@ -695,9 +646,7 @@ class StaticJwksFetcher:
     """In-memory JwksFetcher; also counts fetch calls so tests can assert caching."""
 
     def __init__(self, keys_by_issuer: Mapping[str, list[SigningKey]]) -> None:
-        self._keys: dict[str, list[SigningKey]] = {
-            k: list(v) for k, v in keys_by_issuer.items()
-        }
+        self._keys: dict[str, list[SigningKey]] = {k: list(v) for k, v in keys_by_issuer.items()}
         self.fetch_count: dict[str, int] = dict.fromkeys(self._keys, 0)
         self._lock = threading.Lock()
 

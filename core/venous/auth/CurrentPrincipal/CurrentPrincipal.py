@@ -38,28 +38,30 @@ ANONYMOUS_SUBJECT_ID: Final[str] = ""
 
 # Claim keys whose VALUES MUST be redacted on every for_log() call. Keys are
 # lower-cased before matching so callers cannot bypass via casing.
-SENSITIVE_CLAIM_KEYS: Final[frozenset[str]] = frozenset({
-    "password",
-    "pwd",
-    "secret",
-    "token",
-    "access_token",
-    "refresh_token",
-    "id_token",
-    "authorization",
-    "cookie",
-    "set-cookie",
-    "api_key",
-    "apikey",
-    "x-api-key",
-    "client_secret",
-    "private_key",
-    "ssn",
-    "credit_card",
-    "card_number",
-    "cvv",
-    "pan",
-})
+SENSITIVE_CLAIM_KEYS: Final[frozenset[str]] = frozenset(
+    {
+        "password",
+        "pwd",
+        "secret",
+        "token",
+        "access_token",
+        "refresh_token",
+        "id_token",
+        "authorization",
+        "cookie",
+        "set-cookie",
+        "api_key",
+        "apikey",
+        "x-api-key",
+        "client_secret",
+        "private_key",
+        "ssn",
+        "credit_card",
+        "card_number",
+        "cvv",
+        "pan",
+    }
+)
 
 _FORBIDDEN_CHARS: Final[frozenset[str]] = frozenset({"\x00", "\r", "\n", "\t"})
 
@@ -94,8 +96,7 @@ def _validate_subject_id(subject_id: str, *, is_anonymous: bool) -> str:
     """PRINCIPAL-INV-02 / PRINCIPAL-INV-04: subject_id sanity + anonymity parity."""
     if not isinstance(subject_id, str):
         raise PrincipalInvariantError(
-            "PRINCIPAL-INV-04: subject_id MUST be a str, "
-            f"got {type(subject_id).__name__}."
+            f"PRINCIPAL-INV-04: subject_id MUST be a str, got {type(subject_id).__name__}."
         )
     if is_anonymous:
         if subject_id != ANONYMOUS_SUBJECT_ID:
@@ -106,8 +107,7 @@ def _validate_subject_id(subject_id: str, *, is_anonymous: bool) -> str:
         return subject_id
     if subject_id == ANONYMOUS_SUBJECT_ID:
         raise PrincipalInvariantError(
-            "PRINCIPAL-INV-02: a non-anonymous principal MUST have a "
-            "non-empty subject_id."
+            "PRINCIPAL-INV-02: a non-anonymous principal MUST have a non-empty subject_id."
         )
     if subject_id.strip() != subject_id or subject_id.strip() == "":
         raise PrincipalInvariantError(
@@ -121,13 +121,23 @@ def _validate_subject_id(subject_id: str, *, is_anonymous: bool) -> str:
 def _reject_control_chars(value: str, *, field_name: str) -> None:
     """PRINCIPAL-INV-04: forbid C0/C1 controls and Unicode bidi-override chars."""
     # Bidi / format overrides that can disguise identifiers in logs and UIs.
-    bidi_overrides = frozenset({
-        "\u202a", "\u202b", "\u202c", "\u202d", "\u202e",
-        "\u2066", "\u2067", "\u2068", "\u2069",
-        "\u200e", "\u200f",
-    })
+    bidi_overrides = frozenset(
+        {
+            "\u202a",
+            "\u202b",
+            "\u202c",
+            "\u202d",
+            "\u202e",
+            "\u2066",
+            "\u2067",
+            "\u2068",
+            "\u2069",
+            "\u200e",
+            "\u200f",
+        }
+    )
     for ch in value:
-        if ch in _FORBIDDEN_CHARS or ord(ch) < 0x20 or 0x7f <= ord(ch) <= 0x9f:
+        if ch in _FORBIDDEN_CHARS or ord(ch) < 0x20 or 0x7F <= ord(ch) <= 0x9F:
             raise PrincipalInvariantError(
                 f"PRINCIPAL-INV-04: {field_name} MUST NOT contain control / "
                 f"null bytes; offending codepoint U+{ord(ch):04X}."
@@ -145,8 +155,7 @@ def _validate_tenant_id(tenant_id: str | None) -> str | None:
         return None
     if not isinstance(tenant_id, str):
         raise PrincipalInvariantError(
-            "PRINCIPAL-INV-04: tenant_id MUST be str or None, "
-            f"got {type(tenant_id).__name__}."
+            f"PRINCIPAL-INV-04: tenant_id MUST be str or None, got {type(tenant_id).__name__}."
         )
     if tenant_id == "" or tenant_id.strip() != tenant_id:
         raise PrincipalInvariantError(
@@ -168,8 +177,7 @@ def _validate_roles(roles: object) -> frozenset[str]:
     for r in roles:
         if not isinstance(r, str) or r == "" or r.strip() != r:
             raise PrincipalInvariantError(
-                "PRINCIPAL-INV-03: every role MUST be a non-empty, "
-                f"non-padded str; got {r!r}."
+                f"PRINCIPAL-INV-03: every role MUST be a non-empty, non-padded str; got {r!r}."
             )
     return roles
 
@@ -178,14 +186,12 @@ def _validate_claims(claims: object) -> Mapping[str, str]:
     """PRINCIPAL-INV-01 / PRINCIPAL-INV-05: claims MUST be an immutable Mapping[str,str]."""
     if not isinstance(claims, Mapping):
         raise PrincipalInvariantError(
-            "PRINCIPAL-INV-01: claims MUST be a Mapping[str, str]; got "
-            f"{type(claims).__name__}."
+            f"PRINCIPAL-INV-01: claims MUST be a Mapping[str, str]; got {type(claims).__name__}."
         )
     for k, v in claims.items():
         if not isinstance(k, str) or k == "":
             raise PrincipalInvariantError(
-                "PRINCIPAL-INV-05: claim keys MUST be non-empty str; "
-                f"got {k!r}."
+                f"PRINCIPAL-INV-05: claim keys MUST be non-empty str; got {k!r}."
             )
         if not isinstance(v, str):
             raise PrincipalInvariantError(
@@ -231,7 +237,6 @@ class CurrentPrincipal:
                 "PRINCIPAL-INV-02: an anonymous principal MUST have an empty "
                 f"role set; got {sorted(self.roles)!r}."
             )
-
 
     # ---- read-only convenience API -----------------------------------------
     def has_role(self, role: str) -> bool:
@@ -294,13 +299,15 @@ class CurrentPrincipal:
         # MappingProxyType which is unhashable. Hash over a tuple of sorted
         # claim items instead; equality (auto-generated) still compares the
         # mappings structurally so the eq/hash contract is preserved.
-        return hash((
-            self.subject_id,
-            self.tenant_id,
-            self.roles,
-            tuple(sorted(self.claims.items())),
-            self.is_anonymous,
-        ))
+        return hash(
+            (
+                self.subject_id,
+                self.tenant_id,
+                self.roles,
+                tuple(sorted(self.claims.items())),
+                self.is_anonymous,
+            )
+        )
 
     def __repr__(self) -> str:
         # Never leak claim values through repr; pair with __str__ for logs.
@@ -318,16 +325,16 @@ class CurrentPrincipal:
 # `slots=True` rewraps the class (Python 3.14 quirk). We replace BOTH with
 # clean impls so writes/deletes raise the documented FrozenInstanceError
 # instead of a confusing `TypeError: super(type, obj)`.
-def _principal_setattr(self: CurrentPrincipal, name: str, value: object) -> None:  # noqa: ARG001
+def _principal_setattr(self: CurrentPrincipal, name: str, value: object) -> None:
     raise dataclasses.FrozenInstanceError(f"cannot assign to field {name!r}")
 
 
-def _principal_delattr(self: CurrentPrincipal, name: str) -> None:  # noqa: ARG001
+def _principal_delattr(self: CurrentPrincipal, name: str) -> None:
     raise dataclasses.FrozenInstanceError(f"cannot delete field {name!r}")
 
 
-CurrentPrincipal.__setattr__ = _principal_setattr  # type: ignore[method-assign]
-CurrentPrincipal.__delattr__ = _principal_delattr  # type: ignore[method-assign]
+CurrentPrincipal.__setattr__ = _principal_setattr  # type: ignore[method-assign, assignment]  # PRINCIPAL-INV-01: deliberate runtime freeze-patch on the slotted dataclass
+CurrentPrincipal.__delattr__ = _principal_delattr  # type: ignore[method-assign, assignment]  # PRINCIPAL-INV-01: deliberate runtime freeze-patch on the slotted dataclass
 
 
 # ---------------------------------------------------------------------------
@@ -381,9 +388,7 @@ class StaticPrincipalProvider:
         self,
         table: Mapping[str, CurrentPrincipal] | None = None,
     ) -> None:
-        self._table: Mapping[str, CurrentPrincipal] = MappingProxyType(
-            dict(table or {})
-        )
+        self._table: Mapping[str, CurrentPrincipal] = MappingProxyType(dict(table or {}))
 
     def resolve(self, credential: str | None) -> CurrentPrincipal:
         if credential is None or credential == "":

@@ -12,7 +12,7 @@ class TracingBuffer:
         maxlen: Maximum number of request records to retain.
     """
 
-    def __init__(self, maxlen: int=1000) -> None:
+    def __init__(self, maxlen: int = 1000) -> None:
         self._buf: deque[dict[str, Any]] = deque(maxlen=maxlen)
         self._lock = threading.Lock()
 
@@ -39,11 +39,11 @@ class TracingBuffer:
         """
         with self._lock:
             for entry in self._buf:
-                if entry.get('id') == request_id:
+                if entry.get("id") == request_id:
                     return entry
         return None
 
-    def get_slow(self, percentile: float=0.99) -> list[dict[str, Any]]:
+    def get_slow(self, percentile: float = 0.99) -> list[dict[str, Any]]:
         """Return requests at or above the given latency percentile.
 
         Args:
@@ -51,12 +51,12 @@ class TracingBuffer:
                 Defaults to 0.99 (p99).
         """
         with self._lock:
-            items = sorted(self._buf, key=lambda r: r.get('total_ms', 0))
+            items = sorted(self._buf, key=lambda r: r.get("total_ms", 0))
         if not items:
             return []
         cutoff_idx = max(0, int(len(items) * percentile) - 1)
-        threshold = items[cutoff_idx].get('total_ms', 0)
-        return [r for r in items if r.get('total_ms', 0) >= threshold]
+        threshold = items[cutoff_idx].get("total_ms", 0)
+        return [r for r in items if r.get("total_ms", 0) >= threshold]
 
     def __len__(self) -> int:
         """Return current number of buffered entries."""

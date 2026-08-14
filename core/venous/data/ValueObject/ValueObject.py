@@ -79,7 +79,7 @@ def _is_allowed_value(value: object) -> bool:
     Rejected: list, set, dict, references to objects carrying Aggregate/Entity
     identity markers, and any non-hashable object.
     """
-    if isinstance(value, VALUE_PRIMITIVE_TYPES) or isinstance(value, FrozenValueObject):
+    if isinstance(value, (*VALUE_PRIMITIVE_TYPES, FrozenValueObject)):
         return True
     if isinstance(value, (frozenset, tuple)):
         return all(_is_allowed_value(v) for v in value)
@@ -183,19 +183,15 @@ class Money(FrozenValueObject):
     currency: str
 
     def __post_init__(self) -> None:
-        super().__post_init__()
+        FrozenValueObject.__post_init__(self)
         if not isinstance(self.amount_cents, int) or isinstance(self.amount_cents, bool):
             raise ValueObjectInvariantError(
                 "VO-INV-04: Money.amount_cents MUST be an int (not bool)."
             )
         if self.amount_cents < 0:
-            raise ValueObjectInvariantError(
-                "VO-INV-04: Money.amount_cents MUST be >= 0."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: Money.amount_cents MUST be >= 0.")
         if not isinstance(self.currency, str) or len(self.currency) != 3:
-            raise ValueObjectInvariantError(
-                "VO-INV-04: Money.currency MUST be a 3-letter code."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: Money.currency MUST be a 3-letter code.")
         if self.currency != self.currency.upper() or not self.currency.isalpha():
             raise ValueObjectInvariantError(
                 "VO-INV-04: Money.currency MUST be uppercase ASCII letters."
@@ -204,13 +200,9 @@ class Money(FrozenValueObject):
     def add(self, other: Money) -> Money:
         """Algebraic add; currencies MUST match."""
         if not isinstance(other, Money):
-            raise ValueObjectInvariantError(
-                "VO-INV-04: Money.add requires a Money operand."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: Money.add requires a Money operand.")
         if other.currency != self.currency:
-            raise ValueObjectInvariantError(
-                "VO-INV-04: Money.add requires matching currency."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: Money.add requires matching currency.")
         return self.with_changes(amount_cents=self.amount_cents + other.amount_cents)
 
 
@@ -225,11 +217,9 @@ class Email(FrozenValueObject):
     address: str
 
     def __post_init__(self) -> None:
-        super().__post_init__()
+        FrozenValueObject.__post_init__(self)
         if not isinstance(self.address, str):
-            raise ValueObjectInvariantError(
-                "VO-INV-04: Email.address MUST be a string."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: Email.address MUST be a string.")
         if self.address.count("@") != 1:
             raise ValueObjectInvariantError(
                 "VO-INV-04: Email.address MUST contain exactly one '@'."
@@ -252,15 +242,11 @@ class DateRange(FrozenValueObject):
     end_epoch_s: int
 
     def __post_init__(self) -> None:
-        super().__post_init__()
+        FrozenValueObject.__post_init__(self)
         if not isinstance(self.start_epoch_s, int) or isinstance(self.start_epoch_s, bool):
-            raise ValueObjectInvariantError(
-                "VO-INV-04: DateRange.start_epoch_s MUST be an int."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: DateRange.start_epoch_s MUST be an int.")
         if not isinstance(self.end_epoch_s, int) or isinstance(self.end_epoch_s, bool):
-            raise ValueObjectInvariantError(
-                "VO-INV-04: DateRange.end_epoch_s MUST be an int."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: DateRange.end_epoch_s MUST be an int.")
         if self.end_epoch_s <= self.start_epoch_s:
             raise ValueObjectInvariantError(
                 "VO-INV-04: DateRange.end_epoch_s MUST be > start_epoch_s."
@@ -290,13 +276,9 @@ class CoercionRegistry:
         from_mapping: Any,
     ) -> None:
         if not isinstance(cls, type):
-            raise ValueObjectInvariantError(
-                "VO-INV-04: register requires a class."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: register requires a class.")
         if not callable(to_mapping) or not callable(from_mapping):
-            raise ValueObjectInvariantError(
-                "VO-INV-04: register requires callable adapters."
-            )
+            raise ValueObjectInvariantError("VO-INV-04: register requires callable adapters.")
         self._to[cls] = to_mapping
         self._from[cls] = from_mapping
 

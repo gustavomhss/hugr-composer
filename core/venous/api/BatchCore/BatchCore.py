@@ -3,18 +3,18 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 
-class ProcessingStrategy(str, Enum):
+class ProcessingStrategy(StrEnum):
     """How the batch iterates its items."""
 
     SEQUENTIAL = "sequential"
     PARALLEL = "parallel"
 
 
-class IsolationMode(str, Enum):
+class IsolationMode(StrEnum):
     """Failure-isolation policy for a batch run."""
 
     ALL_OR_NOTHING = "all_or_nothing"
@@ -41,12 +41,25 @@ class BatchCore:
         max_parallel: Semaphore concurrency limit for parallel mode.
     """
 
-    def __init__(self, handler: Callable[[Any], Awaitable[Any]], *, timeout_per_item_s: float=5.0, max_parallel: int=10) -> None:
+    def __init__(
+        self,
+        handler: Callable[[Any], Awaitable[Any]],
+        *,
+        timeout_per_item_s: float = 5.0,
+        max_parallel: int = 10,
+    ) -> None:
         self._handler = handler
         self._timeout = timeout_per_item_s
         self._sem = asyncio.Semaphore(max_parallel)
 
-    async def run(self, items: list[Any], *, mode: IsolationMode, strategy: ProcessingStrategy, idempotency_keys: list[str] | None=None) -> list[BatchItemResult]:
+    async def run(
+        self,
+        items: list[Any],
+        *,
+        mode: IsolationMode,
+        strategy: ProcessingStrategy,
+        idempotency_keys: list[str] | None = None,
+    ) -> list[BatchItemResult]:
         """Execute all items and return per-item results.
 
         Args:
@@ -58,18 +71,28 @@ class BatchCore:
         Returns:
             List of BatchItemResult aligned to *items*.
         """
-        keys = idempotency_keys or [None] * len(items)
+        keys: list[str | None] = list(idempotency_keys) if idempotency_keys else [None] * len(items)
         if strategy == ProcessingStrategy.SEQUENTIAL:
             results: list[BatchItemResult] = []
-            for idx, (item, key) in enumerate(zip(items, keys)):
+            for idx, (item, key) in enumerate(zip(items, keys, strict=False)):
                 result = await self._run_one(idx, item, key)
                 results.append(result)
                 if mode == IsolationMode.ALL_OR_NOTHING and result.status_code >= 400:
                     for remaining in range(idx + 1, len(items)):
-                        results.append(BatchItemResult(index=remaining, status_code=409, error='Rolled back due to all_or_nothing failure.', idempotency_key=keys[remaining]))
+                        results.append(
+                            BatchItemResult(
+                                index=remaining,
+                                status_code=409,
+                                error="Rolled back due to all_or_nothing failure.",
+                                idempotency_key=keys[remaining],
+                            )
+                        )
                     return results
             return results
-        tasks = [self._run_one(idx, item, key) for idx, (item, key) in enumerate(zip(items, keys))]
+        tasks = [
+            self._run_one(idx, item, key)
+            for idx, (item, key) in enumerate(zip(items, keys, strict=False))
+        ]
         return list(await asyncio.gather(*tasks))
 
     async def _run_one(self, idx: int, item: Any, idempotency_key: str | None) -> BatchItemResult:
@@ -86,9 +109,21 @@ class BatchCore:
         async with self._sem:
             try:
                 data = await asyncio.wait_for(self._handler(item), timeout=self._timeout)
-                return BatchItemResult(index=idx, status_code=201, data=data, idempotency_key=idempotency_key)
+                return BatchItemResult(
+                    index=idx, status_code=201, data=data, idempotency_key=idempotency_key
+                )
             except TimeoutError:
-                return BatchItemResult(index=idx, status_code=504, error='Per-item timeout exceeded.', idempotency_key=idempotency_key)
-            except Exception as exc:
-                code = getattr(exc, 'status_code', 500)
-                return BatchItemResult(index=idx, status_code=int(code), error=f'{type(exc).__name__}: {exc}', idempotency_key=idempotency_key)
+                return BatchItemResult(
+                    index=idx,
+                    status_code=504,
+                    error="Per-item timeout exceeded.",
+                    idempotency_key=idempotency_key,
+                )
+            except Exception as exc:  # noqa: BLE001 — per-item fail-open: the handler may raise any error type; isolation MUST still return a per-item result
+                code = getattr(exc, "status_code", 500)
+                return BatchItemResult(
+                    index=idx,
+                    status_code=int(code),
+                    error=f"{type(exc).__name__}: {exc}",
+                    idempotency_key=idempotency_key,
+                )

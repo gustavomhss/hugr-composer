@@ -21,7 +21,9 @@ class RetryBudget:
         min_requests: Minimum requests before enforcing the budget.
     """
 
-    def __init__(self, service: str, ratio: float=0.1, window_s: float=60.0, min_requests: int=10) -> None:
+    def __init__(
+        self, service: str, ratio: float = 0.1, window_s: float = 60.0, min_requests: int = 10
+    ) -> None:
         """Initialise a new retry budget for *service*.
 
         Args:
@@ -68,7 +70,12 @@ class RetryBudget:
             current_ratio = retries / total if total else 0.0
             allowed = current_ratio < self.ratio
             if not allowed:
-                logger.warning('Retry budget exhausted for %s: %.1f%% >= %.1f%%', self.service, current_ratio * 100, self.ratio * 100)
+                logger.warning(
+                    "Retry budget exhausted for %s: %.1f%% >= %.1f%%",
+                    self.service,
+                    current_ratio * 100,
+                    self.ratio * 100,
+                )
             return allowed
 
     def current_ratio(self) -> float:
@@ -84,7 +91,7 @@ class RetryBudget:
             retries = len(self._retries)
             return retries / total if total > 0 else 0.0
 
-    def stats(self) -> dict:
+    def stats(self) -> dict[str, str | int | float | bool]:
         """Return current budget statistics dict.
 
         Returns:
@@ -97,7 +104,14 @@ class RetryBudget:
             total = len(self._requests)
             retries = len(self._retries)
         ratio = retries / total if total > 0 else 0.0
-        return {'service': self.service, 'total_requests': total, 'total_retries': retries, 'current_ratio': round(ratio, 4), 'budget_ratio': self.ratio, 'budget_exhausted': ratio >= self.ratio and total >= self.min_requests}
+        return {
+            "service": self.service,
+            "total_requests": total,
+            "total_retries": retries,
+            "current_ratio": round(ratio, 4),
+            "budget_ratio": self.ratio,
+            "budget_exhausted": ratio >= self.ratio and total >= self.min_requests,
+        }
 
     def _evict(self, now: float) -> None:
         """Remove entries outside the sliding window (call with lock held).

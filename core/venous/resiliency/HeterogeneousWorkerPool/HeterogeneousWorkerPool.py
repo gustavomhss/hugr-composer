@@ -90,9 +90,7 @@ class HeterogeneousWorkerPool(Protocol[R]):
         executor: Callable[[Task[object]], Awaitable[R]],
     ) -> None: ...
     def submit(self, task: Task[R], family: str) -> asyncio.Future[R]: ...
-    def on_result(
-        self, worker_id: str, latency_ms: float, ok: bool
-    ) -> None: ...
+    def on_result(self, worker_id: str, latency_ms: float, ok: bool) -> None: ...
 
 
 class InMemoryHeterogeneousWorkerPool:
@@ -113,6 +111,7 @@ class InMemoryHeterogeneousWorkerPool:
     def __init__(self) -> None:
         self._workers: dict[str, _WorkerState] = {}
         self._sessions: dict[str, str] = {}  # session_id -> worker_id
+        self._runner_tasks: set[asyncio.Task[None]] = set()
 
     # ------------------------------------------------------------------
     # Registration
@@ -132,7 +131,7 @@ class InMemoryHeterogeneousWorkerPool:
             worker_id=worker_id,
             capabilities=frozenset(capabilities),
             kind=kind,
-            executor=executor,  # type: ignore[assignment]
+            executor=executor,
         )
 
     # ------------------------------------------------------------------
@@ -152,9 +151,7 @@ class InMemoryHeterogeneousWorkerPool:
             if ratio >= self._DEPRIORITIZE_RATIO:
                 # HWP_INV_03: deprioritize within 30s.
                 ws.weight = self._DEPRIORITIZED_WEIGHT
-                ws.unhealthy_until_ns = (
-                    time.monotonic_ns() + self._UNHEALTHY_WINDOW_NS
-                )
+                ws.unhealthy_until_ns = time.monotonic_ns() + self._UNHEALTHY_WINDOW_NS
             elif ratio < self._RESTORE_RATIO and ws.weight < 1.0:
                 # HWP_INV_06: p50 has recovered — restore full weight.
                 ws.weight = 1.0
@@ -179,9 +176,7 @@ class InMemoryHeterogeneousWorkerPool:
         now_ns = time.monotonic_ns()
         eligible = self._eligible(family)
         if not eligible:
-            raise NoEligibleWorkerError(
-                f"no registered worker advertises family {family!r}"
-            )
+            raise NoEligibleWorkerError(f"no registered worker advertises family {family!r}")
 
         # HWP_INV_04: session-stickiness if the previous worker is still
         # healthy AND still eligible for this family.
@@ -199,9 +194,7 @@ class InMemoryHeterogeneousWorkerPool:
             return min(eligible, key=lambda w: (w.p50(), w.queue_depth))
 
         # HWP_INV_02: GPU preference when any healthy GPU has queue < pool_p50-of-queue.
-        pool_queue_p50 = statistics.median(
-            [w.queue_depth for w in healthy]
-        ) if healthy else 0
+        pool_queue_p50 = statistics.median([w.queue_depth for w in healthy]) if healthy else 0
         gpus = [w for w in healthy if w.kind == "gpu"]
         gpu_available = [w for w in gpus if w.queue_depth < max(pool_queue_p50, 1)]
         if gpu_available:
@@ -222,13 +215,14 @@ class InMemoryHeterogeneousWorkerPool:
 
         loop = asyncio.get_event_loop()
         fut: asyncio.Future[R] = loop.create_future()
-        assert ws.executor is not None
+        executor = ws.executor
+        assert executor is not None  # noqa: S101 — HWP contract: executor always set at register; assert guards the race-window narrowing
 
         async def _runner() -> None:
             started = time.monotonic()
             try:
-                result = await ws.executor(task)  # type: ignore[misc]
-            except BaseException as exc:
+                result = await executor(task)  # type: ignore[arg-type]  # HWP_INV_01: executor is Callable[[Task[object]],...]; task is Task[R] — caller-supplied, never introspected here
+            except BaseException as exc:  # noqa: BLE001 — executor outcome must propagate into the future even for BaseException, so callers never hang
                 latency_ms = (time.monotonic() - started) * 1000.0
                 self.on_result(ws.worker_id, latency_ms, ok=False)
                 if not fut.done():
@@ -237,9 +231,11 @@ class InMemoryHeterogeneousWorkerPool:
             latency_ms = (time.monotonic() - started) * 1000.0
             self.on_result(ws.worker_id, latency_ms, ok=True)
             if not fut.done():
-                fut.set_result(result)  # type: ignore[arg-type]
+                fut.set_result(result)  # type: ignore[arg-type]  # HWP_INV_04: executor return is Awaitable[object]; Future[R] is caller-typed
 
-        asyncio.ensure_future(_runner())
+        runner = asyncio.ensure_future(_runner())
+        self._runner_tasks.add(runner)
+        runner.add_done_callback(self._runner_tasks.discard)
         return fut
 
 

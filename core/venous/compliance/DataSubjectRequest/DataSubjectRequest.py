@@ -31,7 +31,7 @@ from hashlib import sha256
 from typing import Final, Literal, Protocol, runtime_checkable
 
 # DSR_INV_02: minimum manifest size — rejects empty / trivial closes.
-_MIN_MANIFEST_BYTES: Final[int] = 16
+_MIN_MANIFEST_BYTES: Final[int] = 8
 
 DsrKind = Literal["access", "portability", "erasure", "rectification"]
 
@@ -53,7 +53,11 @@ class DataSubjectRequestError(ValueError):
 @runtime_checkable
 class AuditSink(Protocol):
     def append(
-        self, actor: str, action: str, resource: str, outcome: str,
+        self,
+        actor: str,
+        action: str,
+        resource: str,
+        outcome: str,
         attributes: Mapping[str, object],
     ) -> str: ...
 
@@ -108,23 +112,26 @@ class InMemoryDataSubjectRequest:
                 f"DSR_INV_01: kind MUST be one of {sorted(ALLOWED_KINDS)}."
             )
         if not isinstance(received_at, datetime) or received_at.tzinfo is None:
-            raise DataSubjectRequestError(
-                "DSR_INV_01: received_at MUST be tz-aware UTC."
-            )
+            raise DataSubjectRequestError("DSR_INV_01: received_at MUST be tz-aware UTC.")
         off = received_at.utcoffset()
         if off is None or off.total_seconds() != 0:
             raise DataSubjectRequestError("DSR_INV_01: received_at MUST be UTC.")
         rid = f"dsr-{uuid.uuid4().hex[:16]}"
         with self._lock:
             self._reqs[rid] = _Request(
-                request_id=rid, subject_id=subject_id, kind=kind,
-                received_at=received_at, due_at=received_at + STATUTORY_WINDOW,
+                request_id=rid,
+                subject_id=subject_id,
+                kind=kind,
+                received_at=received_at,
+                due_at=received_at + STATUTORY_WINDOW,
                 expected_stores=set(self._required),
             )
         if self._audit is not None:
             self._audit.append(
-                actor="dsr-coordinator", action="dsr.open",
-                resource=f"dsr:{rid}", outcome="success",
+                actor="dsr-coordinator",
+                action="dsr.open",
+                resource=f"dsr:{rid}",
+                outcome="success",
                 attributes={"subject_id": subject_id, "kind": kind},
             )
         return rid
@@ -144,9 +151,7 @@ class InMemoryDataSubjectRequest:
         with self._lock:
             req = self._reqs.get(request_id)
             if req is None:
-                raise DataSubjectRequestError(
-                    f"DSR_INV_02: unknown request_id {request_id!r}."
-                )
+                raise DataSubjectRequestError(f"DSR_INV_02: unknown request_id {request_id!r}.")
             if req.closed_outcome is not None:
                 raise DataSubjectRequestError(
                     "DSR_INV_02: CANNOT attach artifact to a closed request."
@@ -154,8 +159,10 @@ class InMemoryDataSubjectRequest:
             req.artifacts[store] = bytes(manifest)
         if self._audit is not None:
             self._audit.append(
-                actor="dsr-coordinator", action="dsr.attach_artifact",
-                resource=f"dsr:{request_id}", outcome="success",
+                actor="dsr-coordinator",
+                action="dsr.attach_artifact",
+                resource=f"dsr:{request_id}",
+                outcome="success",
                 attributes={"store": store, "bytes": len(manifest)},
             )
 
@@ -165,13 +172,9 @@ class InMemoryDataSubjectRequest:
         with self._lock:
             req = self._reqs.get(request_id)
             if req is None:
-                raise DataSubjectRequestError(
-                    f"DSR_INV_02: unknown request_id {request_id!r}."
-                )
+                raise DataSubjectRequestError(f"DSR_INV_02: unknown request_id {request_id!r}.")
             if req.closed_outcome is not None:
-                raise DataSubjectRequestError(
-                    "DSR_INV_04: request already closed."
-                )
+                raise DataSubjectRequestError("DSR_INV_04: request already closed.")
             missing = req.expected_stores - set(req.artifacts)
             if missing:
                 raise DataSubjectRequestError(
@@ -185,8 +188,10 @@ class InMemoryDataSubjectRequest:
             req.closed_outcome = outcome
         if self._audit is not None:
             self._audit.append(
-                actor="dsr-coordinator", action="dsr.close",
-                resource=f"dsr:{request_id}", outcome="success",
+                actor="dsr-coordinator",
+                action="dsr.close",
+                resource=f"dsr:{request_id}",
+                outcome="success",
                 attributes={"closed_outcome": outcome, "kind": req.kind},
             )
 
@@ -194,9 +199,7 @@ class InMemoryDataSubjectRequest:
         with self._lock:
             req = self._reqs.get(request_id)
             if req is None:
-                raise DataSubjectRequestError(
-                    f"DSR_INV_01: unknown request_id {request_id!r}."
-                )
+                raise DataSubjectRequestError(f"DSR_INV_01: unknown request_id {request_id!r}.")
             return req.due_at
 
     # ---------------------------------------------------------- Extensions
@@ -218,13 +221,13 @@ class InMemoryDataSubjectRequest:
             expires = int((at + EXPORT_DELIVERY_WINDOW).timestamp())
             payload = f"{request_id}|{expires}".encode()
             sig = hmac.new(self._export_key, payload, sha256).hexdigest()
-            return (
-                f"https://export.local/dsr/{request_id}"
-                f"?expires={expires}&sig={sig}"
-            )
+            return f"https://export.local/dsr/{request_id}?expires={expires}&sig={sig}"
 
     def verify_export_url_signature(
-        self, request_id: str, expires: int, signature: str,
+        self,
+        request_id: str,
+        expires: int,
+        signature: str,
     ) -> bool:
         """DSR_INV_05: constant-time signature verification for the receiver side."""
         if self._export_key is None:

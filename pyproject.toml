@@ -47,9 +47,9 @@ target-version = "py311"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM", "T20", "PIE", "PT", "Q", "RUF", "SLF", "TRY"]
-ignore = ["S101", "TRY003", "N999"]
-per-file-ignores = { "tests/*" = ["S101", "SLF001"] }
+select = ["E", "F", "I", "N", "W", "UP", "B", "BLE", "C4", "C901", "SIM", "T20", "PIE", "PT", "Q", "RUF", "SLF", "TRY", "S101", "S112", "S311", "ASYNC110"]
+ignore = ["TRY003", "N999"]
+per-file-ignores = { "tests/*" = ["S101", "SLF001"], "**/test_*.py" = ["S101"] }
 
 [tool.ruff.format]
 quote-style = "double"

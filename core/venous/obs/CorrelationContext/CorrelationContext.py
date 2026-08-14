@@ -103,8 +103,8 @@ def _gen_trace_id() -> str:
 # ---------------------------------------------------------------------------
 # Reference implementation
 # ---------------------------------------------------------------------------
-_CURRENT: contextvars.ContextVar[InMemoryCorrelationContext | None] = (
-    contextvars.ContextVar("correlation_context", default=None)
+_CURRENT: contextvars.ContextVar[InMemoryCorrelationContext | None] = contextvars.ContextVar(
+    "correlation_context", default=None
 )
 
 
@@ -160,11 +160,8 @@ class InMemoryCorrelationContext:
     @classmethod
     def from_headers(cls, headers: Mapping[str, str]) -> InMemoryCorrelationContext:
         tp = headers.get("traceparent", "")
-        if tp and TRACEPARENT_RE.match(tp):
-            trace_id = tp.split("-")[1]
-        else:
-            # CORR-INV-04: invalid → generate a fresh trace_id; NEVER return empty.
-            trace_id = _gen_trace_id()
+        # CORR-INV-04: invalid → generate a fresh trace_id; NEVER return empty.
+        trace_id = tp.split("-")[1] if tp and TRACEPARENT_RE.match(tp) else _gen_trace_id()
         request_id = headers.get("x-request-id", "") or _gen_request_id()
         try:
             request_id = validate_request_id(request_id)

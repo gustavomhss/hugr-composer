@@ -4,6 +4,7 @@ import asyncio
 import logging
 import signal
 import time
+from collections.abc import Awaitable, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ class GracefulShutdown:
         timeout_seconds: Max seconds to wait for in-flight requests.
     """
 
-    def __init__(self, drain_seconds: float=5.0, timeout_seconds: float=30.0) -> None:
+    def __init__(self, drain_seconds: float = 5.0, timeout_seconds: float = 30.0) -> None:
         """Initialise with drain and timeout durations.
 
         Args:
@@ -30,7 +31,7 @@ class GracefulShutdown:
         self._in_flight = 0
         self._lock = asyncio.Lock()
         self._drain_started_at: float | None = None
-        self._cleanup_callbacks: list = []
+        self._cleanup_callbacks: list[Callable[[], Awaitable[None]]] = []
 
     def register(self) -> None:
         """Install SIGTERM and SIGINT handlers on the event loop."""
@@ -38,7 +39,11 @@ class GracefulShutdown:
             loop = asyncio.get_event_loop()
             loop.add_signal_handler(signal.SIGTERM, self._on_signal)
             loop.add_signal_handler(signal.SIGINT, self._on_signal)
-            logger.info('GracefulShutdown registered (drain=%ds, timeout=%ds)', self.drain_seconds, self.timeout_seconds)
+            logger.info(
+                "GracefulShutdown registered (drain=%ds, timeout=%ds)",
+                self.drain_seconds,
+                self.timeout_seconds,
+            )
         except NotImplementedError:
             signal.signal(signal.SIGTERM, lambda *_: self._on_signal())
             signal.signal(signal.SIGINT, lambda *_: self._on_signal())
@@ -49,7 +54,9 @@ class GracefulShutdown:
             return
         self._draining = True
         self._drain_started_at = time.monotonic()
-        logger.info('Shutdown signal received — drain phase started (drain=%ds)', self.drain_seconds)
+        logger.info(
+            "Shutdown signal received — drain phase started (drain=%ds)", self.drain_seconds
+        )
 
     def is_draining(self) -> bool:
         """Return True if we are in the drain or complete phase.
@@ -67,7 +74,7 @@ class GracefulShutdown:
         """Decrement the count of in-flight requests."""
         self._in_flight = max(0, self._in_flight - 1)
 
-    def add_cleanup(self, callback) -> None:
+    def add_cleanup(self, callback: Callable[[], Awaitable[None]]) -> None:
         """Register an async cleanup callback for the cleanup phase.
 
         Args:
@@ -80,18 +87,20 @@ class GracefulShutdown:
         if not self._draining:
             return
         await asyncio.sleep(self.drain_seconds)
-        logger.info('Drain complete — waiting for %d in-flight requests', self._in_flight)
+        logger.info("Drain complete — waiting for %d in-flight requests", self._in_flight)
         deadline = time.monotonic() + self.timeout_seconds
-        while self._in_flight > 0 and time.monotonic() < deadline:
+        while self._in_flight > 0 and time.monotonic() < deadline:  # noqa: ASYNC110 — poll loop: supports a dynamic deadline, not just a fixed Event wait
             await asyncio.sleep(0.1)
         if self._in_flight > 0:
-            logger.warning('Shutdown timeout reached — %d in-flight requests abandoned', self._in_flight)
+            logger.warning(
+                "Shutdown timeout reached — %d in-flight requests abandoned", self._in_flight
+            )
         else:
-            logger.info('All in-flight requests completed.')
+            logger.info("All in-flight requests completed.")
         for cb in self._cleanup_callbacks:
             try:
                 await cb()
-            except Exception:
-                logger.warning('Cleanup callback raised', exc_info=True)
+            except Exception:  # noqa: BLE001 — cleanup cb may raise anything; log-and-continue keeps the drain from hanging
+                logger.warning("Cleanup callback raised", exc_info=True)
         self._shutting_down = True
-        logger.info('Graceful shutdown complete.')
+        logger.info("Graceful shutdown complete.")

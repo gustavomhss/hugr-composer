@@ -181,13 +181,11 @@ def validate_event_id(value: object) -> str:
 def validate_aggregate_id(value: object) -> str:
     if not isinstance(value, str):
         raise DomainEventInvariantError(
-            f"DE-INV-02 supporting: aggregate_id MUST be str, "
-            f"got {type(value).__name__}.",
+            f"DE-INV-02 supporting: aggregate_id MUST be str, got {type(value).__name__}.",
         )
     if not _AGGREGATE_ID_RE.match(value):
         raise DomainEventInvariantError(
-            f"DE-INV-02 supporting: aggregate_id {value!r} MUST match "
-            f"[A-Za-z0-9_\\-:.]{{1,200}}.",
+            f"DE-INV-02 supporting: aggregate_id {value!r} MUST match [A-Za-z0-9_\\-:.]{{1,200}}.",
         )
     return value
 
@@ -195,8 +193,7 @@ def validate_aggregate_id(value: object) -> str:
 def validate_aggregate_type(value: object) -> str:
     if not isinstance(value, str):
         raise DomainEventInvariantError(
-            f"DE-INV-04 supporting: aggregate_type MUST be str, "
-            f"got {type(value).__name__}.",
+            f"DE-INV-04 supporting: aggregate_type MUST be str, got {type(value).__name__}.",
         )
     if not value or len(value) > _MAX_AGG_TYPE_LEN:
         raise DomainEventInvariantError(
@@ -205,8 +202,7 @@ def validate_aggregate_type(value: object) -> str:
         )
     if not re.match(r"^[A-Za-z][A-Za-z0-9_]*$", value):
         raise DomainEventInvariantError(
-            f"DE-INV-04 supporting: aggregate_type {value!r} MUST match "
-            f"[A-Za-z][A-Za-z0-9_]*.",
+            f"DE-INV-04 supporting: aggregate_type {value!r} MUST match [A-Za-z][A-Za-z0-9_]*.",
         )
     return value
 
@@ -236,8 +232,7 @@ def validate_event_type(value: object) -> str:
 def validate_occurred_at(value: object) -> str:
     if not isinstance(value, str):
         raise DomainEventInvariantError(
-            f"DE-INV-02 supporting: occurred_at MUST be str, "
-            f"got {type(value).__name__}.",
+            f"DE-INV-02 supporting: occurred_at MUST be str, got {type(value).__name__}.",
         )
     if not _RFC3339_UTC_RE.match(value):
         raise DomainEventInvariantError(
@@ -245,7 +240,7 @@ def validate_occurred_at(value: object) -> str:
             f"(ending 'Z' or '+00:00').",
         )
     try:
-        datetime.fromisoformat(value.replace("Z", "+00:00"))
+        datetime.fromisoformat(value)
     except ValueError as e:
         raise DomainEventInvariantError(
             f"DE-INV-02 supporting: occurred_at {value!r} failed RFC 3339 parse: {e}",
@@ -358,7 +353,7 @@ class FrozenDomainEvent:
 
 
 def _unfreeze(value: object) -> Any:
-    if isinstance(value, MappingProxyType) or isinstance(value, Mapping):
+    if isinstance(value, (MappingProxyType, Mapping)):
         return {k: _unfreeze(v) for k, v in value.items()}
     if isinstance(value, tuple):
         return [_unfreeze(v) for v in value]
@@ -526,9 +521,7 @@ class AggregateEventStream:
         published: list[FrozenDomainEvent] = []
         with self._lock:
             items = [
-                (key, list(state.pending))
-                for key, state in self._streams.items()
-                if state.pending
+                (key, list(state.pending)) for key, state in self._streams.items() if state.pending
             ]
         # Publish outside the lock so publisher I/O cannot deadlock staging.
         for _key, batch in items:

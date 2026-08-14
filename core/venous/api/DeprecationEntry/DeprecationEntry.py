@@ -17,9 +17,10 @@ Invariants cited here:
   carries every public field + the derived ``days_until_sunset``
   + ``warn`` bool.
 """
+
 from __future__ import annotations
 
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 # Default warning window. Caller can override per-entry via
@@ -41,11 +42,16 @@ class DeprecationEntry:
         description: Optional human-readable deprecation reason.
         warn_days_before_sunset: Window in days before `sunset_date`
             where ``should_warn`` returns True.
+
     """
 
     __slots__ = (
-        "path", "method", "sunset_date", "replacement",
-        "description", "warn_days_before_sunset",
+        "description",
+        "method",
+        "path",
+        "replacement",
+        "sunset_date",
+        "warn_days_before_sunset",
     )
 
     def __init__(
@@ -73,7 +79,7 @@ class DeprecationEntry:
     @property
     def days_until_sunset(self) -> int:
         """Days remaining until sunset (negative if already past)."""
-        return (self.sunset_date - date.today()).days
+        return (self.sunset_date - datetime.now(UTC).date()).days
 
     @property
     def should_warn(self) -> bool:

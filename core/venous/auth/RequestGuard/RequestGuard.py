@@ -34,18 +34,18 @@ from __future__ import annotations
 
 import asyncio
 import copy
-import enum
 import inspect
 import threading
 from collections.abc import Awaitable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from enum import StrEnum
 from typing import Any, Final, Protocol, runtime_checkable
 
 
 # ---------------------------------------------------------------------------
 # Life-cycle states (RG-INV-04)
 # ---------------------------------------------------------------------------
-class GuardState(str, enum.Enum):
+class GuardState(StrEnum):
     """The CompositeGuard life-cycle — a strictly monotone state machine."""
 
     OPEN = "open"
@@ -55,17 +55,19 @@ class GuardState(str, enum.Enum):
     TERMINAL_ERROR = "terminal_error"
 
 
-TERMINAL_STATES: Final[frozenset[GuardState]] = frozenset({
-    GuardState.TERMINAL_ALLOW,
-    GuardState.TERMINAL_DENY,
-    GuardState.TERMINAL_ERROR,
-})
+TERMINAL_STATES: Final[frozenset[GuardState]] = frozenset(
+    {
+        GuardState.TERMINAL_ALLOW,
+        GuardState.TERMINAL_DENY,
+        GuardState.TERMINAL_ERROR,
+    }
+)
 
 
 # ---------------------------------------------------------------------------
 # Outcome taxonomy (RG-INV-01 / RG-INV-05)
 # ---------------------------------------------------------------------------
-class GuardOutcome(str, enum.Enum):
+class GuardOutcome(StrEnum):
     """How the error filter MUST translate a guard evaluation.
 
     - ALLOW → handler runs.
@@ -155,8 +157,7 @@ class RoleGuard:
         for r in required:
             if not isinstance(r, str) or r == "":
                 raise RequestGuardInvariantError(
-                    "RG-INV-03: every required role MUST be a non-empty str; "
-                    f"got {r!r}."
+                    f"RG-INV-03: every required role MUST be a non-empty str; got {r!r}."
                 )
         self._required: frozenset[str] = frozenset(required)
 
@@ -232,9 +233,9 @@ def _snapshot(
     on the post-call comparison, which the checker raises as
     `RequestGuardInvariantError`.
     """
-    assigns_items: tuple[tuple[str, object], ...] = tuple(sorted(
-        (str(k), copy.deepcopy(v)) for k, v in ctx.assigns.items()
-    ))
+    assigns_items: tuple[tuple[str, object], ...] = tuple(
+        sorted((str(k), copy.deepcopy(v)) for k, v in ctx.assigns.items())
+    )
     headers_items: tuple[tuple[str, str], ...] = tuple(sorted(ctx.headers.items()))
     return (
         ctx.request_id,

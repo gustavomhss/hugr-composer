@@ -109,9 +109,7 @@ class FeatureToggleRegistry:
         """FT-INV-05: deletion REQUIRES a prior mark_stale."""
         with self._lock:
             if key not in self._toggles:
-                raise FeatureToggleInvariantError(
-                    f"FT-INV-05: unknown toggle {key!r}."
-                )
+                raise FeatureToggleInvariantError(f"FT-INV-05: unknown toggle {key!r}.")
             if key not in self._stale:
                 raise FeatureToggleInvariantError(
                     f"FT-INV-05: toggle {key!r} MUST be marked stale before deletion."
@@ -126,17 +124,15 @@ class FeatureToggleRegistry:
         FT-INV-04: every call records an audit entry.
         """
         if not isinstance(ctx, ToggleContext):
-            raise FeatureToggleInvariantError(
-                "FT-INV-01: ctx MUST be a ToggleContext."
-            )
-        # FT-INV-02: atomically snapshot both the toggle and its stale/deleted
-        # status so a concurrent delete() cannot produce a decision for a key
-        # that `known_keys()` no longer reports.
+            raise FeatureToggleInvariantError("FT-INV-01: ctx MUST be a ToggleContext.")
+        # FT-INV-02: atomically snapshot the toggle so a concurrent delete()
+        # cannot produce a decision for a key that `known_keys()` no longer
+        # reports. A stale toggle remains evaluable (FT-INV-05: code references
+        # must not disappear abruptly); only deletion removes the toggle.
         with self._lock:
             toggle = self._toggles.get(key)
-            staled = key in self._stale
         decision: bool
-        if toggle is None or staled:
+        if toggle is None:
             decision = False
         else:
             try:

@@ -23,7 +23,7 @@ class ModelRegistry:
         self._loaders: dict[str, Callable[[], Any]] = {}
         self._meta: dict[str, dict[str, Any]] = {}
 
-    def register(self, name: str, loader_fn: Callable[[], Any], version: str='latest') -> None:
+    def register(self, name: str, loader_fn: Callable[[], Any], version: str = "latest") -> None:
         """Register a named model with its lazy loader callable.
 
         The loader is called at startup (or on first access) to produce
@@ -34,12 +34,18 @@ class ModelRegistry:
             loader_fn: Zero-argument callable that returns the model.
             version: Optional version string.  Defaults to ``"latest"``.
         """
-        key = f'{name}:{version}'
+        key = f"{name}:{version}"
         self._loaders[key] = loader_fn
-        self._meta[key] = {'name': name, 'version': version, 'loaded': False, 'last_latency_ms': None, 'error_count': 0}
-        logger.info('model registered', extra={'model_name': name, 'model_version': version})
+        self._meta[key] = {
+            "name": name,
+            "version": version,
+            "loaded": False,
+            "last_latency_ms": None,
+            "error_count": 0,
+        }
+        logger.info("model registered", extra={"model_name": name, "model_version": version})
 
-    def get(self, name: str, version: str='latest') -> Any:
+    def get(self, name: str, version: str = "latest") -> Any:
         """Return the model instance, loading it on first access.
 
         Args:
@@ -53,13 +59,13 @@ class ModelRegistry:
             KeyError: If ``name:version`` is not registered.
             RuntimeError: If the loader callable raises.
         """
-        key = f'{name}:{version}'
+        key = f"{name}:{version}"
         if key not in self._loaders:
             raise KeyError(f"Model '{key}' is not registered")
         if key not in self._models:
-            logger.info('loading model', extra={'model_name': name, 'model_version': version})
+            logger.info("loading model", extra={"model_name": name, "model_version": version})
             self._models[key] = self._loaders[key]()
-            self._meta[key]['loaded'] = True
+            self._meta[key]["loaded"] = True
         return self._models[key]
 
     def list_models(self) -> list[dict[str, Any]]:
@@ -71,7 +77,9 @@ class ModelRegistry:
         """
         return list(self._meta.values())
 
-    def update_stats(self, name: str, version: str, latency_ms: float, *, error: bool=False) -> None:
+    def update_stats(
+        self, name: str, version: str, latency_ms: float, *, error: bool = False
+    ) -> None:
         """Update prediction statistics for a model.
 
         Args:
@@ -80,9 +88,9 @@ class ModelRegistry:
             latency_ms: Prediction latency in milliseconds.
             error: Set to ``True`` when the prediction raised an exception.
         """
-        key = f'{name}:{version}'
+        key = f"{name}:{version}"
         if key not in self._meta:
             return
-        self._meta[key]['last_latency_ms'] = latency_ms
+        self._meta[key]["last_latency_ms"] = latency_ms
         if error:
-            self._meta[key]['error_count'] += 1
+            self._meta[key]["error_count"] += 1

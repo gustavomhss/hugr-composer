@@ -170,7 +170,9 @@ class InMemoryMiddlewarePipeline:
             self._error_filters.append(flt)
         return self
 
-    def insert_before(self, anchor: str, mw: Middleware, *, name: str) -> InMemoryMiddlewarePipeline:
+    def insert_before(
+        self, anchor: str, mw: Middleware, *, name: str
+    ) -> InMemoryMiddlewarePipeline:
         """Explicit insert before the named anchor. MWP-INV-01: never implicit."""
         self._ensure_unfrozen("insert_before")
         with self._lock:
@@ -272,7 +274,9 @@ class InMemoryMiddlewarePipeline:
 
         try:
             await _walk(chain, 0, ctx)
-        except Exception as exc:  # MWP-INV-03: every raise routes through filters before propagating.
+        except (
+            Exception
+        ) as exc:  # MWP-INV-03: every raise routes through filters before propagating.
             ctx.error = exc
             await _run_error_filters(filters, ctx, exc)
             if not ctx.response_written:
@@ -336,7 +340,7 @@ async def _run_error_filters(
     for flt in filters:
         try:
             await flt(ctx, exc)
-        except Exception as inner:  # noqa: BLE001, PERF203 — MWP-INV-03: every filter MUST run even when a predecessor raised; filter failures MUST NOT mask the original exception. The per-iteration try/except is the contract, not an accident.
+        except Exception as inner:  # noqa: BLE001 — MWP-INV-03: every filter MUST run even when a predecessor raised; filter failures MUST NOT mask the original exception. The per-iteration try/except is the contract, not an accident.
             bucket = ctx.attributes.get("mwp.filter_errors")
             if not isinstance(bucket, list):
                 bucket = []

@@ -75,8 +75,15 @@ def test_inv_shard_count_prevents_zero() -> None:
 # ---------------------------------------------------------------------------
 def test_inv_concurrent_increments_fan_out_confirms() -> None:
     c = InMemoryShardedCounter(shard_count=8)
+    # A Barrier guarantees all 8 threads are alive and truly concurrent before
+    # any increment runs. Without it, each thread finishes (100 trivial
+    # increments) before the next starts, the runtime reuses the thread ident,
+    # and every increment lands on the same shard — a test artifact, not a
+    # primitive defect.
+    barrier = threading.Barrier(8)
 
     def bump() -> None:
+        barrier.wait()
         for _ in range(100):
             c.increment("hot", 1)
 

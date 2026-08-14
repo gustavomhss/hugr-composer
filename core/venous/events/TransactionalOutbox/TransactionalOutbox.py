@@ -195,15 +195,9 @@ class InMemoryTransactionalOutbox:
         key.
         """
         if limit < 0:
-            raise TransactionalOutboxInvariantError(
-                "TXN-INV-04: limit MUST be non-negative."
-            )
+            raise TransactionalOutboxInvariantError("TXN-INV-04: limit MUST be non-negative.")
         with self._lock:
-            rows = [
-                m
-                for m in self._store.values()
-                if m.status == _STATUS_PENDING
-            ]
+            rows = [m for m in self._store.values() if m.status == _STATUS_PENDING]
         rows.sort(key=lambda m: (m.key, m.sequence))
         return [m.to_dict() for m in rows[:limit]]
 
@@ -251,8 +245,7 @@ class InMemoryTransactionalOutbox:
                 )
             if msg.status == _STATUS_PUBLISHED:
                 raise TransactionalOutboxInvariantError(
-                    "TXN-INV-02: cannot fail an already-published message; "
-                    "broker ack is terminal."
+                    "TXN-INV-02: cannot fail an already-published message; broker ack is terminal."
                 )
             msg.status = _STATUS_FAILED
             msg.failed_reason = reason
@@ -273,16 +266,14 @@ class InMemoryTransactionalOutbox:
         published: list[str] = []
         with self._lock:
             candidates = [
-                m
-                for m in self._store.values()
-                if m.status in (_STATUS_PENDING, _STATUS_FAILED)
+                m for m in self._store.values() if m.status in (_STATUS_PENDING, _STATUS_FAILED)
             ]
         # Sort by (key, sequence) so per-partition order is preserved.
         candidates.sort(key=lambda m: (m.key, m.sequence))
         for m in candidates[:limit]:
             try:
                 acked = self._broker_publish_fn(m)
-            except BaseException as exc:  # noqa: BLE001 — TXN-INV-03: relay MUST survive EVERY fault including SystemExit/KeyboardInterrupt so the in-memory "pending" row is always mark_failed'd before we lose the loop; otherwise a SIGINT mid-batch would orphan messages in limbo. We mark_failed then re-raise so the shutdown path still proceeds.
+            except BaseException as exc:
                 self.mark_failed(m.message_id, f"publish_raised:{exc!r}"[:200])
                 if isinstance(exc, (SystemExit, KeyboardInterrupt)):
                     raise

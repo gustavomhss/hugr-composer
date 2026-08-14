@@ -146,8 +146,14 @@ jobs:
           #   - *.protocol.py — type-protocol stubs (N999 + F821 by design)
           PYF=$(echo "$CHANGED" | grep '\.py$' | grep -vE '\.venv|/emitted/|core/venous/_staging/|core/venous/_extracted/|\.protocol\.py$' || true)
           if [ -n "$PYF" ]; then
-            "${VENV}/bin/python" -m ruff check $PYF
-            "${VENV}/bin/python" -m ruff format --check $PYF
+            # Iterate per-file: ruff on macOS fails the whole batch with
+            # E902 "File name too long (os error 63)" once the arg list
+            # exceeds ~a dozen long paths (ruff < 0.x known limit); the
+            # per-file result is identical to the batch result.
+            echo "$PYF" | while IFS= read -r f; do
+              "${VENV}/bin/python" -m ruff check "$f"
+              "${VENV}/bin/python" -m ruff format --check "$f"
+            done
           fi
       - name: Hygiene — no committed venvs/site-packages/emitted/db
         run: "${VENV}/bin/python scripts/checks/no_committed_venv.py"

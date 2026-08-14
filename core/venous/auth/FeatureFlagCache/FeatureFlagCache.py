@@ -4,6 +4,7 @@ import asyncio
 import json
 import time
 from collections import OrderedDict
+from typing import Any
 
 # Module-level tuning constants (see FeatureFlagCache.md). Feature-flag reads
 # vastly outnumber writes, so a short TTL bounds staleness while a capacity cap
@@ -22,11 +23,11 @@ class FeatureFlagCache:
     """
 
     def __init__(self) -> None:
-        self._store: OrderedDict[str, tuple[float, dict]] = OrderedDict()
+        self._store: OrderedDict[str, tuple[float, dict[str, object]]] = OrderedDict()
         self._lock = asyncio.Lock()
-        self._invalidation_task: asyncio.Task | None = None
+        self._invalidation_task: asyncio.Task[object] | None = None
 
-    async def get(self, key: str) -> dict | None:
+    async def get(self, key: str) -> dict[str, object] | None:
         """Return cached payload, or None if missing/expired.
 
         Args:
@@ -46,7 +47,7 @@ class FeatureFlagCache:
             self._store.move_to_end(key)
             return value
 
-    async def set(self, key: str, value: dict) -> None:
+    async def set(self, key: str, value: dict[str, object]) -> None:
         """Store a flag payload, evicting LRU entries if at capacity.
 
         Args:
@@ -66,7 +67,7 @@ class FeatureFlagCache:
             key: Flag key to evict, or '*' to clear all.
         """
         async with self._lock:
-            if key == '*':
+            if key == "*":
                 self._store.clear()
             else:
                 self._store.pop(key, None)
@@ -76,7 +77,7 @@ class FeatureFlagCache:
         async with self._lock:
             self._store.clear()
 
-    async def start_invalidation_listener(self, redis) -> None:
+    async def start_invalidation_listener(self, redis: Any) -> None:
         """Subscribe to Redis pubsub and evict keys on incoming messages.
 
         Args:
@@ -87,15 +88,16 @@ class FeatureFlagCache:
             pubsub = redis.pubsub()
             await pubsub.subscribe(INVALIDATION_CHANNEL)
             async for message in pubsub.listen():
-                if message.get('type') != 'message':
+                if message.get("type") != "message":
                     continue
                 try:
-                    payload = json.loads(message['data'])
+                    payload = json.loads(message["data"])
                 except (json.JSONDecodeError, TypeError):
                     continue
-                key = payload.get('key') or payload.get('flag_key')
+                key = payload.get("key") or payload.get("flag_key")
                 if key:
                     await self.invalidate(key)
+
         self._invalidation_task = asyncio.create_task(_listen())
 
     async def stop(self) -> None:

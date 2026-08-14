@@ -29,7 +29,7 @@ from __future__ import annotations
 import contextlib
 import threading
 from collections.abc import Callable, Iterator
-from enum import Enum
+from enum import StrEnum
 from types import TracebackType
 from typing import Any, Final, Literal, Self, TypeVar
 
@@ -39,7 +39,7 @@ T = TypeVar("T")
 # ---------------------------------------------------------------------------
 # Protocol surface (matches catalog api_signature verbatim)
 # ---------------------------------------------------------------------------
-class LifetimeScope(str, Enum):
+class LifetimeScope(StrEnum):
     """Closed vocabulary for instance lifetimes (LS-INV-05).
 
     Values are strings for wire-compatibility with framework adapters
@@ -79,8 +79,7 @@ def coerce(value: str | LifetimeScope) -> LifetimeScope:
     except ValueError as e:
         valid = sorted(m.value for m in LifetimeScope)
         raise LifetimeScopeInvariantError(
-            f"LS-INV-05: unknown lifetime value {value!r}; "
-            f"the value set is closed to {valid}."
+            f"LS-INV-05: unknown lifetime value {value!r}; the value set is closed to {valid}."
         ) from e
 
 
@@ -175,7 +174,9 @@ class ScopeManager:
                     f"re-registration MUST be explicit."
                 )
             self._registrations[key] = _Registration(
-                key=key, factory=factory, scope=scope_enum,
+                key=key,
+                factory=factory,
+                scope=scope_enum,
             )
 
     def register_instance(self, key: str, instance: object) -> None:
@@ -194,9 +195,7 @@ class ScopeManager:
             )
         with self._reg_lock, self._singleton_lock:
             if key in self._registrations:
-                raise LifetimeScopeInvariantError(
-                    f"LS-INV-05: key {key!r} is already registered."
-                )
+                raise LifetimeScopeInvariantError(f"LS-INV-05: key {key!r} is already registered.")
             self._registrations[key] = _Registration(
                 key=key,
                 factory=lambda: instance,
@@ -218,9 +217,7 @@ class ScopeManager:
             )
         reg = self._registrations.get(key)
         if reg is None:
-            raise LifetimeScopeInvariantError(
-                f"LS-INV-05: no registration for key={key!r}."
-            )
+            raise LifetimeScopeInvariantError(f"LS-INV-05: no registration for key={key!r}.")
 
         if reg.scope is LifetimeScope.SINGLETON:
             with self._singleton_lock:
@@ -384,9 +381,7 @@ class ScopeManager:
         """Return the declared lifetime for `key` (LS-INV-05)."""
         reg = self._registrations.get(key)
         if reg is None:
-            raise LifetimeScopeInvariantError(
-                f"LS-INV-05: no registration for key={key!r}."
-            )
+            raise LifetimeScopeInvariantError(f"LS-INV-05: no registration for key={key!r}.")
         return reg.scope
 
 

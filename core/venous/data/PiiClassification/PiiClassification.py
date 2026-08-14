@@ -26,11 +26,11 @@ from __future__ import annotations
 import threading
 from collections.abc import Mapping
 from dataclasses import dataclass
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Final, Protocol, runtime_checkable
 
 
-class PiiClass(str, Enum):
+class PiiClass(StrEnum):
     PUBLIC = "public"
     INTERNAL = "internal"
     PII = "pii"
@@ -40,7 +40,11 @@ class PiiClass(str, Enum):
 
 # Sensitivity ladder (index = sensitivity; higher = more sensitive).
 _LADDER: Final[tuple[PiiClass, ...]] = (
-    PiiClass.PUBLIC, PiiClass.INTERNAL, PiiClass.PII, PiiClass.PHI, PiiClass.PCI,
+    PiiClass.PUBLIC,
+    PiiClass.INTERNAL,
+    PiiClass.PII,
+    PiiClass.PHI,
+    PiiClass.PCI,
 )
 
 
@@ -68,8 +72,9 @@ class ReclassificationRecord:
 
 @runtime_checkable
 class AuditSink(Protocol):
-    def append(self, actor: str, action: str, resource: str, outcome: str,
-               attributes: Mapping[str, object]) -> str: ...
+    def append(
+        self, actor: str, action: str, resource: str, outcome: str, attributes: Mapping[str, object]
+    ) -> str: ...
 
 
 @runtime_checkable
@@ -113,12 +118,18 @@ class InMemoryPiiClassification:
             existing = self._annotations.get(key)
             if existing is not None and _rank(pii_class) < _rank(existing):
                 raise PiiClassificationError(
-                    "PIC_INV_05: downward reclassification requires `reclassify(..., approver=...)`."
+                    "PIC_INV_05: downward reclassification requires "
+                    "`reclassify(..., approver=...)`."
                 )
             self._annotations[key] = pii_class
 
     def reclassify(
-        self, model: type, field: str, new_class: PiiClass, *, approver: str,
+        self,
+        model: type,
+        field: str,
+        new_class: PiiClass,
+        *,
+        approver: str,
     ) -> ReclassificationRecord:
         """PIC_INV_05: downward reclassification MUST carry approver + audit row."""
         if not isinstance(approver, str) or not approver.strip():
@@ -128,17 +139,21 @@ class InMemoryPiiClassification:
             key = (name, field)
             existing = self._annotations.get(key)
             if existing is None:
-                raise PiiClassificationError(
-                    f"PIC_INV_01: field {name}.{field} is not registered."
-                )
+                raise PiiClassificationError(f"PIC_INV_01: field {name}.{field} is not registered.")
             self._annotations[key] = new_class
         record = ReclassificationRecord(
-            model=name, field=field, old_class=existing, new_class=new_class, approver=approver,
+            model=name,
+            field=field,
+            old_class=existing,
+            new_class=new_class,
+            approver=approver,
         )
         if self._audit is not None and _rank(new_class) < _rank(existing):
             self._audit.append(
-                actor=approver, action="pii.reclassify",
-                resource=f"{name}.{field}", outcome="success",
+                actor=approver,
+                action="pii.reclassify",
+                resource=f"{name}.{field}",
+                outcome="success",
                 attributes={"old": existing.value, "new": new_class.value},
             )
         return record
@@ -200,8 +215,10 @@ class InMemoryPiiClassification:
             self._leak_count += 1
         if self._audit is not None:
             self._audit.append(
-                actor="pii-classifier", action="pii.leak",
-                resource=f"sink:{sink}", outcome="failure",
+                actor="pii-classifier",
+                action="pii.leak",
+                resource=f"sink:{sink}",
+                outcome="failure",
                 attributes={"type": type(obj).__name__},
             )
 
@@ -209,6 +226,7 @@ class InMemoryPiiClassification:
     @staticmethod
     def _obj_fields(obj: Any) -> dict[str, Any]:
         import dataclasses as _dc
+
         if _dc.is_dataclass(obj) and not isinstance(obj, type):
             return {f.name: getattr(obj, f.name) for f in _dc.fields(obj)}
         if hasattr(obj, "__dict__"):

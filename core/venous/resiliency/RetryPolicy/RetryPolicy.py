@@ -95,10 +95,15 @@ class RetryClassifier:
     """
 
     _RETRYABLE: Final[tuple[type[BaseException], ...]] = (
-        TimeoutError, ConnectionError, OSError,
+        TimeoutError,
+        ConnectionError,
+        OSError,
     )
     _NON_RETRYABLE: Final[tuple[type[BaseException], ...]] = (
-        ValueError, TypeError, KeyError, AttributeError,
+        ValueError,
+        TypeError,
+        KeyError,
+        AttributeError,
     )
 
     def classify(self, exc: BaseException) -> ErrorClass:
@@ -152,9 +157,7 @@ class RetryBudget:
 
     def __init__(self, budget_ratio: float, min_floor: int = 0) -> None:
         if budget_ratio < 0.0 or budget_ratio > 1.0:
-            raise ValueError(
-                "budget_ratio MUST be in [0.0, 1.0] — see RETRY-INV-02."
-            )
+            raise ValueError("budget_ratio MUST be in [0.0, 1.0] — see RETRY-INV-02.")
         self._budget_ratio = budget_ratio
         self._min_floor = min_floor
         self._successes = 0
@@ -236,7 +239,8 @@ class ExponentialBackoffRetryPolicy:
 
         self._classifier = classifier or RetryClassifier()
         self._budget = budget or RetryBudget(
-            budget_ratio=budget_ratio, min_floor=max(1, max_attempts - 1),
+            budget_ratio=budget_ratio,
+            min_floor=max(1, max_attempts - 1),
         )
         self._rng = rng or random.Random()  # noqa: S311 — jitter RETRY-INV-03 is statistical, not cryptographic.
         self._sleep_fn = sleep_fn or asyncio.sleep
@@ -283,7 +287,7 @@ class ExponentialBackoffRetryPolicy:
             )
         return int(delay)
 
-    async def execute(
+    async def execute(  # noqa: C901 — the retry loop mirrors the RETRY-INV-01..04 guard ordering verbatim; extracting helpers would obscure the invariant chain
         self,
         fn: Callable[[], Awaitable[T]],
         *,
@@ -304,7 +308,7 @@ class ExponentialBackoffRetryPolicy:
         while attempt <= self.max_attempts:
             try:
                 result = await fn()
-            except BaseException as exc:  # noqa: PERF203 — retry loop REQUIRES try/except per attempt; RETRY-INV-05 classifier gates handling.
+            except BaseException as exc:
                 last_exc = exc
                 cls = self.classify(exc)
                 self._record(attempt, outcome=f"error:{cls}")

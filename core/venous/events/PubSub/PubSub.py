@@ -41,9 +41,11 @@ Invariants cited by this module:
 This primitive is framework-free. The Redis-backed variant lives in
 ``core/venous/_adapters/redis/PubSubAdapter.py``.
 """
+
 from __future__ import annotations
 
 import asyncio
+import contextlib
 from collections.abc import AsyncIterator
 from typing import Any, Final, Protocol, runtime_checkable
 
@@ -60,8 +62,11 @@ class PubSubError(Exception):
     """Base class for PubSub-family errors."""
 
 
-class PubSubClosed(PubSubError):
+class PubSubClosedError(PubSubError):
     """Raised when ``publish`` / ``subscribe`` is called on a closed backend."""
+
+
+PubSubClosed = PubSubClosedError  # backward-compat alias
 
 
 class PubSubInvariantError(RuntimeError):
@@ -115,7 +120,7 @@ class InMemoryPubSub:
     tied to the loop that created it.
     """
 
-    __slots__ = ("_subscribers", "_closed")
+    __slots__ = ("_closed", "_subscribers")
 
     def __init__(self) -> None:
         self._subscribers: dict[str, list[asyncio.Queue[Any]]] = {}
@@ -155,8 +160,7 @@ class InMemoryPubSub:
             )
         if not isinstance(topic, str) or topic == "":
             raise PubSubInvariantError(
-                "PS_INV_03: topic MUST be a non-empty str to preserve isolation; "
-                f"got {topic!r}.",
+                f"PS_INV_03: topic MUST be a non-empty str to preserve isolation; got {topic!r}.",
             )
         # Snapshot the current subscribers for this topic so late arrivals
         # during the fanout loop are NOT queued the in-flight payload
@@ -183,8 +187,7 @@ class InMemoryPubSub:
             )
         if not isinstance(topic, str) or topic == "":
             raise PubSubInvariantError(
-                "PS_INV_03: topic MUST be a non-empty str to preserve isolation; "
-                f"got {topic!r}.",
+                f"PS_INV_03: topic MUST be a non-empty str to preserve isolation; got {topic!r}.",
             )
         q: asyncio.Queue[Any] = asyncio.Queue()
         self._subscribers.setdefault(topic, []).append(q)
@@ -203,11 +206,8 @@ class InMemoryPubSub:
             # PS_INV_05 would be violated (payload queued for a closed sub).
             subs = self._subscribers.get(topic)
             if subs is not None:
-                try:
+                with contextlib.suppress(ValueError):
                     subs.remove(q)
-                except ValueError:
-                    # Already removed (e.g. concurrent close()); not an error.
-                    pass
                 if not subs:
                     self._subscribers.pop(topic, None)
 

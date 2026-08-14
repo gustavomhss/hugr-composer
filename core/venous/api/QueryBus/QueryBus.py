@@ -13,6 +13,7 @@ Invariants cited here:
   side-effect-free reads. The bus does not enforce this at the
   transport layer; it's a contract callers honour.
 """
+
 from __future__ import annotations
 
 import logging
@@ -50,4 +51,4 @@ class QueryBus:
         return await handler(q, **kwargs)
 
 
-__all__ = ["QueryBus", "Handler"]
+__all__ = ["Handler", "QueryBus"]
