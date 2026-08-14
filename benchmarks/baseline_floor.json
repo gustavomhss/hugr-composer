@@ -4,5 +4,6 @@
   "floor_set_for": "v0.1.0",
   "policy": "B3.5 non-regression floor. Current overall score must be >= floor. Raise this in the same commit that raises latest_score.json so a future release cannot silently regress by more than a 10-point buffer below the last published score.",
   "last_published_overall": 100.0,
-  "last_published_methodology": "plan_level_v3_best_of_ensemble"
+  "last_published_methodology": "plan_level_v3_session_maestro",
+  "last_published_at": "2026-08-14"
 }
