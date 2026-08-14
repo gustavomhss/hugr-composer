@@ -98,9 +98,7 @@ def _table_args_for(name: str, fields: dict[str, str]) -> list[str]:
     for field_name, field_type in fields.items():
         if field_name == "rating" and field_type == "int":
             extras.append(
-                '        sa.CheckConstraint('
-                '"rating >= 1 AND rating <= 5", '
-                'name="ck_rating_range"),'
+                '        sa.CheckConstraint("rating >= 1 AND rating <= 5", name="ck_rating_range"),'
             )
     return extras
 
@@ -118,12 +116,19 @@ def _table_block(
     lines: list[str] = []
     lines.append("    op.create_table(")
     lines.append(f'        "{table_name}",')
-    lines.append(
-        '        sa.Column("id", sa.Uuid(), nullable=False),'
-    )
+    lines.append('        sa.Column("id", sa.Uuid(), nullable=False),')
 
     for field_name, field_type in fields.items():
-        lines.append(_column_for(field_name, field_type, table_name=table_name, known_models=known_models))
+        if field_name == "id":
+            continue
+        lines.append(
+            _column_for(
+                field_name,
+                field_type,
+                table_name=table_name,
+                known_models=known_models,
+            )
+        )
 
     if with_owner:
         lines.append(
@@ -135,12 +140,9 @@ def _table_block(
     if with_timestamps:
         lines.append(
             '        sa.Column("created_at", sa.DateTime(timezone=True), '
-            'server_default=sa.func.now(), nullable=False),'
+            "server_default=sa.func.now(), nullable=False),"
         )
-        lines.append(
-            '        sa.Column("updated_at", sa.DateTime(timezone=True), '
-            'nullable=True),'
-        )
+        lines.append('        sa.Column("updated_at", sa.DateTime(timezone=True), nullable=True),')
 
     lines.append('        sa.PrimaryKeyConstraint("id"),')
     lines.extend(_table_args_for(table_name, fields))
@@ -149,16 +151,14 @@ def _table_block(
     # Index on owner_id for efficient ownership filtering
     if with_owner:
         lines.append(
-            f'    op.create_index('
-            f'"ix_{table_name}_owner_id", '
-            f'"{table_name}", ["owner_id"])'
+            f'    op.create_index("ix_{table_name}_owner_id", "{table_name}", ["owner_id"])'
         )
 
     # Index on FK *_id columns (except owner_id which is already indexed)
     for field_name in fields:
         if field_name.endswith("_id") and field_name != "id":
             lines.append(
-                f'    op.create_index('
+                f"    op.create_index("
                 f'"ix_{table_name}_{field_name}", '
                 f'"{table_name}", ["{field_name}"])'
             )
@@ -166,7 +166,7 @@ def _table_block(
     return "\n".join(lines)
 
 
-def generate_baseline_migration(
+def generate_baseline_migration(  # noqa: C901 — table/column emit loop with per-field branches (PK, FK, index, type).
     output_dir: str,
     models: dict[str, dict[str, str]] | None = None,
     owner_models: dict[str, str] | None = None,
@@ -200,18 +200,20 @@ def generate_baseline_migration(
     tables_in_order: list[tuple[str, str, dict[str, str], bool]] = []
 
     if with_auth:
-        tables_in_order.append((
-            "users",
-            "User",
-            {
-                "email": "EmailStr",
-                "full_name": "str",
-                "hashed_password": "str",
-                "is_active": "bool",
-                "is_superuser": "bool",
-            },
-            False,
-        ))
+        tables_in_order.append(
+            (
+                "users",
+                "User",
+                {
+                    "email": "EmailStr",
+                    "full_name": "str",
+                    "hashed_password": "str",
+                    "is_active": "bool",
+                    "is_superuser": "bool",
+                },
+                False,
+            )
+        )
 
     # Separate models by whether they have FK dependencies on other domain models
     # to ensure creation order is topologically valid.  Use the same normalised
@@ -252,13 +254,11 @@ def generate_baseline_migration(
         for field_name in fields:
             if field_name.endswith("_id") and field_name != "id":
                 downgrade_lines.append(
-                    f'    op.drop_index("ix_{table_name}_{field_name}", '
-                    f'table_name="{table_name}")'
+                    f'    op.drop_index("ix_{table_name}_{field_name}", table_name="{table_name}")'
                 )
         if owner:
             downgrade_lines.append(
-                f'    op.drop_index("ix_{table_name}_owner_id", '
-                f'table_name="{table_name}")'
+                f'    op.drop_index("ix_{table_name}_owner_id", table_name="{table_name}")'
             )
         downgrade_lines.append(f'    op.drop_table("{table_name}")')
 

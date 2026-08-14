@@ -24,7 +24,7 @@ _TYPE_MAP: dict[str, tuple[str, dict[str, object]]] = {
 }
 
 
-def generate_input_schema(
+def generate_input_schema(  # noqa: C901 — per-type annotation mapping branches (user vs system fields).
     output_dir: str,
     name: str,
     fields: dict[str, str],
@@ -101,6 +101,11 @@ def generate_input_schema(
     ] = []  # (name, py_type, optional, constraints)
 
     for field_name, raw_type in fields.items():
+        # The model always owns its ``id`` UUID primary key — it is not a
+        # caller-supplied input field, so it must never surface in the
+        # input schema (a required ``id`` breaks Create/Update).
+        if field_name == "id":
+            continue
         optional = raw_type.endswith("?")
         type_key = raw_type.rstrip("?")
         entry = _TYPE_MAP.get(type_key, ("str", {"max_length": 255}))

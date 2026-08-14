@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_data_generate_model',
-    'description': 'Generate a SQLAlchemy ORM model with UUID PK, typed columns, and optional timestamps/soft-delete.',
-    'tags': ['database', 'generator'],
-    'entry': 'generate_model',
+    "name": "fastapi_data_generate_model",
+    "description": (
+        "Generate a SQLAlchemy ORM model with UUID PK, typed columns, and "
+        "optional timestamps/soft-delete."
+    ),
+    "tags": ["database", "generator"],
+    "entry": "generate_model",
 }
 
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 
-from generators._pluralize import pluralize
+from generators._pluralize import pluralize  # noqa: E402
 
 # Mapping from user-friendly type names to (python_type, sa_column) pairs.
 _TYPE_MAP: dict[str, tuple[str, str]] = {
@@ -53,7 +56,7 @@ def _resolve_fk_model(stem: str, known_models: dict[str, dict] | None) -> str | 
     return None
 
 
-def generate_model(
+def generate_model(  # noqa: C901 — multi-branch type/column mapping table; each branch is a distinct user-facing type.
     output_dir: str,
     name: str,
     fields: dict[str, str],
@@ -115,11 +118,7 @@ def generate_model(
     # skip it here to avoid double-generation.
     fk_fields: dict[str, str] = {}
     for field_name in fields:
-        if (
-            field_name.endswith("_id")
-            and field_name != "id"
-            and field_name != "owner_id"
-        ):
+        if field_name.endswith("_id") and field_name != "id" and field_name != "owner_id":
             stem = field_name[:-3]
             matched_model = _resolve_fk_model(stem, known_models)
             if matched_model is not None:
@@ -129,9 +128,7 @@ def generate_model(
             # else: no matching model → field keeps its declared type (not a FK)
 
     # --- Detect CheckConstraint candidates (rating 1..5) -------------------
-    has_rating_check = (
-        fields.get("rating") == "int"
-    )
+    has_rating_check = fields.get("rating") == "int"
 
     # --- Collect imports ---------------------------------------------------
     stdlib_imports: set[str] = {"uuid"}
@@ -139,7 +136,9 @@ def generate_model(
     sa_imports: set[str] = {"Mapped", "mapped_column"}
     sa_type_imports: set[str] = {"Uuid"}
 
-    for _, type_hint in fields.items():
+    for field_name, type_hint in fields.items():
+        if field_name == "id":
+            continue
         entry = _TYPE_MAP.get(type_hint, ("str", "String(255)"))
         py_type, sa_col = entry
         if py_type == "Decimal":
@@ -171,7 +170,7 @@ def generate_model(
 
     # --- Build import block -----------------------------------------------
     import_lines: list[str] = []
-    import_lines.append('"""ORM model for %s."""' % class_name)
+    import_lines.append(f'"""ORM model for {class_name}."""')
     import_lines.append("")
     import_lines.append("from __future__ import annotations")
     import_lines.append("")
@@ -210,9 +209,7 @@ def generate_model(
 
     # Primary key
     class_lines.append(
-        "    id: Mapped[uuid.UUID] = mapped_column("
-        "Uuid, primary_key=True, default=uuid.uuid4"
-        ")"
+        "    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)"
     )
 
     # Helper: detect fields that are external payment identifiers (always unique).
@@ -221,6 +218,12 @@ def generate_model(
 
     # User-defined fields
     for field_name, type_hint in fields.items():
+        # The primary key is emitted above — a caller-declared ``id``
+        # (any type) must never re-declare the column, otherwise the
+        # class-level redefinition overwrites the PK and the model
+        # assembles without any primary key.
+        if field_name == "id":
+            continue
         # FK fields (auto-detected *_id) — emit as ForeignKey column
         if field_name in fk_fields:
             referenced = fk_fields[field_name]
@@ -259,9 +262,9 @@ def generate_model(
     if owner_field:
         class_lines.append("")
         class_lines.append(
-            f'    owner_id: Mapped[uuid.UUID] = mapped_column('
+            f"    owner_id: Mapped[uuid.UUID] = mapped_column("
             f'Uuid, ForeignKey("{pluralize(owner_field)}.id", ondelete="CASCADE")'
-            f')'
+            f")"
         )
 
     # Timestamps
@@ -281,9 +284,7 @@ def generate_model(
     # Soft delete
     if with_soft_delete:
         class_lines.append("")
-        class_lines.append(
-            "    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)"
-        )
+        class_lines.append("    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)")
         class_lines.append(
             "    deleted_at: Mapped[datetime | None] = mapped_column("
             "DateTime(timezone=True), default=None"

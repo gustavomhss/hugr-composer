@@ -20,9 +20,9 @@ MCP_TOOL = {
     "entry": "generate_tests",
 }
 
-import re
-import textwrap
-from pathlib import Path
+import re  # noqa: E402
+import textwrap  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Simple inflection (duplicated from crud_routes.py to stay self-contained)
@@ -93,6 +93,10 @@ def _build_payload(fields: dict[str, str], values: dict[str, str]) -> str:
     """Build a Python dict literal from a fields mapping."""
     items: list[str] = []
     for name, raw_type in fields.items():
+        # ``id`` is a server-generated UUID PK — the test payload must
+        # not send it (the input schema has no id field).
+        if name == "id":
+            continue
         type_key = raw_type.rstrip("?")
         val = values.get(type_key, '"test"')
         items.append(f'    "{name}": {val},')
@@ -797,7 +801,7 @@ def _bola_owner_guard_test(
 def _generate_crud_tests_no_auth(
     *,
     model_name: str,
-    fields: dict[str, str],  # noqa: ARG001 — kept for future field-aware ID extraction
+    fields: dict[str, str],
     create_indented: str,
     update_indented: str,
 ) -> str:

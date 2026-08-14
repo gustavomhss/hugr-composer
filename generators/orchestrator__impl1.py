@@ -61,7 +61,10 @@ PROFILES: dict[str, dict] = {
         "skip_precommit": True,
     },
     "api": {
-        "description": "Production API: models + auth + middleware + health. ~50 files. No deployment/observability.",
+        "description": (
+            "Production API: models + auth + middleware + health. "
+            "~50 files. No deployment/observability."
+        ),
         "with_auth": True,
         "with_redis": True,
         "with_docker_compose": False,
@@ -78,7 +81,9 @@ PROFILES: dict[str, dict] = {
         "skip_precommit": True,
     },
     "full": {
-        "description": "Everything: auth + middleware + deployment + observability + testing. ~80 files.",
+        "description": (
+            "Everything: auth + middleware + deployment + observability + testing. ~80 files."
+        ),
         "skip_middleware": False,
         "skip_deployment": False,
         "skip_testing": False,
@@ -86,7 +91,10 @@ PROFILES: dict[str, dict] = {
         "skip_precommit": False,
     },
     "worker": {
-        "description": "Background worker only: models + DB + config. No API routes, no auth, no middleware. ~20 files.",
+        "description": (
+            "Background worker only: models + DB + config. No API routes, "
+            "no auth, no middleware. ~20 files."
+        ),
         "with_auth": False,
         "with_redis": True,
         "with_docker_compose": False,
@@ -150,7 +158,24 @@ class _Ctx:
         }
 
 
-def generate_project(
+def _pascal_case(name: str) -> str:
+    """Normalise a caller-supplied model key to PascalCase.
+
+    The generator convention is PascalCase keys (``"Order"``); callers
+    sometimes pass lowercase or snake_case (``"order"`` / ``"order_item"``).
+    Normalising here keeps the class name, module name, and the import
+    emitted by ``orchestrator__impl2`` consistent — otherwise the import
+    uses the raw key while the class is capitalised, producing
+    ``ImportError: cannot import name 'order'``.
+
+    Only the first letter of each segment is uppercased (never
+    ``str.capitalize()``, which would mangle already-PascalCase keys
+    like ``OrderItem`` into ``Orderitem``).
+    """
+    return "".join(part[:1].upper() + part[1:] for part in name.split("_"))
+
+
+def generate_project(  # noqa: C901 — orchestrator: each branch is one subsystem phase (auth, db, models, deploy, obs).
     output_dir: str,
     name: str = "app",
     prefix: str = "/api/v1",
@@ -229,6 +254,19 @@ def generate_project(
     if profile not in PROFILES:
         raise ValueError(f"Unknown profile '{profile}'. Valid profiles: {list(PROFILES.keys())}")
     p = PROFILES[profile]
+
+    # ------------------------------------------------------------------
+    # Model-key normalisation.  The convention is PascalCase keys
+    # (``{"Order": ...}``); accept lowercase / snake_case and normalise
+    # up-front so the class name, module name, and cross-file imports
+    # stay consistent (see ``_pascal_case``).
+    # ------------------------------------------------------------------
+    if models:
+        models = {_pascal_case(k): v for k, v in models.items()}
+    if owner_models:
+        owner_models = {_pascal_case(k): v for k, v in owner_models.items()}
+    if shared_models:
+        shared_models = {_pascal_case(name) for name in shared_models}
 
     # ------------------------------------------------------------------
     # BOLA opt-out normalisation.  ``shared_models`` accepts any iterable

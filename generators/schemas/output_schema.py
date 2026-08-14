@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 MCP_TOOL = {
-    'name': 'fastapi_api_generate_schemas',
-    'description': 'Generate input (Create/Update), output (Public), and list ({data, count}) schemas for a model.',
-    'tags': ['generator', 'schemas'],
-    'entry': 'generate_schemas',
+    "name": "fastapi_api_generate_schemas",
+    "description": (
+        "Generate input (Create/Update), output (Public), and list "
+        "({data, count}) schemas for a model."
+    ),
+    "tags": ["generator", "schemas"],
+    "entry": "generate_schemas",
 }
 
-from pathlib import Path
+from pathlib import Path  # noqa: E402
 
 # Mapping from user-friendly type names to the Python annotation used in
 # the *output* schema.  These are simpler than input schemas because
@@ -41,7 +44,7 @@ _DEFAULT_EXCLUDE: list[str] = ["hashed_password", "password"]
 _SENSITIVE_SUBSTRINGS: tuple[str, ...] = ("_encrypted", "_secret", "_hashed", "_hash")
 
 
-def generate_output_schema(
+def generate_output_schema(  # noqa: C901 — per-type annotation mapping branches (user vs system fields).
     output_dir: str,
     name: str,
     fields: dict[str, str],
@@ -81,6 +84,10 @@ def generate_output_schema(
     # ------------------------------------------------------------------
     surviving: list[tuple[str, str, bool]] = []  # (name, py_type, optional)
     for field_name, raw_type in fields.items():
+        # The ``id: UUID`` primary key is emitted explicitly below — a
+        # caller-declared ``id`` would collide with it.
+        if field_name == "id":
+            continue
         if field_name in excluded:
             continue
         # Auto-exclude fields whose names contain sensitive substrings
@@ -178,9 +185,7 @@ def generate_output_schema(
         f"{len(surviving)} field(s) exposed, id and created_at always included.",
     ]
     if excluded_actual:
-        notes.append(
-            f"Excluded sensitive field(s): {', '.join(sorted(excluded_actual))}."
-        )
+        notes.append(f"Excluded sensitive field(s): {', '.join(sorted(excluded_actual))}.")
 
     return {"files_created": [str(file_path)], "notes": notes}
 
@@ -227,9 +232,8 @@ def _ensure_in_import(source: str, module: str, symbol: str) -> str:
     line if none exists yet.
     """
     import re as _re
-    pattern = _re.compile(
-        rf"^from {_re.escape(module)} import (?P<names>.+)$", _re.MULTILINE
-    )
+
+    pattern = _re.compile(rf"^from {_re.escape(module)} import (?P<names>.+)$", _re.MULTILINE)
     match = pattern.search(source)
     if match:
         names = [n.strip() for n in match.group("names").split(",")]
@@ -237,7 +241,7 @@ def _ensure_in_import(source: str, module: str, symbol: str) -> str:
             return source
         names.append(symbol)
         new_line = f"from {module} import {', '.join(sorted(set(names)))}"
-        return source[: match.start()] + new_line + source[match.end():]
+        return source[: match.start()] + new_line + source[match.end() :]
     # No existing ``from module`` line — inject a fresh one
     return _inject_import(source, f"from {module} import {symbol}")
 
