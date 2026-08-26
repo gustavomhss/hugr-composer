@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Optional, Protocol, runtime_checkable
+from DistributedLock import LockHandle
 
 @runtime_checkable
 class DistributedLock(Protocol):

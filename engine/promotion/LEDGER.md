@@ -1,6 +1,6 @@
 # Promotion Ledger
 
-**Generated:** 2026-06-09T14:01:14+00:00 · **Classifier:** v1.0 · **Total:** 217 (176 staged + 41 quarantined)
+**Generated:** 2026-08-15T03:18:00+00:00 · **Classifier:** v1.0 · **Total:** 215 (174 staged + 41 quarantined)
 
 > **How to use this ledger.** Each entry proposes a path to
 > functionality. Tick the checkbox to mark it approved; un-ticked =
@@ -19,7 +19,7 @@
 | extract_motor_pair | 117 | Refactoring sprint — ~2-4h per item. |
 | needs_review | 0 | Adjudicate manually; reclassify. |
 | redundant | 0 | Leave in place, or opt-in delete for cleanup. |
-| needs_caller | 100 | No action. Revisit when a caller appears. |
+| needs_caller | 98 | No action. Revisit when a caller appears. |
 
 ## Extract motor+adapter pair (re-factor required) — 117 primitive(s)
 
@@ -729,7 +729,7 @@ Framework-coupled with no motor registered. Cannot be promoted as-is (§B1.0.1 b
 
 ---
 
-## Wait for §A12(b) caller signal — 100 primitive(s)
+## Wait for §A12(b) caller signal — 98 primitive(s)
 
 No current §A12(b) signal — no registered tool, module, or benchmark spec references this primitive. §A12 discipline says: wait for a caller to appear before promoting. Leave in `_staging/` with the recorded staging_reason.
 
@@ -1195,238 +1195,224 @@ No current §A12(b) signal — no registered tool, module, or benchmark spec ref
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_chaos_testing.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 67. [ ] `MODEL_NAMEAdmin` (resiliency)
-
-  - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
-  - **State:** REPLACE_ME=7 · loc=11 · tla=n · concurrency=n · mutable=n · tests=y · score=1608
-  - **Signals:** _No signals._
-  - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_sqladmin.py` but no current caller declares it. Re-evaluate on the next triage pass.
-
-### 68. [ ] `MemoryGuard` (resiliency)
+### 67. [ ] `MemoryGuard` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=5 · loc=60 · tla=n · concurrency=n · mutable=n · tests=y · score=159696
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_ml_gpu_inference.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 69. [ ] `MeterEventBuffer` (resiliency)
+### 68. [ ] `MeterEventBuffer` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=27 · tla=n · concurrency=n · mutable=y · tests=y · score=14208
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_api_monetization.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 70. [ ] `OnboardingOrchestrator` (resiliency)
+### 69. [ ] `OnboardingOrchestrator` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=68 · tla=n · concurrency=n · mutable=n · tests=y · score=207424
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_tenant_onboarding.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 71. [ ] `OnboardingProgress` (resiliency)
+### 70. [ ] `OnboardingProgress` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=23 · tla=n · concurrency=n · mutable=n · tests=y · score=8904
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_tenant_onboarding.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 72. [ ] `OnboardingStep` (resiliency)
+### 71. [ ] `OnboardingStep` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=19 · tla=n · concurrency=n · mutable=n · tests=y · score=5148
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_tenant_onboarding.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 73. [ ] `PushService` (resiliency)
+### 72. [ ] `PushService` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=45 · tla=n · concurrency=n · mutable=n · tests=y · score=31264
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_push_notifications_native.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 74. [ ] `RefundStatus` (resiliency)
+### 73. [ ] `RefundStatus` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=15 · tla=n · concurrency=n · mutable=n · tests=y · score=1356
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_stripe_refund_flow.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 75. [ ] `ReportEngine` (resiliency)
+### 74. [ ] `ReportEngine` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=5 · loc=82 · tla=n · concurrency=y · mutable=n · tests=y · score=97440
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_pdf_reports.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 76. [ ] `RequestFingerprinter` (resiliency)
+### 75. [ ] `RequestFingerprinter` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=56 · tla=n · concurrency=n · mutable=n · tests=y · score=61280
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_request_fingerprint.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 77. [ ] `RequestMetrics` (resiliency)
+### 76. [ ] `RequestMetrics` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=49 · tla=n · concurrency=n · mutable=y · tests=y · score=78948
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_prometheus_metrics.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 78. [ ] `RequestRecorder` (resiliency)
+### 77. [ ] `RequestRecorder` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=105 · tla=n · concurrency=n · mutable=n · tests=y · score=733320
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_api_replay_debugger.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 79. [ ] `RequestReplayer` (resiliency)
+### 78. [ ] `RequestReplayer` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=43 · tla=n · concurrency=n · mutable=n · tests=y · score=33536
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_api_replay_debugger.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 80. [ ] `ResendProvider` (resiliency)
+### 79. [ ] `ResendProvider` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=22 · tla=n · concurrency=n · mutable=n · tests=y · score=4628
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_email_templates.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 81. [ ] `S3Client` (resiliency)
+### 80. [ ] `S3Client` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=81 · tla=n · concurrency=n · mutable=n · tests=y · score=86736
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_s3_storage.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 82. [ ] `S3CostEstimator` (resiliency)
+### 81. [ ] `S3CostEstimator` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=19 · tla=n · concurrency=n · mutable=n · tests=y · score=4480
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_cost_tracker.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 83. [ ] `SMTPProvider` (resiliency)
+### 82. [ ] `SMTPProvider` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=12 · tla=n · concurrency=y · mutable=n · tests=y · score=1452
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_email_templates.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 84. [ ] `Saga` (resiliency)
+### 83. [ ] `Saga` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=42 · tla=n · concurrency=n · mutable=n · tests=y · score=24496
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_saga.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 85. [ ] `SchedulerFactory` (resiliency)
+### 84. [ ] `SchedulerFactory` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=33 · tla=n · concurrency=n · mutable=n · tests=y · score=11152
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_scheduled_tasks.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 86. [ ] `SecretProvider` (resiliency)
+### 85. [ ] `SecretProvider` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=45 · tla=n · concurrency=n · mutable=n · tests=y · score=16008
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_secret_rotation.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 87. [ ] `SecurityEvent` (resiliency)
+### 86. [ ] `SecurityEvent` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=24 · tla=n · concurrency=n · mutable=n · tests=y · score=2604
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_runtime_sentinel.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 88. [ ] `SeedDataStep` (resiliency)
+### 87. [ ] `SeedDataStep` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=18 · tla=n · concurrency=n · mutable=n · tests=y · score=5696
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_tenant_onboarding.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 89. [ ] `SendWelcomeEmailStep` (resiliency)
+### 88. [ ] `SendWelcomeEmailStep` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=18 · tla=n · concurrency=n · mutable=n · tests=y · score=6048
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_tenant_onboarding.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 90. [ ] `SendgridProvider` (resiliency)
+### 89. [ ] `SendgridProvider` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=5 · loc=35 · tla=n · concurrency=n · mutable=n · tests=y · score=12400
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_transactional_email.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 91. [ ] `SensitivePattern` (resiliency)
+### 90. [ ] `SensitivePattern` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=17 · tla=n · concurrency=n · mutable=n · tests=y · score=1268
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_dlp_shield.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 92. [ ] `StorageConfig` (resiliency)
+### 91. [ ] `StorageConfig` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=34 · tla=n · concurrency=n · mutable=n · tests=y · score=5788
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_s3_storage.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 93. [ ] `TemplateName` (resiliency)
-
-  - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
-  - **State:** REPLACE_ME=7 · loc=19 · tla=n · concurrency=n · mutable=n · tests=y · score=2244
-  - **Signals:** _No signals._
-  - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_email_templates.py` but no current caller declares it. Re-evaluate on the next triage pass.
-
-### 94. [ ] `TemporalClientFactory` (resiliency)
+### 92. [ ] `TemporalClientFactory` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=42 · tla=n · concurrency=n · mutable=n · tests=y · score=11624
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_temporal_workflow.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 95. [ ] `TimeoutInjector` (resiliency)
+### 93. [ ] `TimeoutInjector` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=27 · tla=n · concurrency=y · mutable=n · tests=y · score=7832
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_chaos_testing.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 96. [ ] `TimeoutRegistry` (resiliency)
+### 94. [ ] `TimeoutRegistry` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=49 · tla=n · concurrency=n · mutable=n · tests=y · score=31376
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_adaptive_timeouts.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 97. [ ] `TimingCollector` (resiliency)
+### 95. [ ] `TimingCollector` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=57 · tla=n · concurrency=n · mutable=n · tests=y · score=31740
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_request_tracing_ui.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 98. [ ] `VaultSecretProvider` (resiliency)
+### 96. [ ] `VaultSecretProvider` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=59 · tla=n · concurrency=n · mutable=y · tests=y · score=96576
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_secret_rotation.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 99. [ ] `WorkerFactory` (resiliency)
+### 97. [ ] `WorkerFactory` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=40 · tla=n · concurrency=n · mutable=n · tests=y · score=12552
   - **Signals:** _No signals._
   - **Staging reason:** No §A12(b) signal yet. Primitive was extracted from `infrastructure/add_temporal_workflow.py` but no current caller declares it. Re-evaluate on the next triage pass.
 
-### 100. [ ] `WorkerSettings` (resiliency)
+### 98. [ ] `WorkerSettings` (resiliency)
 
   - **Rationale:** No registered tool / module / benchmark spec currently imports or references this primitive. §A12(b) gate not met; leave staged until a caller appears.
   - **State:** REPLACE_ME=7 · loc=25 · tla=n · concurrency=n · mutable=n · tests=y · score=3932

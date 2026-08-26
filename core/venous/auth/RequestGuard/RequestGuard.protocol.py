@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Protocol, runtime_checkable
 from collections.abc import Awaitable
+from RequestGuard import _PrincipalLike, _RequestContextLike
 
 @runtime_checkable
 class RequestGuard(Protocol):

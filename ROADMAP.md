@@ -97,7 +97,7 @@ the command says 125, the doc is wrong, not the command.
 | Quarantined primitives | 41 | `_staging/_quarantine/`, hidden from catalog |
 | Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
-| Ledger entries | 217 | Post-Wave-1.5 triage state; Projector deleted (redundant vs MaterializedView) on 2026-06-09 |
+| Ledger entries | 215 | Post-Wave-1.5 triage state; Projector deleted (redundant vs MaterializedView) on 2026-06-09 |
 | Contract rules passing | 47/47 | Machine-verified by `engine.audit.contract_check` |
 | Plan-level benchmark | 100.00 | 20/20 specs, v3 best-of-ensemble |
 | Code-level benchmark | 100.00 | 20/20 specs, executable pytest rubric |

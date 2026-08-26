@@ -104,6 +104,47 @@ def _method_signature(method: ast.FunctionDef | ast.AsyncFunctionDef) -> str | N
     return decorator_block + sig
 
 
+def _module_defined_names(tree: ast.Module) -> set[str]:
+    """Names defined at module level in `tree` (classes, functions, aliases)."""
+    names: set[str] = set()
+    for node in tree.body:
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)):
+            names.add(node.name)
+        elif isinstance(node, (ast.Import, ast.ImportFrom)):
+            if isinstance(node, ast.Import):
+                names.update(alias.asname or alias.name.split(".")[0] for alias in node.names)
+            else:
+                names.update(alias.asname or alias.name for alias in node.names)
+        elif isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    names.add(target.id)
+        elif isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            names.add(node.target.id)
+    return names
+
+
+def _annotation_names(class_node: ast.ClassDef) -> set[str]:
+    """Collect bare names referenced in the class's method annotations."""
+    names: set[str] = set()
+
+    def _walk(node: ast.AST) -> None:
+        if isinstance(node, ast.Name):
+            names.add(node.id)
+            return
+        for child in ast.iter_child_nodes(node):
+            _walk(child)
+
+    for item in class_node.body:
+        if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            for arg in (*item.args.args, *item.args.kwonlyargs, *item.args.posonlyargs):
+                if arg.annotation:
+                    _walk(arg.annotation)
+            if item.returns:
+                _walk(item.returns)
+    return names
+
+
 def infer_protocol(class_node: ast.ClassDef, suffix: str = "Protocol") -> str | None:
     """Produce a `@runtime_checkable` Protocol class source for the given class.
 
@@ -132,16 +173,28 @@ def infer_protocol(class_node: ast.ClassDef, suffix: str = "Protocol") -> str | 
     )
 
 
-def protocol_for_source(source: str) -> list[str]:
-    """Return one Protocol source string per public class in `source`."""
+def protocol_for_source(source: str, module_name: str | None = None) -> list[str]:
+    """Return one Protocol source string per public class in `source`.
+
+    `module_name` is the impl module's file stem (e.g. ``KeyValueBucket``
+    for ``KeyValueBucket.py``). When given, types defined in the same module
+    that the protocol references are imported from it — without this the
+    standalone ``*.protocol.py`` is an F821 (undefined-name) bug.
+    """
     try:
         tree = ast.parse(source)
     except SyntaxError:
         return []
+    module_names = _module_defined_names(tree)
     out: list[str] = []
     for node in tree.body:
         if isinstance(node, ast.ClassDef) and not node.name.startswith("_"):
             proto = infer_protocol(node)
             if proto is not None:
+                if module_name:
+                    referenced = _annotation_names(node)
+                    missing = sorted(referenced & module_names - {node.name})
+                    if missing:
+                        proto = f"from {module_name} import {', '.join(missing)}\n\n" + proto
                 out.append(proto)
     return out

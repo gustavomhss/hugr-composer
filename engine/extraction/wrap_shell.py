@@ -140,7 +140,8 @@ def _synthesize_contract(name: str, ns: str, source: str) -> dict[str, Any]:
         "concrete purpose statement before promotion.",
         "api_signature": api_signature,
         "invariants": [
-            f"{_camel_to_snake_upper(name)}_INV_01: REPLACE_ME — describe the primary correctness invariant.",
+            f"{_camel_to_snake_upper(name)}_INV_01: REPLACE_ME — describe the primary "
+            "correctness invariant.",
         ],
         "status": "staged",
     }
@@ -201,11 +202,14 @@ def _synthesize_md(name: str, ns: str, source_tool: str, unresolved: set[str]) -
         f"{sorted(unresolved) or 'none'}.\n\n"
         "## Checklist before promotion\n"
         f"- [ ] Replace `REPLACE_ME` in `{name}.contract.json` with real purpose + invariants.\n"
-        f"- [ ] Replace `REPLACE_ME` in `invariant_bindings.json` with real `confirms`/`prevents`/`under_failure` cases.\n"
+        f"- [ ] Replace `REPLACE_ME` in `invariant_bindings.json` with real "
+        f"`confirms`/`prevents`/`under_failure` cases.\n"
         f"- [ ] Flesh out `test_{name}.py` beyond the smoke-stubs.\n"
         "- [ ] Stateful? Add `<Name>.tla` + `<Name>.cfg`; otherwise omit.\n"
         "- [ ] Verify `conftest.py` picks up the correct hypothesis storage dir.\n"
-        "- [ ] Move directory from `core/venous/_staging/<ns>/<Name>/` to `core/venous/<ns>/<Name>/` and run `engine.check_primitive` with `--maturity emerging`.\n"
+        "- [ ] Move directory from `core/venous/_staging/<ns>/<Name>/` to "
+        "`core/venous/<ns>/<Name>/` and run `engine.check_primitive` with "
+        "`--maturity emerging`.\n"
     )
 
 
@@ -261,7 +265,7 @@ def wrap(primitive_dir: Path, *, force: bool = False) -> dict[str, Any]:
     impl_path.write_text(rewritten)
 
     # Protocol stub.
-    protocols = protocol_for_source(original_source)
+    protocols = protocol_for_source(original_source, module_name=name)
     if protocols:
         joined = "\n\n".join(protocols)
         # `@abstractmethod` is a runtime decorator, not an annotation — if any
@@ -349,11 +353,11 @@ if __name__ == "__main__":
     wrapped = sum(1 for r in out if r["status"] == "wrapped")
     skipped = sum(1 for r in out if r["status"] == "skipped_edited")
     if skipped:
-        print(f"Skipped (human-edited): {skipped} — pass --force to overwrite.")
+        print(f"Skipped (human-edited): {skipped} — pass --force to overwrite.")  # noqa: T201
     with_unresolved = [r for r in out if r.get("unresolved")]
-    print(f"Wrapped: {wrapped} / {len(out)}")
-    print(f"With unresolved imports: {len(with_unresolved)}")
+    print(f"Wrapped: {wrapped} / {len(out)}")  # noqa: T201
+    print(f"With unresolved imports: {len(with_unresolved)}")  # noqa: T201
     if with_unresolved:
-        print("Top primitives needing manual import fixes:")
+        print("Top primitives needing manual import fixes:")  # noqa: T201
         for r in with_unresolved[:10]:
-            print(f"  {r['namespace']}/{r['name']}: {r['unresolved'][:5]}...")
+            print(f"  {r['namespace']}/{r['name']}: {r['unresolved'][:5]}...")  # noqa: T201

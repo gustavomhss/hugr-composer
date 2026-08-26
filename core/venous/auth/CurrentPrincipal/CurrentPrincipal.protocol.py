@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Protocol, runtime_checkable
 from collections.abc import Iterable
+from CurrentPrincipal import CurrentPrincipal
 
 @runtime_checkable
 class PrincipalProvider(Protocol):

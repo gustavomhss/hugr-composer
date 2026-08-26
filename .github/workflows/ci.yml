@@ -53,6 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           REQ_HASH=$(cat requirements-mcp.txt requirements-apps.txt | shasum | awk '{print $1}')
+          TEST_EXTRAS="pytest pytest-xdist pytest-json-report ruff"
+          REQ_HASH="${REQ_HASH} $(echo "$TEST_EXTRAS" | shasum | awk '{print $1}')"
           STAMP="${VENV}/.req_hash"
           if [ ! -x "${VENV}/bin/python" ] || [ "$(cat "$STAMP" 2>/dev/null)" != "$REQ_HASH" ]; then
             echo "Building shared venv at ${VENV}"
@@ -61,7 +63,9 @@ jobs:
             "${VENV}/bin/pip" install --quiet -r requirements-mcp.txt
             "${VENV}/bin/pip" install --quiet -r requirements-apps.txt
             # Test-runner extras not pulled in by the two requirements files.
-            "${VENV}/bin/pip" install --quiet pytest pytest-xdist ruff
+            # pytest-json-report is REQUIRED by engine.bench.blind.judge
+            # (boots emitted apps); without it the judge exits 4 (usage error).
+            "${VENV}/bin/pip" install --quiet $TEST_EXTRAS
             echo "$REQ_HASH" > "$STAMP"
           else
             echo "Shared venv up to date (req hash $REQ_HASH)"

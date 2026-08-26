@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Protocol, runtime_checkable
 from collections.abc import AsyncIterator
+from KeyValueBucket import KvEntry
 
 @runtime_checkable
 class KeyValueBucket(Protocol):

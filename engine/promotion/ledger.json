@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-06-09T14:01:14+00:00",
+  "generated_at": "2026-08-15T03:45:24+00:00",
   "classifier_version": "1.0",
-  "total_staged": 176,
+  "total_staged": 174,
   "total_quarantined": 41,
   "entries": [
     {
@@ -5347,37 +5347,6 @@
       "classifier_version": "1.0"
     },
     {
-      "primitive": "MODEL_NAMEAdmin",
-      "namespace": "resiliency",
-      "verdict": "needs_caller",
-      "tier": "none",
-      "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [],
-      "blockers": [],
-      "state": {
-        "name": "MODEL_NAMEAdmin",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 11,
-        "primitive_score": 1608,
-        "origin_tool": "infrastructure/add_sqladmin.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `infrastructure/add_sqladmin.py` but no current caller declares it. Re-evaluate on the next triage pass.",
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
       "primitive": "MemoryGuard",
       "namespace": "resiliency",
       "verdict": "needs_caller",
@@ -6773,37 +6742,6 @@
         "invariants_stubbed": true
       },
       "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `infrastructure/add_s3_storage.py` but no current caller declares it. Re-evaluate on the next triage pass.",
-      "delete_reason": null,
-      "promotion_target": null,
-      "classifier_version": "1.0"
-    },
-    {
-      "primitive": "TemplateName",
-      "namespace": "resiliency",
-      "verdict": "needs_caller",
-      "tier": "none",
-      "rationale": "No registered tool / module / benchmark spec currently imports or references this primitive. \u00a7A12(b) gate not met; leave staged until a caller appears.",
-      "signals": [],
-      "blockers": [],
-      "state": {
-        "name": "TemplateName",
-        "namespace": "resiliency",
-        "is_quarantined": false,
-        "replace_me_count": 7,
-        "has_tla": false,
-        "has_concurrency": false,
-        "has_mutable_class_state": false,
-        "loc": 19,
-        "primitive_score": 2244,
-        "origin_tool": "infrastructure/add_email_templates.py",
-        "quarantine_reason": "",
-        "forbidden_modules": [],
-        "framework_imports": [],
-        "duplicate_of_registered": null,
-        "test_file_present": true,
-        "invariants_stubbed": true
-      },
-      "staging_reason": "No \u00a7A12(b) signal yet. Primitive was extracted from `infrastructure/add_email_templates.py` but no current caller declares it. Re-evaluate on the next triage pass.",
       "delete_reason": null,
       "promotion_target": null,
       "classifier_version": "1.0"
