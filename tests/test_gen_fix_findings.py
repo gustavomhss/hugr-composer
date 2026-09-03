@@ -14,7 +14,8 @@ def test_generator_fix_findings_creates_files():
     try:
         result = fix_findings(project_dir=project_dir)
         assert isinstance(result, dict)
-        assert "notes" in result
+        assert "fixed" in result
+        assert "score_after" in result
     finally:
         shutil.rmtree(project_dir)
 
