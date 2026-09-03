@@ -213,6 +213,48 @@ def generate_github_actions(
                 if: always()
                 with:
                   sarif_file: trivy-results.sarif
+
+          # ------------------------------------------------------------------
+          # Doc-gate: drift detector for scaffold-generated files (WP-01)
+          # ------------------------------------------------------------------
+          doc-gate:
+            runs-on: ubuntu-latest
+            needs: lint
+            timeout-minutes: 1
+            steps:
+              - uses: actions/checkout@v4
+
+              - name: Set up Python
+                uses: actions/setup-python@v5
+                with:
+                  python-version: ${{ env.PYTHON_VERSION }}
+                  cache: pip
+
+              - name: Verify gate scripts present
+                run: |
+                  test -f scripts/check_docs_drift.py || {{
+                    echo "::error::scripts/check_docs_drift.py missing -- kit emit incomplete";
+                    exit 1;
+                  }}
+                  test -f .hugr-scaffold-manifest.json || {{
+                    echo "::error::.hugr-scaffold-manifest.json missing -- kit emit incomplete";
+                    exit 1;
+                  }}
+
+              - name: Run drift gate
+                id: gate
+                run: python scripts/check_docs_drift.py
+                continue-on-error: true
+
+              - name: Show drift details on failure
+                if: steps.gate.outcome == 'failure'
+                run: |
+                  echo "::error::Scaffolded files drifted from kit output."
+                  echo "::error::Fix: run `./sync-docs` (or `make sync-docs`) and re-commit."
+
+              - name: Fail the job if gate drifted
+                if: steps.gate.outcome == 'failure'
+                run: exit 1
     """)
 
     file_path = out / "ci.yml"
