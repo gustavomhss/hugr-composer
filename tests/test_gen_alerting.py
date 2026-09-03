@@ -1,14 +1,13 @@
 """Tests for generator: alerting."""
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
 
 
 def test_generator_alerting_creates_files():
     """Generator must run successfully and create files."""
-    from generators.alerting import generate_alerting
+    from generators.observability.alerting import generate_alerting
 
     output_dir = tempfile.mkdtemp()
     try:
@@ -23,11 +22,11 @@ def test_generator_alerting_creates_files():
 
 def test_generator_alerting_idempotent():
     """Running twice must be safe — second run succeeds or is no-op."""
-    from generators.alerting import generate_alerting
+    from generators.observability.alerting import generate_alerting
 
     output_dir = tempfile.mkdtemp()
     try:
-        result1 = generate_alerting(output_dir)
+        result1 = generate_alerting(output_dir)  # noqa: F841  first call (idempotency setup)
         result2 = generate_alerting(output_dir)
         assert isinstance(result2, dict)
     finally:
@@ -36,16 +35,19 @@ def test_generator_alerting_idempotent():
 
 def test_generator_alerting_valid_python():
     """Generated .py files must pass ast.parse."""
-    from generators.alerting import generate_alerting
+    from generators.observability.alerting import generate_alerting
 
     output_dir = tempfile.mkdtemp()
     try:
         result = generate_alerting(output_dir)
         for fpath in result.get("files_created", []):
             if fpath.endswith(".py"):
-                full_path = Path(output_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
+                full_path = (
+                    Path(output_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
+                )
                 source = full_path.read_text()
                 import ast
+
                 ast.parse(source)
     finally:
         shutil.rmtree(output_dir)
@@ -53,7 +55,7 @@ def test_generator_alerting_valid_python():
 
 def test_generator_alerting_files_exist():
     """All files_created must exist on disk after generation."""
-    from generators.alerting import generate_alerting
+    from generators.observability.alerting import generate_alerting
 
     output_dir = tempfile.mkdtemp()
     try:

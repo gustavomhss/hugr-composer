@@ -1,8 +1,7 @@
 """Tests for generator: otel."""
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
 
 
@@ -12,7 +11,9 @@ def test_generator_otel_creates_files():
 
     output_dir = tempfile.mkdtemp()
     try:
-        result = generate_otel_setup(output_dir, service_name='app', exporter='EXPORTER_OTLP_GRPC', with_structlog=True)
+        result = generate_otel_setup(
+            output_dir, service_name="app", exporter="otlp_grpc", with_structlog=True
+        )
         assert isinstance(result, dict)
         assert "files_created" in result
         assert isinstance(result["files_created"], list)
@@ -27,8 +28,12 @@ def test_generator_otel_idempotent():
 
     output_dir = tempfile.mkdtemp()
     try:
-        result1 = generate_otel_setup(output_dir, service_name='app', exporter='EXPORTER_OTLP_GRPC', with_structlog=True)
-        result2 = generate_otel_setup(output_dir, service_name='app', exporter='EXPORTER_OTLP_GRPC', with_structlog=True)
+        result1 = generate_otel_setup(  # noqa: F841  first call (idempotency setup)
+            output_dir, service_name="app", exporter="otlp_grpc", with_structlog=True
+        )
+        result2 = generate_otel_setup(
+            output_dir, service_name="app", exporter="otlp_grpc", with_structlog=True
+        )
         assert isinstance(result2, dict)
     finally:
         shutil.rmtree(output_dir)
@@ -40,12 +45,17 @@ def test_generator_otel_valid_python():
 
     output_dir = tempfile.mkdtemp()
     try:
-        result = generate_otel_setup(output_dir, service_name='app', exporter='EXPORTER_OTLP_GRPC', with_structlog=True)
+        result = generate_otel_setup(
+            output_dir, service_name="app", exporter="otlp_grpc", with_structlog=True
+        )
         for fpath in result.get("files_created", []):
             if fpath.endswith(".py"):
-                full_path = Path(output_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
+                full_path = (
+                    Path(output_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
+                )
                 source = full_path.read_text()
                 import ast
+
                 ast.parse(source)
     finally:
         shutil.rmtree(output_dir)
@@ -57,7 +67,9 @@ def test_generator_otel_files_exist():
 
     output_dir = tempfile.mkdtemp()
     try:
-        result = generate_otel_setup(output_dir, service_name='app', exporter='EXPORTER_OTLP_GRPC', with_structlog=True)
+        result = generate_otel_setup(
+            output_dir, service_name="app", exporter="otlp_grpc", with_structlog=True
+        )
         for fpath in result.get("files_created", []):
             full_path = Path(output_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
             assert full_path.exists(), f"File not found: {fpath}"

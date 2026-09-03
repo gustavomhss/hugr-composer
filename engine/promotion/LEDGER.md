@@ -1,6 +1,6 @@
 # Promotion Ledger
 
-**Generated:** 2026-08-15T03:18:00+00:00 · **Classifier:** v1.0 · **Total:** 215 (174 staged + 41 quarantined)
+**Generated:** 2026-09-03T19:39:25+00:00 · **Classifier:** v1.0 · **Total:** 215 (174 staged + 41 quarantined)
 
 > **How to use this ledger.** Each entry proposes a path to
 > functionality. Tick the checkbox to mark it approved; un-ticked =

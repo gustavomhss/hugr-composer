@@ -1,8 +1,7 @@
 """Tests for generator: fix_findings (tool)."""
 
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
 
 
@@ -14,7 +13,8 @@ def test_generator_fix_findings_creates_files():
     try:
         result = fix_findings(project_dir=project_dir)
         assert isinstance(result, dict)
-        assert "notes" in result
+        assert "fixed" in result
+        assert "score_after" in result
     finally:
         shutil.rmtree(project_dir)
 
@@ -25,7 +25,7 @@ def test_generator_fix_findings_idempotent():
 
     project_dir = tempfile.mkdtemp()
     try:
-        result1 = fix_findings(project_dir=project_dir)
+        result1 = fix_findings(project_dir=project_dir)  # noqa: F841  first call (idempotency setup)
         result2 = fix_findings(project_dir=project_dir)
         assert isinstance(result2, dict)
     finally:
@@ -42,9 +42,12 @@ def test_generator_fix_findings_valid_python():
         files = result.get("files_created", []) + result.get("files_modified", [])
         for fpath in files:
             if fpath.endswith(".py"):
-                full_path = Path(project_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
+                full_path = (
+                    Path(project_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
+                )
                 source = full_path.read_text()
                 import ast
+
                 ast.parse(source)
     finally:
         shutil.rmtree(project_dir)
