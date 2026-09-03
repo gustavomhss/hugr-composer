@@ -193,7 +193,7 @@ def protocol_for_source(source: str, module_name: str | None = None) -> list[str
             if proto is not None:
                 if module_name:
                     referenced = _annotation_names(node)
-                    missing = sorted(referenced & module_names - {node.name})
+                    missing = sorted((referenced & module_names) - {node.name})
                     if missing:
                         proto = f"from {module_name} import {', '.join(missing)}\n\n" + proto
                 out.append(proto)
