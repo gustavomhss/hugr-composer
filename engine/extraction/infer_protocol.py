@@ -125,7 +125,13 @@ def _module_defined_names(tree: ast.Module) -> set[str]:
 
 
 def _annotation_names(class_node: ast.ClassDef) -> set[str]:
-    """Collect bare names referenced in the class's method annotations."""
+    """Collect bare names referenced in the class's method annotations.
+
+    Limitation: string forward-refs like `def m() -> "KvEntry"` parse as
+    `ast.Constant`, not `ast.Name`, so they are NOT collected here. Callers
+    that need PEP 563-style string refs must pre-resolve or use real names.
+    Real example: `core/venous/cache/KeyValueBucket/KeyValueBucket.py:240`.
+    """
     names: set[str] = set()
 
     def _walk(node: ast.AST) -> None:
