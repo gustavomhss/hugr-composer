@@ -8,7 +8,7 @@ from pathlib import Path
 
 def test_generator_alerting_creates_files():
     """Generator must run successfully and create files."""
-    from generators.alerting import generate_alerting
+    from generators.observability.alerting import generate_alerting
 
     output_dir = tempfile.mkdtemp()
     try:
@@ -23,7 +23,7 @@ def test_generator_alerting_creates_files():
 
 def test_generator_alerting_idempotent():
     """Running twice must be safe — second run succeeds or is no-op."""
-    from generators.alerting import generate_alerting
+    from generators.observability.alerting import generate_alerting
 
     output_dir = tempfile.mkdtemp()
     try:
@@ -36,7 +36,7 @@ def test_generator_alerting_idempotent():
 
 def test_generator_alerting_valid_python():
     """Generated .py files must pass ast.parse."""
-    from generators.alerting import generate_alerting
+    from generators.observability.alerting import generate_alerting
 
     output_dir = tempfile.mkdtemp()
     try:
@@ -53,7 +53,7 @@ def test_generator_alerting_valid_python():
 
 def test_generator_alerting_files_exist():
     """All files_created must exist on disk after generation."""
-    from generators.alerting import generate_alerting
+    from generators.observability.alerting import generate_alerting
 
     output_dir = tempfile.mkdtemp()
     try:
