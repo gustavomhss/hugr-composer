@@ -3,33 +3,39 @@
 import pytest
 import tempfile
 import shutil
+import ast
 from pathlib import Path
 
 
+PRIMITIVE_NAME = "core.venous.resiliency.GracefulShutdown"
+
+
 def test_generator_scaffold_venous_creates_files():
-    """Generator must run successfully and create files."""
-    from generators.scaffold_venous import copy_primitive
+    """Generator must run successfully and write files for a valid primitive."""
+    from generators.scaffold_venous import copy_primitive, CopyResult
 
     output_dir = tempfile.mkdtemp()
     try:
-        result = copy_primitive(output_dir, qualified_name=None)
-        assert isinstance(result, dict)
-        assert "files_created" in result
-        assert isinstance(result["files_created"], list)
-        assert len(result["files_created"]) > 0, "Generator created no files"
+        result = copy_primitive(output_dir, PRIMITIVE_NAME)
+        assert isinstance(result, CopyResult)
+        assert result.already_present is False
+        assert isinstance(result.files_written, list)
+        assert len(result.files_written) > 0, "Generator created no files"
     finally:
         shutil.rmtree(output_dir)
 
 
 def test_generator_scaffold_venous_idempotent():
-    """Running twice must be safe — second run succeeds or is no-op."""
-    from generators.scaffold_venous import copy_primitive
+    """Running twice must be safe — second run is no-op (already_present)."""
+    from generators.scaffold_venous import copy_primitive, CopyResult
 
     output_dir = tempfile.mkdtemp()
     try:
-        result1 = copy_primitive(output_dir, qualified_name=None)
-        result2 = copy_primitive(output_dir, qualified_name=None)
-        assert isinstance(result2, dict)
+        result1 = copy_primitive(output_dir, PRIMITIVE_NAME)
+        result2 = copy_primitive(output_dir, PRIMITIVE_NAME)
+        assert isinstance(result2, CopyResult)
+        assert result2.already_present is True
+        assert result2.files_written == []
     finally:
         shutil.rmtree(output_dir)
 
@@ -40,26 +46,25 @@ def test_generator_scaffold_venous_valid_python():
 
     output_dir = tempfile.mkdtemp()
     try:
-        result = copy_primitive(output_dir, qualified_name=None)
-        for fpath in result.get("files_created", []):
+        result = copy_primitive(output_dir, PRIMITIVE_NAME)
+        for fpath in result.files_written:
             if fpath.endswith(".py"):
-                full_path = Path(output_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
-                source = full_path.read_text()
-                import ast
+                source = Path(fpath).read_text()
                 ast.parse(source)
     finally:
         shutil.rmtree(output_dir)
 
 
 def test_generator_scaffold_venous_files_exist():
-    """All files_created must exist on disk after generation."""
+    """All files_written must exist on disk after generation."""
     from generators.scaffold_venous import copy_primitive
 
     output_dir = tempfile.mkdtemp()
     try:
-        result = copy_primitive(output_dir, qualified_name=None)
-        for fpath in result.get("files_created", []):
-            full_path = Path(output_dir) / fpath if not Path(fpath).is_absolute() else Path(fpath)
-            assert full_path.exists(), f"File not found: {fpath}"
+        result = copy_primitive(output_dir, PRIMITIVE_NAME)
+        entry = Path(result.destination) / "GracefulShutdown.py"
+        assert entry.exists(), f"Entry-point file missing: {entry}"
+        for fpath in result.files_written:
+            assert Path(fpath).exists(), f"File not found: {fpath}"
     finally:
         shutil.rmtree(output_dir)
