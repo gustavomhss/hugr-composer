@@ -640,7 +640,7 @@ def generate_otel_setup(
     Returns:
         Dict with:
 
-        * ``files_created`` — list of relative paths created under *output_dir*.
+        * ``files_created`` — list of absolute paths created under *output_dir*.
         * ``observability_path`` — absolute path to the ``observability/`` package.
         * ``requirements`` — pip packages the generated code depends on.
         * ``exporter`` — the exporter variant used.
@@ -679,7 +679,7 @@ def generate_otel_setup(
     for filename, content in files.items():
         filepath = obs_dir / filename
         filepath.write_text(content, encoding="utf-8")
-        created.append(f"observability/{filename}")
+        created.append(str(filepath))
 
     return {
         "files_created": created,

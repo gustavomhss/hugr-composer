@@ -188,6 +188,8 @@ def _parse_qualified_name(qualified_name: str) -> tuple[str, str]:
             ``core.venous.`` or has a missing namespace / name.
     """
     prefix = "core.venous."
+    if not isinstance(qualified_name, str):
+        raise ValueError(f"qualified_name must be a str, got {type(qualified_name).__name__}")
     if not qualified_name.startswith(prefix):
         raise ValueError(
             f"Expected qualified name 'core.venous.<ns>.<Name>', got {qualified_name!r}"
