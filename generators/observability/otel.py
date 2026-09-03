@@ -679,7 +679,7 @@ def generate_otel_setup(
     for filename, content in files.items():
         filepath = obs_dir / filename
         filepath.write_text(content, encoding="utf-8")
-        created.append(f"observability/{filename}")
+        created.append(str(filepath))
 
     return {
         "files_created": created,
