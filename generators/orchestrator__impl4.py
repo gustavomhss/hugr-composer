@@ -44,6 +44,11 @@ from generators.orchestrator__impl2 import _generate_package_inits
 from generators.schemas.input_schema import generate_input_schema
 from generators.schemas.list_response import generate_list_response
 from generators.schemas.output_schema import generate_output_schema
+from generators.provenance.provenance import generate_provenance
+from generators.runbook.runbook import generate_runbooks
+from generators.semver.semver import generate_semver
+from generators.security_scan.security_scan import generate_security_scan
+from generators.supply_chain.sbom import generate_sbom
 
 if TYPE_CHECKING:  # pragma: no cover
     from generators.orchestrator__impl1 import _Ctx

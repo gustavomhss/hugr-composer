@@ -6,8 +6,8 @@
 
 ## Headline
 
-- **213 files define `MCP_TOOL` metadata** (agent-visible surface).
-- **Catalog:** 1 skill, 6 bundles, 202 tools (202 local + 0 federated), 298 primitives, 392 recipes.
+- **218 files define `MCP_TOOL` metadata** (agent-visible surface).
+- **Catalog:** 1 skill, 6 bundles, 207 tools (207 local + 0 federated), 298 primitives, 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
 - **174 staged primitives** in `_staging/` (plus 41 quarantined).
 - **18 FastAPI adapters** (production-wired).
@@ -53,11 +53,11 @@ the full surface.
 | `api_design` | 12 | api, versioning, cqrs |
 | `auth_access` | 20 | security, auth |
 | `crud_data` | 21 | data, persistence |
-| `infrastructure` | 130 | resiliency, infra |
+| `infrastructure` | 135 | resiliency, infra |
 | `realtime` | 7 | streaming, sse, websocket |
 | `testing_tools` | 12 | testing, fixtures |
 
-## 3. generators/ — 61 tools
+## 3. generators/ — 207 tools
 
 | category | count |
 |---|---:|
@@ -68,7 +68,12 @@ the full surface.
 | `infra` | 11 |
 | `middleware` | 7 |
 | `observability` | 7 |
+| `provenance` | 1 |
+| `runbook` | 1 |
 | `schemas` | 3 |
+| `security_scan` | 1 |
+| `semver` | 1 |
+| `supply_chain` | 1 |
 | `testing` | 0 |
 | `tools` | 9 |
 

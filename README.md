@@ -14,7 +14,7 @@
 - Staged: 174 (in `_staging/`, +41 quarantined)
 - 18 FastAPI adapters (production-wired; +1 Redis, +1 Stripe)
 - 135 adapt tools (105 extend + 30 other)
-- 61 generators · 28 modules · 20 examples · 124 specs
+- 207 generators · 28 modules · 20 examples · 124 specs
 - Contract: 47/47 (contract_check green)
 
 ## Quick Start
@@ -30,7 +30,8 @@ PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check --quiet   # contrac
 
 ```
 skill root/             # SKILL-001 FastAPI production
-├── generators/          # 61 macro scaffold helpers
+## 3. generators/ — 207 tools
+# 207 macro scaffold helpers
 ├── adapt/               # 135 tools (105 extend + 30 other)
 ├── core/venous/         # 124 primitives + 18 FastAPI adapters (+ Redis/Stripe)
 │   ├── _staging/        # 174 staged (+41 quarantined)

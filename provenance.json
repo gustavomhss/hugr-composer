@@ -1,0 +1,27 @@
+{
+  "buildDefinition": {
+    "buildType": "https://github.com/slsa-framework/slsa-github-generator/container@v1",
+    "externalParameters": {
+      "profile": "{{cookiecutter.profile}}",
+      "projectName": "{{cookiecutter.project_name}}"
+    },
+    "internalParameters": {},
+    "resolvedDependencies": []
+  },
+  "buildType": "https://github.com/slsa-framework/slsa-github-generator/container@v1",
+  "builder": {
+    "id": "https://github.com/hugr-labs/skill-001-fastapi-production",
+    "version": "1.0.0"
+  },
+  "runDetails": {
+    "builder": {
+      "id": "https://github.com/hugr-labs/skill-001-fastapi-production",
+      "version": "1.0.0"
+    },
+    "metadata": {
+      "finishedOn": "{{cookiecutter.timestamp}}",
+      "invokedBy": "hugr-scaffold",
+      "startedOn": "{{cookiecutter.timestamp}}"
+    }
+  }
+}

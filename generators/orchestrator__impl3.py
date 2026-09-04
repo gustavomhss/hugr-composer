@@ -97,6 +97,92 @@ def _phase_deployment(ctx: _Ctx) -> None:
         except ImportError:
             ctx.phases["ci"] = {"files": 0, "status": "skipped (generator not built yet)"}
 
+    # Doc-gate is part of CI, not deployment — independent of skip_deployment.
+    # (WP-01 Q1: ∀ emitted project has the gate.)
+    if ctx.with_ci:
+        try:
+            from generators.deployment.github_actions import generate_github_actions
+
+            ctx.run(
+                "ci",
+                generate_github_actions(
+                    output_dir=str(ctx.out),
+                    python_version=ctx.python_version,
+                ),
+            )
+        except ImportError:
+            ctx.phases["ci"] = {"files": 0, "status": "skipped (generator not built yet)"}
+
+    # Supply chain: SBOM, lockfile, reproducible install
+    if not p.get("skip_deployment"):
+        try:
+            from generators.supply_chain.sbom import generate_sbom
+
+            ctx.run(
+                "sbom",
+                generate_sbom(
+                    output_dir=str(ctx.out),
+                    project_name=ctx.name,
+                ),
+            )
+        except ImportError:
+            ctx.phases["sbom"] = {"files": 0, "status": "skipped (generator not built yet)"}
+
+    # Runbooks (5 standard scenarios)
+    try:
+        from generators.runbook.runbook import generate_runbooks
+
+        ctx.run(
+            "runbooks",
+            generate_runbooks(
+                output_dir=str(ctx.out),
+                project_name=ctx.name,
+            ),
+        )
+    except ImportError:
+        ctx.phases["runbooks"] = {"files": 0, "status": "skipped (generator not built yet)"}
+
+    # SemVer + Changelog + version bump tooling
+    try:
+        from generators.semver.semver import generate_semver
+
+        ctx.run(
+            "semver",
+            generate_semver(
+                output_dir=str(ctx.out),
+                project_name=ctx.name,
+            ),
+        )
+    except ImportError:
+        ctx.phases["semver"] = {"files": 0, "status": "skipped (generator not built yet)"}
+
+    # Security scan: pre-commit, dependabot, Trivy, pip-audit
+    try:
+        from generators.security_scan.security_scan import generate_security_scan
+
+        ctx.run(
+            "security_scan",
+            generate_security_scan(
+                output_dir=str(ctx.out),
+            ),
+        )
+    except ImportError:
+        ctx.phases["security_scan"] = {"files": 0, "status": "skipped (generator not built yet)"}
+
+    # Provenance + license compliance
+    try:
+        from generators.provenance.provenance import generate_provenance
+
+        ctx.run(
+            "provenance",
+            generate_provenance(
+                output_dir=str(ctx.out),
+                project_name=ctx.name,
+            ),
+        )
+    except ImportError:
+        ctx.phases["provenance"] = {"files": 0, "status": "skipped (generator not built yet)"}
+
     if not p.get("skip_deployment") and ctx.with_loadtest:
         try:
             from generators.deployment.k6_loadtest import generate_k6_loadtest

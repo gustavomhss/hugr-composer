@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "6c8d4b8c",
-  "generated_at": "2026-08-12T02:41:07+00:00",
+  "kit_commit": "6824eb3c",
+  "generated_at": "2026-09-04T06:24:25+00:00",
   "verbs": [
     "add",
     "generate",
@@ -115,7 +115,7 @@
         },
         {
           "name": "infrastructure",
-          "tool_count": 130,
+          "tool_count": 135,
           "tags": [
             "resiliency",
             "infra"
@@ -3836,6 +3836,26 @@
       "example_output": null
     },
     {
+      "name": "fastapi_resiliency_analyze_provenance_generate",
+      "legacy_name": "fastapi_provenance_generate",
+      "verb": "analyze",
+      "domain": "resiliency",
+      "skill": "SKILL-001-fastapi-production",
+      "bundle": "infrastructure",
+      "synopsis": "Generate provenance tracking and license compliance artifacts",
+      "when_to_call": "Generate provenance tracking and license compliance artifacts.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "generators/provenance/provenance.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
       "name": "fastapi_resiliency_analyze_refactor_model",
       "legacy_name": null,
       "verb": "analyze",
@@ -3850,6 +3870,26 @@
       "status": "stable",
       "since": "",
       "module_path": "adapt/evolve/refactor_model/__init__.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_resiliency_analyze_runbook_generate",
+      "legacy_name": "fastapi_runbook_generate",
+      "verb": "analyze",
+      "domain": "resiliency",
+      "skill": "SKILL-001-fastapi-production",
+      "bundle": "infrastructure",
+      "synopsis": "Generate 5 operational runbooks: migration_fail, secret_leak, deploy_break, db_slow, rollback",
+      "when_to_call": "Generate 5 operational runbooks: migration_fail, secret_leak, deploy_break, db_slow, rollback.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "generators/runbook/runbook.py",
       "test_paths": [],
       "primitives_used": [],
       "example_input": null,
@@ -3898,6 +3938,46 @@
       "example_output": null
     },
     {
+      "name": "fastapi_resiliency_analyze_security_scan_generate",
+      "legacy_name": "fastapi_security_scan_generate",
+      "verb": "analyze",
+      "domain": "resiliency",
+      "skill": "SKILL-001-fastapi-production",
+      "bundle": "infrastructure",
+      "synopsis": "Generate security scanning configuration (pip-audit, bandit, trivy, dependabot)",
+      "when_to_call": "Generate security scanning configuration (pip-audit, bandit, trivy, dependabot).",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "generators/security_scan/security_scan.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_resiliency_analyze_semver_generate",
+      "legacy_name": "fastapi_semver_generate",
+      "verb": "analyze",
+      "domain": "resiliency",
+      "skill": "SKILL-001-fastapi-production",
+      "bundle": "infrastructure",
+      "synopsis": "Generate VERSION, CHANGELOG.md, and semver tooling (bump, validate)",
+      "when_to_call": "Generate VERSION, CHANGELOG.md, and semver tooling (bump, validate).",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "generators/semver/semver.py",
+      "test_paths": [],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
       "name": "fastapi_resiliency_analyze_sla_reporter",
       "legacy_name": null,
       "verb": "analyze",
@@ -3915,6 +3995,26 @@
       "test_paths": [
         "adapt/operate/test_sla_reporter.py"
       ],
+      "primitives_used": [],
+      "example_input": null,
+      "example_output": null
+    },
+    {
+      "name": "fastapi_resiliency_analyze_supply_chain_generate_sbom",
+      "legacy_name": "fastapi_supply_chain_generate_sbom",
+      "verb": "analyze",
+      "domain": "resiliency",
+      "skill": "SKILL-001-fastapi-production",
+      "bundle": "infrastructure",
+      "synopsis": "Generate SBOM (CycloneDX), lockfile (pip compile), and verify reproducible install",
+      "when_to_call": "Generate SBOM (CycloneDX), lockfile (pip compile), and verify reproducible install.",
+      "when_not_to_call": "",
+      "tags": [],
+      "tier": 2,
+      "status": "stable",
+      "since": "",
+      "module_path": "generators/supply_chain/sbom.py",
+      "test_paths": [],
       "primitives_used": [],
       "example_input": null,
       "example_output": null
@@ -12008,13 +12108,13 @@
     }
   ],
   "counts": {
-    "tools_total": 202,
-    "tools_local": 202,
+    "tools_total": 207,
+    "tools_local": 207,
     "tools_federated": 0,
     "primitives": 298,
     "recipes": 392,
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "1291ae38075ab83a7c2ad2f15286ddb66f1662e750f54b42f2c9da7365607780"
+  "stable_hash": "42fa4bb9967b68adbd7f1511111d5684256b746ee4215f78eecab35cd8e87aae"
 }

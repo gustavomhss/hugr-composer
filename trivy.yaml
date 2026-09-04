@@ -1,0 +1,34 @@
+# trivy.yaml — Trivy vulnerability scanner config
+# Run: trivy image --config trivy.yaml <image>
+# Or in CI: trivy image --config trivy.yaml --exit-code 1 --severity HIGH,CRITICAL <image>
+
+scan:
+  vuln-type:
+    - os
+    - lang
+  severity:
+    - HIGH
+    - CRITICAL
+  ignored-unfixed: true
+  skip-dirs:
+    - /usr/share/doc
+    - /usr/share/man
+    - /var/cache
+    - /tmp
+  skip-files:
+    - "*.md"
+    - "*.txt"
+    - "*.rst"
+  ignored-vulnerabilities: []
+  ignore-unfixed: true
+
+report:
+  format: "sarif"
+  output: "trivy-results.sarif"
+
+db:
+  download-timeout: 10m
+  skip-update: false
+
+cache:
+  dir: "/tmp/trivy-cache"

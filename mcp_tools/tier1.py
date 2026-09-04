@@ -77,7 +77,7 @@ MCP_TOOL = {
         "(auth, data, api, realtime, resiliency, observability, compliance, "
         "deployment, testing, meta), per-domain tool counts, top-3 "
         "canonical tools per domain, primitive count, recipe count, and "
-        "workflow breadcrumbs. One 1200-token call replaces flat 202-tool "
+        "workflow breadcrumbs. One 1200-token call replaces flat 207-tool "
         "catalog introspection. Returns CATALOG state only — it does NOT "
         "read your repo; inspect the working directory yourself to decide "
         "whether to scaffold. After this, narrow with fastapi_meta_search "
@@ -141,7 +141,7 @@ def fastapi_meta_home() -> dict:
         "landscape": landscape,
         "workflow": [
             "1. fastapi_meta_scaffold(models={...}, owner_models={...}) — scaffold a fresh project (inspect your working directory first; the catalog map this tool returns does NOT include repo state)",
-            '2. fastapi_meta_search(query="...") — find a capability in the 202-tool catalog',
+            '2. fastapi_meta_search(query="...") — find a capability in the 207-tool catalog',
             "3. <one of the returned fastapi_<domain>_add_*> — emit the slice",
             "4. fastapi_meta_audit() — verify the SKILL-KIT contract (not the emitted project; run pytest inside the scaffold for project-level validation)",
             "5. fastapi_meta_verify() — 10-tier quality gate on the skill's primitive registry (also skill-kit scoped)",
@@ -259,7 +259,7 @@ def _bm25_score(
 MCP_TOOL_SEARCH = {
     "name": "fastapi_meta_search",
     "description": (
-        "Search the HuGR FastAPI catalog (202 tools + 298 primitives + "
+        "Search the HuGR FastAPI catalog (207 tools + 298 primitives + "
         "392 recipes) by natural language. Returns the top-K matching "
         "entries with synopsis, domain, verb, and next-step breadcrumbs. "
         "Use this when you know WHAT you need (e.g. 'exactly-once webhook', "
@@ -628,7 +628,7 @@ MCP_TOOL_LIST_BUNDLE = {
         "a bundle you want to explore (e.g. 'crud_data', 'auth_access', "
         "'infrastructure'). Returns the bundle's tool names + synopses + "
         "tags. Caps at one bundle's slice (typically a few dozen entries) "
-        "vs the full 202 tools diluted in a flat list, and scales the same "
+        "vs the full 207 tools diluted in a flat list, and scales the same "
         "way as the kit grows toward 10K tools. Pass `skill` only when "
         "SKILL-002 onward ship; "
         "today the single skill SKILL-001-fastapi-production is the default."
