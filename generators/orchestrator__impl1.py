@@ -32,6 +32,7 @@ from generators.orchestrator__impl4 import (
     _phase_middleware,
     _phase_schemas,
 )
+from generators.scaffold_manifest import emit_doc_gate
 
 # ---------------------------------------------------------------------------
 # Sentinel for "parameter not passed by caller"
@@ -48,7 +49,7 @@ PROFILES: dict[str, dict] = {
         "with_auth": False,
         "with_redis": False,
         "with_docker_compose": False,
-        "with_ci": False,
+        "with_ci": True,
         "with_otel": False,
         "with_prometheus": False,
         "with_alerting": False,
@@ -68,7 +69,7 @@ PROFILES: dict[str, dict] = {
         "with_auth": True,
         "with_redis": True,
         "with_docker_compose": False,
-        "with_ci": False,
+        "with_ci": True,
         "with_otel": False,
         "with_prometheus": False,
         "with_alerting": False,
@@ -98,7 +99,7 @@ PROFILES: dict[str, dict] = {
         "with_auth": False,
         "with_redis": True,
         "with_docker_compose": False,
-        "with_ci": False,
+        "with_ci": True,
         "with_otel": False,
         "with_prometheus": False,
         "with_alerting": False,
@@ -374,6 +375,17 @@ def generate_project(  # noqa: C901 — orchestrator: each branch is one subsyst
     _phase_requirements(ctx)  # Phase 10
     _phase_tests(ctx)  # Phase 11
     _phase_scaffold_venous(ctx)  # Phase 12
+
+    # Phase 13: emit hash-sidecar manifest + vendored doc-gate scripts.
+    # MUST run last — the manifest hashes the files written by every prior phase.
+    manifest_path = emit_doc_gate(
+        ctx.out,
+        skill="SKILL-001-fastapi-production",
+        name=ctx.name,
+        prefix=ctx.prefix,
+        profile=ctx.profile,
+    )
+    ctx.all_files.append(str(manifest_path))
 
     return {
         "files_created": ctx.all_files,

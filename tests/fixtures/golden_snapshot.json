@@ -1,5 +1,5 @@
 {
-  "file_count": 99,
+  "file_count": 102,
   "migrations": [
     "0001_initial.py",
     "0002_baseline_schema.py",
@@ -10,7 +10,7 @@
     "Item",
     "User"
   ],
-  "python_file_count": 76,
+  "python_file_count": 78,
   "routes": [
     "DELETE:/me",
     "DELETE:/{id}",
@@ -38,5 +38,5 @@
     "POST:/signup",
     "POST:/{id}/restore"
   ],
-  "total_loc": 5571
+  "total_loc": 5695
 }

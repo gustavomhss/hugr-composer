@@ -2,15 +2,18 @@
 
 from __future__ import annotations
 
-MCP_TOOL = {
-    'name': 'fastapi_deployment_generate_ci',
-    'description': 'Generate GitHub Actions CI: lint (ruff+mypy), test (pytest+postgres), build (Docker), scan (Trivy).',
-    'tags': ['deployment', 'generator'],
-    'entry': 'generate_github_actions',
-}
-
 import textwrap
 from pathlib import Path
+
+MCP_TOOL = {
+    "name": "fastapi_deployment_generate_ci",
+    "description": (
+        "Generate GitHub Actions CI: lint (ruff+mypy), "
+        "test (pytest+postgres), build (Docker), scan (Trivy)."
+    ),
+    "tags": ["deployment", "generator"],
+    "entry": "generate_github_actions",
+}
 
 
 def generate_github_actions(
@@ -213,6 +216,48 @@ def generate_github_actions(
                 if: always()
                 with:
                   sarif_file: trivy-results.sarif
+
+          # ------------------------------------------------------------------
+          # Doc-gate: drift detector for scaffold-generated files (WP-01)
+          # ------------------------------------------------------------------
+          doc-gate:
+            runs-on: ubuntu-latest
+            needs: lint
+            timeout-minutes: 1
+            steps:
+              - uses: actions/checkout@v4
+
+              - name: Set up Python
+                uses: actions/setup-python@v5
+                with:
+                  python-version: ${{ env.PYTHON_VERSION }}
+                  cache: pip
+
+              - name: Verify gate scripts present
+                run: |
+                  test -f scripts/check_docs_drift.py || {{
+                    echo "::error::scripts/check_docs_drift.py missing -- kit emit incomplete";
+                    exit 1;
+                  }}
+                  test -f .hugr-scaffold-manifest.json || {{
+                    echo "::error::.hugr-scaffold-manifest.json missing -- kit emit incomplete";
+                    exit 1;
+                  }}
+
+              - name: Run drift gate
+                id: gate
+                run: python scripts/check_docs_drift.py
+                continue-on-error: true
+
+              - name: Show drift details on failure
+                if: steps.gate.outcome == 'failure'
+                run: |
+                  echo "::error::Scaffolded files drifted from kit output."
+                  echo "::error::Fix: run `./sync-docs` (or `make sync-docs`) and re-commit."
+
+              - name: Fail the job if gate drifted
+                if: steps.gate.outcome == 'failure'
+                run: exit 1
     """)
 
     file_path = out / "ci.yml"
@@ -221,8 +266,10 @@ def generate_github_actions(
     return {
         "files_created": [str(file_path)],
         "notes": [
-            f"GitHub Actions CI: Python {python_version}, Postgres {postgres_version} service container.",
-            "Jobs: lint (ruff + mypy) -> test (pytest + coverage >= 80%) -> build (Docker) -> scan (Trivy).",
+            f"GitHub Actions CI: Python {python_version}, "
+            f"Postgres {postgres_version} service container.",
+            "Jobs: lint (ruff + mypy) -> test (pytest + coverage >= 80%) -> "
+            "build (Docker) -> scan (Trivy).",
             "Build + scan only run on push to main (not on PRs).",
             "Uses GHCR (ghcr.io) for container registry with GitHub token auth.",
             "Docker layer caching via GitHub Actions cache (type=gha).",

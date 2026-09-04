@@ -33,7 +33,12 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def _phase_deployment(ctx: _Ctx) -> None:
-    """Phase 7: Deployment (skipped by minimal/api/worker profiles)."""
+    """Phase 7: Deployment + CI (deployment skipped by minimal/api/worker).
+
+    CI is NOT deployment — it stays on for every profile that opted in to
+    with_ci, because the doc-gate (WP-01) is a correctness invariant, not a
+    deployment artefact.
+    """
     p = ctx.p
     if not p.get("skip_deployment"):
         ctx.run(
@@ -76,7 +81,9 @@ def _phase_deployment(ctx: _Ctx) -> None:
         except ImportError:
             ctx.phases["k8s"] = {"files": 0, "status": "skipped (generator not built yet)"}
 
-    if not p.get("skip_deployment") and ctx.with_ci:
+    # Doc-gate is part of CI, not deployment — independent of skip_deployment.
+    # (WP-01 Q1: ∀ emitted project has the gate.)
+    if ctx.with_ci:
         try:
             from generators.deployment.github_actions import generate_github_actions
 
