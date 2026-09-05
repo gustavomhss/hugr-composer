@@ -1,0 +1,1 @@
+from .tenant_scoped_mixin import TenantScopedMixin

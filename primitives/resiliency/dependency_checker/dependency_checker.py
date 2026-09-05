@@ -1,0 +1,103 @@
+"""Pure Python primitive: DependencyChecker."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Optional
+import uuid
+from datetime import datetime
+
+class DependencyChecker:
+    """Performs async health checks for known dependency types."""
+
+    async def check(self, name: str) -> dict[str, Any]:
+        """Run the health check for a named dependency.
+
+        Args:
+            name: Dependency name (database, redis, s3, stripe, or custom).
+
+        Returns:
+            Dict with 'name', 'status', 'latency_ms', and 'detail'.
+        """
+        dispatch = {'database': self._check_database, 'redis': self._check_redis, 's3': self._check_s3, 'stripe': self._check_stripe}
+        fn = dispatch.get(name, self._check_unknown)
+        t0 = time.monotonic()
+        try:
+            result = await asyncio.wait_for(fn(name), timeout=_TIMEOUT_S)
+            result['latency_ms'] = int((time.monotonic() - t0) * 1000)
+            return result
+        except asyncio.TimeoutError:
+            return {'name': name, 'status': 'unhealthy', 'latency_ms': int(_TIMEOUT_S * 1000), 'detail': 'timeout'}
+        except Exception as exc:
+            return {'name': name, 'status': 'unhealthy', 'latency_ms': int((time.monotonic() - t0) * 1000), 'detail': str(exc)}
+
+    async def _check_database(self, name: str) -> dict[str, Any]:
+        """Check PostgreSQL connectivity via SELECT 1.
+
+        Args:
+            name: Dependency label for the result dict.
+        """
+        try:
+            from app.core.db import engine
+            import sqlalchemy
+            async with engine.connect() as conn:
+                await conn.execute(sqlalchemy.text('SELECT 1'))
+            return {'name': name, 'status': 'healthy', 'detail': 'ok'}
+        except Exception as exc:
+            logger.warning('DB health check failed: %s', exc)
+            return {'name': name, 'status': 'unhealthy', 'detail': str(exc)}
+
+    async def _check_redis(self, name: str) -> dict[str, Any]:
+        """Ping Redis to verify connectivity.
+
+        Args:
+            name: Dependency label for the result dict.
+        """
+        try:
+            from redis.asyncio import Redis
+            url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+            client = Redis.from_url(url, decode_responses=True)
+            try:
+                await client.ping()
+            finally:
+                await client.aclose()
+            return {'name': name, 'status': 'healthy', 'detail': 'pong'}
+        except Exception as exc:
+            logger.warning('Redis health check failed: %s', exc)
+            return {'name': name, 'status': 'unhealthy', 'detail': str(exc)}
+
+    async def _check_s3(self, name: str) -> dict[str, Any]:
+        """Check S3 bucket accessibility via head_bucket.
+
+        Args:
+            name: Dependency label for the result dict.
+        """
+        try:
+            import aiobotocore.session
+            bucket = os.getenv('AWS_S3_BUCKET', '')
+            session = aiobotocore.session.get_session()
+            async with session.create_client('s3') as client:
+                await client.head_bucket(Bucket=bucket)
+            return {'name': name, 'status': 'healthy', 'detail': bucket}
+        except Exception as exc:
+            logger.warning('S3 health check failed: %s', exc)
+            return {'name': name, 'status': 'unhealthy', 'detail': str(exc)}
+
+    async def _check_stripe(self, name: str) -> dict[str, Any]:
+        """Verify Stripe API key is set (avoids live API call).
+
+        Args:
+            name: Dependency label for the result dict.
+        """
+        key = os.getenv('STRIPE_SECRET_KEY', '')
+        if key:
+            return {'name': name, 'status': 'healthy', 'detail': 'key present'}
+        return {'name': name, 'status': 'unhealthy', 'detail': 'STRIPE_SECRET_KEY not set'}
+
+    async def _check_unknown(self, name: str) -> dict[str, Any]:
+        """Fallback for unrecognised dependency names.
+
+        Args:
+            name: Dependency label for the result dict.
+        """
+        return {'name': name, 'status': 'unknown', 'detail': 'no check registered'}

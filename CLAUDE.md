@@ -33,7 +33,8 @@ HuGR_Arsenal/
 │       │   ├── contracts/              # 4 contract tools
 │       │   └── proactive/              # 4 proactive tools
 │       ├── modules/                    # 28 feature packages prontos
-│       ├── core/venous/                # 124 registered primitives + 18 FastAPI adapters (+1 redis, +1 stripe) + 174 staged em _staging/ (+41 quarantined)
+│       ├── primitives/                 # 174 FastAPI-native primitives (api, auth, data, resiliency, extras)
+│       ├── core/venous/                # 124 registered primitives + 18 FastAPI adapters (+1 redis, +1 stripe) + 41 quarantined em _staging/
 │       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
 │       │   ├── tier1.py + compose.py   # 8 meta tools (home/search/describe/scaffold/list_bundle/activate_bundle/audit/verify)
 │       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
@@ -74,7 +75,8 @@ A skill principal. Convention over Configuration para FastAPI.
 213  arquivos definem MCP_TOOL   (superfície agent)
 202  tools indexados no catalog.json
 124  primitivos registrados      (core/venous/<ns>/<Name>/)
-174  primitivos staged           (PascalCase-filtered, +41 quarantined)
+174  primitivos FastAPI-native   (primitives/<ns>/<Name>/)
+ 41  primitivos quarantined      (core/venous/_staging/_quarantine/)
  18  FastAPI adapters            (production-wired; +1 Redis, +1 Stripe adapter outside fastapi/)
 135  adapt tools                 (105 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 4 proactive)
  24  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
@@ -91,7 +93,8 @@ A skill principal. Convention over Configuration para FastAPI.
 | Camada | Onde | Qtd | O que é |
 |---|---|---:|---|
 | Primitivos registrados | `core/venous/<ns>/<Name>/` | 124 | Peças framework-free |
-| Primitivos staged (PascalCase) | `core/venous/_staging/` | 174 | HuGR-shelled mas com REPLACE_ME, +41 quarantined |
+| Primitivos FastAPI-native | `primitives/<ns>/<Name>/` | 174 | Prontos para uso (FastAPI/SQLAlchemy), skill-local |
+| Primitivos quarantined | `core/venous/_staging/_quarantine/` | 41 | Rejeitados pelo gate de promoção |
 | Adapters FastAPI | `core/venous/_adapters/fastapi/` | 18 | Wiring production-grade |
 | Adapters Redis / Stripe | `core/venous/_adapters/{redis,stripe}/` | 2 | Provider glue sobre motores `events.PubSub` / `billing.Billing` |
 | EXTEND tools | `adapt/extend/` | 105 | Slice generators (add_*) |

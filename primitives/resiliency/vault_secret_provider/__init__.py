@@ -1,0 +1,1 @@
+from .vault_secret_provider import SecretProvider

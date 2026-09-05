@@ -1,0 +1,22 @@
+
+==================================================================
+  SKILL-001 Local CI — 2026-09-05 13:50:11
+  Python: Python 3.12.13
+  PostgreSQL: SKIPPED
+==================================================================
+
+[36m▶[0m [1mUnit tests (adapt/)                          [0m [32mPASS[0m  (15067s)
+[36m▶[0m [1mBoot individual (100 tools)                  [0m [32mPASS[0m  (135s)
+[36m▶[0m [1mProperty tests (123 × 8)                    [0m [32mPASS[0m  (950s)
+[36m▶[0m [1mSQLite E2E (12 scenarios)                    [0m [32mPASS[0m  (31s)
+[36m▶[0m [1mRed team (25 attacks)                        [0m [32mPASS[0m  (23s)
+[36m▶[0m [1mDeterminism (4 tests)                        [0m [32mPASS[0m  (12s)
+[36m▶[0m [1mBenchmark regression (latest_score.json)     [0m [32mPASS[0m  (0s)
+[36m▶[0m [1mMCP discovery (175 tools)                    [0m [32mPASS[0m  (5s)
+[33m▶[0m [1mPostgreSQL E2E (8 scenarios)                 [0m [33mSKIP[0m  (--no-pg)
+[33m▶[0m [1mBehavior scenarios (12 domains)              [0m [33mSKIP[0m  (--no-pg)
+
+==================================================================
+  [32m[1mALL GREEN[0m: 8/10 passed (2 skipped)
+==================================================================
+

@@ -1,0 +1,1 @@
+from .attack_pattern_registry import AttackPatternRegistry

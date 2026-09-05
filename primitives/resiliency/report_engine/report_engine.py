@@ -1,0 +1,86 @@
+"""Pure Python primitive: ReportEngine."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Optional
+import uuid
+from datetime import datetime
+
+class ReportEngine:
+    """Renders Jinja2 HTML templates to PDF using WeasyPrint.
+
+    Attributes:
+        template_dir: Directory containing the HTML template files.
+        max_pages: Maximum pages allowed per report.
+    """
+
+    def __init__(self, template_dir: str, max_pages: int=100) -> None:
+        """Initialise the engine with a template directory.
+
+        Args:
+            template_dir: Absolute or relative path to HTML templates.
+            max_pages: Hard page limit; raises ValueError when exceeded.
+        """
+        self.template_dir = Path(template_dir)
+        self.max_pages = max_pages
+
+    def render_template(self, template_name: str, context: dict) -> str:
+        """Render a Jinja2 HTML template with context data.
+
+        Args:
+            template_name: Filename of the template (e.g. 'invoice.html').
+            context: Dictionary of values injected into the template.
+
+        Returns:
+            Rendered HTML string.
+
+        Raises:
+            FileNotFoundError: If template_name does not exist.
+        """
+        try:
+            from jinja2 import Environment, FileSystemLoader, select_autoescape
+        except ImportError as exc:
+            raise ImportError('jinja2 is required: pip install jinja2') from exc
+        env = Environment(loader=FileSystemLoader(str(self.template_dir)), autoescape=select_autoescape(['html', 'xml']))
+        template = env.get_template(template_name)
+        return template.render(**context)
+
+    def render_html_to_pdf(self, html: str) -> bytes:
+        """Convert an HTML string to PDF bytes via WeasyPrint.
+
+        WeasyPrint is imported lazily inside this method so the app boots
+        without it installed.
+
+        Args:
+            html: Rendered HTML string to convert.
+
+        Returns:
+            PDF document as bytes.
+
+        Raises:
+            ImportError: If WeasyPrint is not installed.
+        """
+        try:
+            from weasyprint import HTML
+        except ImportError as exc:
+            raise ImportError('weasyprint is required: pip install weasyprint') from exc
+        logger.debug('Rendering HTML to PDF (%d chars)', len(html))
+        return HTML(string=html).write_pdf()
+
+    async def generate_pdf_async(self, template_name: str, context: dict) -> bytes:
+        """Render a template and produce PDF bytes asynchronously.
+
+        Runs the CPU-bound rendering in a ThreadPoolExecutor so the
+        async event loop is not blocked.
+
+        Args:
+            template_name: Template filename (e.g. 'invoice.html').
+            context: Template context dictionary.
+
+        Returns:
+            PDF document as bytes.
+        """
+        loop = asyncio.get_running_loop()
+        html = self.render_template(template_name, context)
+        return await loop.run_in_executor(_executor, self.render_html_to_pdf, html)

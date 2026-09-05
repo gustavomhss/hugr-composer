@@ -1,0 +1,80 @@
+"""Pure Python primitive: DeviceManager."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Optional
+import uuid
+from datetime import datetime
+
+class DeviceManager:
+    """Detect and expose the active inference device.
+
+    Uses lazy torch imports so the app boots on CPU-only machines or
+    when torch is not installed at all.
+
+    Attributes:
+        _device: Cached torch.device selected on first call to
+            ``get_device()``.
+    """
+    _device = None
+
+    def get_device(self):
+        """Return the active ``torch.device``, selecting it on first call.
+
+        If ``GPU_ENABLED`` is False in settings or CUDA is unavailable,
+        falls back to CPU with a log warning.  Never raises.
+
+        Returns:
+            A ``torch.device`` instance (``cuda:N`` or ``cpu``).
+        """
+        if self._device is not None:
+            return self._device
+        self._device = self._select_device()
+        return self._device
+
+    def _select_device(self):
+        """Select device: GPU when available + enabled, else CPU.
+
+        Returns:
+            A ``torch.device`` instance.
+        """
+        try:
+            import torch
+            if settings.GPU_ENABLED and torch.cuda.is_available():
+                device_id = settings.GPU_DEVICE_ID
+                device = torch.device(f'cuda:{device_id}')
+                logger.info('GPU inference enabled', extra={'device': str(device), 'cuda_version': torch.version.cuda})
+                return device
+            if settings.GPU_ENABLED:
+                logger.warning('GPU_ENABLED=true but CUDA unavailable; falling back to CPU')
+        except ImportError:
+            logger.warning('torch not installed; inference will use CPU stub')
+            return _CpuDevice()
+        try:
+            import torch
+            return torch.device('cpu')
+        except ImportError:
+            return _CpuDevice()
+
+    def memory_stats(self) -> dict:
+        """Return GPU memory statistics for the active CUDA device.
+
+        Returns an empty dict on CPU or when torch is absent — callers
+        must tolerate missing keys.
+
+        Returns:
+            Dict with ``allocated_bytes``, ``reserved_bytes``,
+            ``utilisation_pct`` keys when CUDA is active, else ``{}``.
+        """
+        try:
+            import torch
+            device = self.get_device()
+            if not hasattr(device, 'type') or device.type != 'cuda':
+                return {}
+            alloc = torch.cuda.memory_allocated(device)
+            reserved = torch.cuda.memory_reserved(device)
+            util = alloc / reserved if reserved > 0 else 0.0
+            return {'allocated_bytes': alloc, 'reserved_bytes': reserved, 'utilisation_pct': round(util * 100, 2)}
+        except Exception:
+            return {}

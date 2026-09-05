@@ -1,0 +1,77 @@
+"""Pure Python primitive: DataSeeder."""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Optional
+import uuid
+from datetime import datetime
+
+class DataSeeder:
+    """Seed the database with realistic test data in FK-safe order.
+
+    Attributes:
+        session: Async SQLAlchemy session to use for inserts.
+    """
+
+    def __init__(self, session: AsyncSession) -> None:
+        """Initialise with an active async database session.
+
+        Args:
+            session: Async SQLAlchemy session for database writes.
+        """
+        self.session = session
+        self._generator = FieldGenerator()
+
+    async def seed(self, count: int=10) -> dict[str, int]:
+        """Seed all discovered models with *count* rows each.
+
+        Models are seeded in FK-safe topological order so foreign key
+        constraints are never violated.
+
+        Args:
+            count: Number of rows to generate per model table.
+
+        Returns:
+            Dict mapping model class name to number of rows inserted.
+        """
+        models = self._discover_models()
+        graph = DependencyGraph(models)
+        ordered = graph.topological_order()
+        results: dict[str, int] = {}
+        for model_cls in ordered:
+            inserted = await self._seed_model(model_cls, count)
+            results[model_cls.__name__] = inserted
+            logger.info('Seeded %d rows into %s', inserted, model_cls.__name__)
+        return results
+
+    async def _seed_model(self, model_cls: Any, count: int) -> int:
+        """Seed *count* rows for *model_cls*.
+
+        Args:
+            model_cls: SQLAlchemy ORM model class.
+            count: Number of rows to insert.
+
+        Returns:
+            Number of rows successfully inserted.
+        """
+        inserted = 0
+        for _ in range(count):
+            instance = self._generator.generate_instance(model_cls)
+            self.session.add(instance)
+            inserted += 1
+        await self.session.flush()
+        return inserted
+
+    def _discover_models(self) -> list[Any]:
+        """Auto-discover registered SQLAlchemy ORM models.
+
+        Returns:
+            List of ORM model classes found in the app registry.
+        """
+        try:
+            from app.models.base import Base
+            return list(Base.registry.mappers)
+        except Exception:
+            logger.warning('Could not discover models from Base.registry')
+            return []
