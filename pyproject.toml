@@ -46,7 +46,9 @@ dependencies = [
     "alembic>=1.14.0",
     "python-multipart>=0.0.12",
     "aiosqlite>=0.20.0",
-    "fastmcp>=0.1.0",
+    "fastmcp>=4.0.0b2",
+    "mcp>=2.0.0",
+    "hugr-core @ git+https://github.com/humangr-labs/HuGR-Arsenal@23b65fb339bb29d9362d638c8547a8f627ea45cc#subdirectory=hugr-core",
     "pydantic-core>=2.18.0",
     "tenacity>=8.2.3",
     "orjson>=3.9.0",
@@ -82,6 +84,9 @@ include = [
     "primitives*",
     "maintenance*",
 ]
+
+[tool.setuptools.package-data]
+engine = ["**/*.json", "**/*.yaml", "**/*.yml"]
 
 [tool.ruff]
 target-version = "py311"

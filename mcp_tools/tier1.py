@@ -35,6 +35,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from mcp_tools.path_guard import output_dir as guard_output_dir
+
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = SKILL_ROOT / "engine" / "index" / "catalog.json"
 
@@ -448,6 +450,7 @@ def fastapi_meta_scaffold(
     with_auth: bool | None = None,
 ) -> dict:
     t0 = time.perf_counter()
+    output_dir = guard_output_dir(output_dir)
     try:
         from generators.orchestrator import generate_project
     except ImportError as exc:

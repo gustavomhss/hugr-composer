@@ -37,4 +37,4 @@ PyYAML>=6.0.0
 # core-v* tag; pip installs ONLY the hugr-core subpackage of the Arsenal repo,
 # so auth/deploy/docs never enter this skill's dependency closure. First
 # consumer: engine/audit/contract_rules/_common.py (layout resolution).
-hugr-core @ git+https://github.com/humangr-labs/HuGR-Arsenal@core-v0.11.0#subdirectory=hugr-core
+hugr-core @ git+https://github.com/humangr-labs/HuGR-Arsenal@23b65fb339bb29d9362d638c8547a8f627ea45cc#subdirectory=hugr-core

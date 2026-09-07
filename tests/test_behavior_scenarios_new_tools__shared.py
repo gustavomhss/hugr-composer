@@ -134,7 +134,7 @@ def _load_app(project_dir: Path):
     if key not in sys.path:
         sys.path.insert(0, key)
     for m in list(sys.modules):
-        if m == "app" or m.startswith("app."):
+        if m in {"app", "core"} or m.startswith(("app.", "core.")):
             del sys.modules[m]
     importlib.import_module("app.models")
     return importlib.import_module("app.main").app

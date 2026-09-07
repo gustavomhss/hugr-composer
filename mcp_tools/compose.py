@@ -40,6 +40,8 @@ import time
 from pathlib import Path
 from typing import Any
 
+from mcp_tools.path_guard import output_dir as guard_output_dir
+
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = SKILL_ROOT / "engine" / "index" / "catalog.json"
 ADAPTERS_DIR = SKILL_ROOT / "core" / "venous" / "_adapters" / "fastapi"
@@ -480,6 +482,7 @@ def fastapi_meta_compose(
 ) -> dict:
     """See MCP_TOOL description."""
     t0 = time.perf_counter()
+    output_dir = guard_output_dir(output_dir)
 
     # 1. Load catalog + validate inputs
     catalog = _load_catalog()
