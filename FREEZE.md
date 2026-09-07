@@ -79,7 +79,7 @@ Rails-connected in Wave 1.5 — same tool count, but
 
 - `engine/promotion/` module (schemas, classify, signals, state,
   promote, ledger).
-- `engine/promotion/LEDGER.md` — 215-entry triage ledger (post-Wave-1.5
+- `engine/promotion/LEDGER.md` — 41-entry triage ledger (current promotion state;
   pool cleanup — 225 → 218 after 3 NEEDS_REVIEW promotions + 3 twin
   deletions; → 217 after the redundant quarantined Projector was deleted;
   → 215 after placeholder primitives were removed)
@@ -233,7 +233,7 @@ work; deferred to post-v1.0 operational cleanup sprints. The
 classifier has them documented; they stay in `_staging/` until
 someone picks one up and refactors.
 
-### §2.5 — 98 NEEDS_CALLER items
+### §2.5 — 0 NEEDS_CALLER items
 
 Staged primitives without §A12(b) signal. §A12 discipline preserved
 — they wait for a tool/module/benchmark to reference them.

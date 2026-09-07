@@ -1,7 +1,7 @@
 {
   "schema_version": "2.0",
-  "kit_commit": "6824eb3c",
-  "generated_at": "2026-09-04T06:24:25+00:00",
+  "kit_commit": "1acfdabc",
+  "generated_at": "2026-09-07T16:21:50+00:00",
   "verbs": [
     "add",
     "generate",
@@ -4577,15 +4577,6 @@
       "status": "stable"
     },
     {
-      "name": "DeprecationMiddleware",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/DeprecationMiddleware/",
-      "status": "staged"
-    },
-    {
       "name": "DeprecationRegistry",
       "namespace": "api",
       "concern": "api",
@@ -4614,15 +4605,6 @@
       "status": "stable"
     },
     {
-      "name": "GitHubVerifier",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/GitHubVerifier/",
-      "status": "staged"
-    },
-    {
       "name": "IdempotencyStore",
       "namespace": "api",
       "concern": "api",
@@ -4649,15 +4631,6 @@
       ],
       "module_path": "core/venous/api/InboundVerifier/InboundVerifier.py",
       "status": "stable"
-    },
-    {
-      "name": "InternalVerifier",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/InternalVerifier/",
-      "status": "staged"
     },
     {
       "name": "MemoryPubSubBackend",
@@ -4715,15 +4688,6 @@
       "status": "stable"
     },
     {
-      "name": "ReadReplicaSession",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/ReadReplicaSession/",
-      "status": "staged"
-    },
-    {
       "name": "RequestContext",
       "namespace": "api",
       "concern": "api",
@@ -4752,60 +4716,6 @@
       "status": "stable"
     },
     {
-      "name": "SignatureHeader",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/SignatureHeader/",
-      "status": "staged"
-    },
-    {
-      "name": "StripeVerifier",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/StripeVerifier/",
-      "status": "staged"
-    },
-    {
-      "name": "TaskManager",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/TaskManager/",
-      "status": "staged"
-    },
-    {
-      "name": "TaskRegistry",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/TaskRegistry/",
-      "status": "staged"
-    },
-    {
-      "name": "TokenBucket",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/TokenBucket/",
-      "status": "staged"
-    },
-    {
-      "name": "UserPresence",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/UserPresence/",
-      "status": "staged"
-    },
-    {
       "name": "ValueTransform",
       "namespace": "api",
       "concern": "api",
@@ -4818,87 +4728,6 @@
       ],
       "module_path": "core/venous/api/ValueTransform/ValueTransform.py",
       "status": "stable"
-    },
-    {
-      "name": "VerifiedEvent",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/VerifiedEvent/",
-      "status": "staged"
-    },
-    {
-      "name": "VersionInfo",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/VersionInfo/",
-      "status": "staged"
-    },
-    {
-      "name": "VersionRegistry",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/VersionRegistry/",
-      "status": "staged"
-    },
-    {
-      "name": "VersionResolverMiddleware",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/VersionResolverMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "WebSocketManager",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/WebSocketManager/",
-      "status": "staged"
-    },
-    {
-      "name": "WebhookDelivery",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/WebhookDelivery/",
-      "status": "staged"
-    },
-    {
-      "name": "WebhookEndpoint",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/WebhookEndpoint/",
-      "status": "staged"
-    },
-    {
-      "name": "WebhookEndpointCreated",
-      "namespace": "api",
-      "concern": "api",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/api/WebhookEndpointCreated/",
-      "status": "staged"
-    },
-    {
-      "name": "APIKey",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/APIKey/",
-      "status": "staged"
     },
     {
       "name": "AuthorizationCodeFlow",
@@ -4915,15 +4744,6 @@
       "status": "stable"
     },
     {
-      "name": "CedarEngine",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/CedarEngine/",
-      "status": "staged"
-    },
-    {
       "name": "CurrentPrincipal",
       "namespace": "auth",
       "concern": "auth",
@@ -4936,24 +4756,6 @@
       ],
       "module_path": "core/venous/auth/CurrentPrincipal/CurrentPrincipal.py",
       "status": "stable"
-    },
-    {
-      "name": "FeatureFlag",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/FeatureFlag/",
-      "status": "staged"
-    },
-    {
-      "name": "FeatureFlagAudit",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/FeatureFlagAudit/",
-      "status": "staged"
     },
     {
       "name": "FeatureFlagCache",
@@ -4970,123 +4772,6 @@
       "status": "stable"
     },
     {
-      "name": "FeatureFlagPublic",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/FeatureFlagPublic/",
-      "status": "staged"
-    },
-    {
-      "name": "FlagContext",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/FlagContext/",
-      "status": "staged"
-    },
-    {
-      "name": "MFADevice",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/MFADevice/",
-      "status": "staged"
-    },
-    {
-      "name": "MFARecoveryCode",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/MFARecoveryCode/",
-      "status": "staged"
-    },
-    {
-      "name": "OAuthAccount",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/OAuthAccount/",
-      "status": "staged"
-    },
-    {
-      "name": "OAuthProvider",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/OAuthProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "OAuthTokens",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/OAuthTokens/",
-      "status": "staged"
-    },
-    {
-      "name": "OAuthUserInfo",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/OAuthUserInfo/",
-      "status": "staged"
-    },
-    {
-      "name": "OPAMiddleware",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/OPAMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "OtpCode",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/OtpCode/",
-      "status": "staged"
-    },
-    {
-      "name": "Passkey",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/Passkey/",
-      "status": "staged"
-    },
-    {
-      "name": "Permission",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/Permission/",
-      "status": "staged"
-    },
-    {
-      "name": "PermissionCache",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/PermissionCache/",
-      "status": "staged"
-    },
-    {
       "name": "RequestGuard",
       "namespace": "auth",
       "concern": "auth",
@@ -5101,42 +4786,6 @@
       "status": "stable"
     },
     {
-      "name": "ResourceAccessPolicy",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/ResourceAccessPolicy/",
-      "status": "staged"
-    },
-    {
-      "name": "RoleNode",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/RoleNode/",
-      "status": "staged"
-    },
-    {
-      "name": "RolePermission",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/RolePermission/",
-      "status": "staged"
-    },
-    {
-      "name": "ScopeCheckResult",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/ScopeCheckResult/",
-      "status": "staged"
-    },
-    {
       "name": "SessionStore",
       "namespace": "auth",
       "concern": "auth",
@@ -5149,42 +4798,6 @@
       ],
       "module_path": "core/venous/auth/SessionStore/SessionStore.py",
       "status": "stable"
-    },
-    {
-      "name": "SocialAccount",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/SocialAccount/",
-      "status": "staged"
-    },
-    {
-      "name": "SocialAuthProvider",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/SocialAuthProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "TenantIsolationFilter",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/TenantIsolationFilter/",
-      "status": "staged"
-    },
-    {
-      "name": "TenantScopedMixin",
-      "namespace": "auth",
-      "concern": "auth",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/auth/TenantScopedMixin/",
-      "status": "staged"
     },
     {
       "name": "TokenIntrospector",
@@ -5409,15 +5022,6 @@
       "status": "stable"
     },
     {
-      "name": "AuditLog",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/AuditLog/",
-      "status": "staged"
-    },
-    {
       "name": "BoundedContext",
       "namespace": "data",
       "concern": "data.modelling",
@@ -5460,24 +5064,6 @@
       "status": "stable"
     },
     {
-      "name": "ContentVersion",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/ContentVersion/",
-      "status": "staged"
-    },
-    {
-      "name": "CursorPaginator",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/CursorPaginator/",
-      "status": "staged"
-    },
-    {
       "name": "DataMapper",
       "namespace": "data",
       "concern": "data.persistence",
@@ -5506,24 +5092,6 @@
       "status": "stable"
     },
     {
-      "name": "Event",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/Event/",
-      "status": "staged"
-    },
-    {
-      "name": "EventStore",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/EventStore/",
-      "status": "staged"
-    },
-    {
       "name": "IdentityMap",
       "namespace": "data",
       "concern": "data.persistence",
@@ -5536,24 +5104,6 @@
       ],
       "module_path": "core/venous/data/IdentityMap/IdentityMap.py",
       "status": "stable"
-    },
-    {
-      "name": "ImportJob",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/ImportJob/",
-      "status": "staged"
-    },
-    {
-      "name": "ImportProcessor",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/ImportProcessor/",
-      "status": "staged"
     },
     {
       "name": "LegalHold",
@@ -5582,24 +5132,6 @@
       ],
       "module_path": "core/venous/data/LifetimeScope/LifetimeScope.py",
       "status": "stable"
-    },
-    {
-      "name": "LocalStorage",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/LocalStorage/",
-      "status": "staged"
-    },
-    {
-      "name": "LocalStorageBackend",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/LocalStorageBackend/",
-      "status": "staged"
     },
     {
       "name": "MaterializedView",
@@ -5657,15 +5189,6 @@
       "status": "stable"
     },
     {
-      "name": "S3Storage",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/S3Storage/",
-      "status": "staged"
-    },
-    {
       "name": "ShardedCounter",
       "namespace": "data",
       "concern": "data.persistence",
@@ -5677,15 +5200,6 @@
       ],
       "module_path": "core/venous/data/ShardedCounter/ShardedCounter.py",
       "status": "stable"
-    },
-    {
-      "name": "SoftDeleteMixin",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/SoftDeleteMixin/",
-      "status": "staged"
     },
     {
       "name": "Specification",
@@ -5700,15 +5214,6 @@
       ],
       "module_path": "core/venous/data/Specification/Specification.py",
       "status": "stable"
-    },
-    {
-      "name": "StorageBackend",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/StorageBackend/",
-      "status": "staged"
     },
     {
       "name": "TransactionalBatch",
@@ -5751,24 +5256,6 @@
       ],
       "module_path": "core/venous/data/ValueObject/ValueObject.py",
       "status": "stable"
-    },
-    {
-      "name": "VerificationResult",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/VerificationResult/",
-      "status": "staged"
-    },
-    {
-      "name": "VersioningService",
-      "namespace": "data",
-      "concern": "data",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/data/VersioningService/",
-      "status": "staged"
     },
     {
       "name": "CausalReorderBuffer",
@@ -5952,114 +5439,6 @@
       "status": "stable"
     },
     {
-      "name": "APIFuzzer",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/APIFuzzer/",
-      "status": "staged"
-    },
-    {
-      "name": "ActiveUserScenario",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/ActiveUserScenario/",
-      "status": "staged"
-    },
-    {
-      "name": "AdminScenario",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/AdminScenario/",
-      "status": "staged"
-    },
-    {
-      "name": "AuthMixin",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/AuthMixin/",
-      "status": "staged"
-    },
-    {
-      "name": "BrowsingScenario",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/BrowsingScenario/",
-      "status": "staged"
-    },
-    {
-      "name": "ComparisonResult",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/ComparisonResult/",
-      "status": "staged"
-    },
-    {
-      "name": "DataSeeder",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/DataSeeder/",
-      "status": "staged"
-    },
-    {
-      "name": "DependencyGraph",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/DependencyGraph/",
-      "status": "staged"
-    },
-    {
-      "name": "FieldGenerator",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/FieldGenerator/",
-      "status": "staged"
-    },
-    {
-      "name": "FuzzResult",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/FuzzResult/",
-      "status": "staged"
-    },
-    {
-      "name": "FuzzRunner",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/FuzzRunner/",
-      "status": "staged"
-    },
-    {
-      "name": "MigrationCIRunner",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/MigrationCIRunner/",
-      "status": "staged"
-    },
-    {
       "name": "OutboundBinding",
       "namespace": "extras",
       "concern": "extras",
@@ -6102,15 +5481,6 @@
       "status": "stable"
     },
     {
-      "name": "SafetyChecker",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/SafetyChecker/",
-      "status": "staged"
-    },
-    {
       "name": "SchemaComparator",
       "namespace": "extras",
       "concern": "extras",
@@ -6123,15 +5493,6 @@
       ],
       "module_path": "core/venous/extras/SchemaComparator/SchemaComparator.py",
       "status": "stable"
-    },
-    {
-      "name": "SchemaEnforcerMiddleware",
-      "namespace": "extras",
-      "concern": "extras",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/extras/SchemaEnforcerMiddleware/",
-      "status": "staged"
     },
     {
       "name": "VirtualActor",
@@ -6554,96 +5915,6 @@
       "status": "stable"
     },
     {
-      "name": "APICostEstimator",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/APICostEstimator/",
-      "status": "staged"
-    },
-    {
-      "name": "APNsProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/APNsProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "AdaptiveThrottleMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/AdaptiveThrottleMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "AdaptiveTimeout",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/AdaptiveTimeout/",
-      "status": "staged"
-    },
-    {
-      "name": "AdminAuthBackend",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/AdminAuthBackend/",
-      "status": "staged"
-    },
-    {
-      "name": "AlertDispatcher",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/AlertDispatcher/",
-      "status": "staged"
-    },
-    {
-      "name": "AnomalyDetector",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/AnomalyDetector/",
-      "status": "staged"
-    },
-    {
-      "name": "AnomalyMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/AnomalyMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "AttackPatternRegistry",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/AttackPatternRegistry/",
-      "status": "staged"
-    },
-    {
-      "name": "AwsSecretProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/AwsSecretProvider/",
-      "status": "staged"
-    },
-    {
       "name": "Bulkhead",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -6656,87 +5927,6 @@
       ],
       "module_path": "core/venous/resiliency/Bulkhead/Bulkhead.py",
       "status": "stable"
-    },
-    {
-      "name": "BulkheadConfig",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/BulkheadConfig/",
-      "status": "staged"
-    },
-    {
-      "name": "CORSConfigMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CORSConfigMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "CSRFMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CSRFMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "CSRFProtection",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CSRFProtection/",
-      "status": "staged"
-    },
-    {
-      "name": "CacheBackend",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CacheBackend/",
-      "status": "staged"
-    },
-    {
-      "name": "CanaryRegistry",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CanaryRegistry/",
-      "status": "staged"
-    },
-    {
-      "name": "CanaryToken",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CanaryToken/",
-      "status": "staged"
-    },
-    {
-      "name": "ChaosEngine",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ChaosEngine/",
-      "status": "staged"
-    },
-    {
-      "name": "ChaosMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ChaosMiddleware/",
-      "status": "staged"
     },
     {
       "name": "CircuitBreaker",
@@ -6753,60 +5943,6 @@
       "status": "stable"
     },
     {
-      "name": "ComplianceEngine",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ComplianceEngine/",
-      "status": "staged"
-    },
-    {
-      "name": "ComplianceEvent",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ComplianceEvent/",
-      "status": "staged"
-    },
-    {
-      "name": "ConfigureBillingStep",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ConfigureBillingStep/",
-      "status": "staged"
-    },
-    {
-      "name": "CostEstimate",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CostEstimate/",
-      "status": "staged"
-    },
-    {
-      "name": "CostEstimatorProtocol",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CostEstimatorProtocol/",
-      "status": "staged"
-    },
-    {
-      "name": "CostMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CostMiddleware/",
-      "status": "staged"
-    },
-    {
       "name": "CostTracker",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -6819,123 +5955,6 @@
       ],
       "module_path": "core/venous/resiliency/CostTracker/CostTracker.py",
       "status": "stable"
-    },
-    {
-      "name": "CreateAdminUserStep",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CreateAdminUserStep/",
-      "status": "staged"
-    },
-    {
-      "name": "CreateTenantStep",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/CreateTenantStep/",
-      "status": "staged"
-    },
-    {
-      "name": "DBQueryCostEstimator",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/DBQueryCostEstimator/",
-      "status": "staged"
-    },
-    {
-      "name": "DLPMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/DLPMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "DegradationManager",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/DegradationManager/",
-      "status": "staged"
-    },
-    {
-      "name": "DeliveryTracker",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/DeliveryTracker/",
-      "status": "staged"
-    },
-    {
-      "name": "DependencyChecker",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/DependencyChecker/",
-      "status": "staged"
-    },
-    {
-      "name": "DeviceManager",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/DeviceManager/",
-      "status": "staged"
-    },
-    {
-      "name": "DeviceToken",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/DeviceToken/",
-      "status": "staged"
-    },
-    {
-      "name": "EmailEvent",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/EmailEvent/",
-      "status": "staged"
-    },
-    {
-      "name": "EmailProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/EmailProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "EnvSecretProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/EnvSecretProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "ErrorInjector",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ErrorInjector/",
-      "status": "staged"
     },
     {
       "name": "ExcelExporter",
@@ -6952,33 +5971,6 @@
       "status": "stable"
     },
     {
-      "name": "FCMProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/FCMProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "FingerprintMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/FingerprintMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "FingerprintStore",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/FingerprintStore/",
-      "status": "staged"
-    },
-    {
       "name": "GracefulShutdown",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -6993,24 +5985,6 @@
       "status": "stable"
     },
     {
-      "name": "HealthMapBuilder",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/HealthMapBuilder/",
-      "status": "staged"
-    },
-    {
-      "name": "HealthRegistry",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/HealthRegistry/",
-      "status": "staged"
-    },
-    {
       "name": "HeterogeneousWorkerPool",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -7022,51 +5996,6 @@
       ],
       "module_path": "core/venous/resiliency/HeterogeneousWorkerPool/HeterogeneousWorkerPool.py",
       "status": "stable"
-    },
-    {
-      "name": "InputSanitizer",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/InputSanitizer/",
-      "status": "staged"
-    },
-    {
-      "name": "Job",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/Job/",
-      "status": "staged"
-    },
-    {
-      "name": "JobStatus",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/JobStatus/",
-      "status": "staged"
-    },
-    {
-      "name": "LatencyInjector",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/LatencyInjector/",
-      "status": "staged"
-    },
-    {
-      "name": "LeakDetectorMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/LeakDetectorMiddleware/",
-      "status": "staged"
     },
     {
       "name": "LoadShedder",
@@ -7083,51 +6012,6 @@
       "status": "stable"
     },
     {
-      "name": "LoadSheddingMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/LoadSheddingMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "MLModel",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/MLModel/",
-      "status": "staged"
-    },
-    {
-      "name": "MemoryGuard",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/MemoryGuard/",
-      "status": "staged"
-    },
-    {
-      "name": "MeterEventBuffer",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/MeterEventBuffer/",
-      "status": "staged"
-    },
-    {
-      "name": "MeteringMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/MeteringMiddleware/",
-      "status": "staged"
-    },
-    {
       "name": "ModelRegistry",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -7140,105 +6024,6 @@
       ],
       "module_path": "core/venous/resiliency/ModelRegistry/ModelRegistry.py",
       "status": "stable"
-    },
-    {
-      "name": "Notification",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/Notification/",
-      "status": "staged"
-    },
-    {
-      "name": "NotificationService",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/NotificationService/",
-      "status": "staged"
-    },
-    {
-      "name": "OTELMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/OTELMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "OnboardingOrchestrator",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/OnboardingOrchestrator/",
-      "status": "staged"
-    },
-    {
-      "name": "OnboardingProgress",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/OnboardingProgress/",
-      "status": "staged"
-    },
-    {
-      "name": "OnboardingStep",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/OnboardingStep/",
-      "status": "staged"
-    },
-    {
-      "name": "OutboxDlq",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/OutboxDlq/",
-      "status": "staged"
-    },
-    {
-      "name": "OutboxEvent",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/OutboxEvent/",
-      "status": "staged"
-    },
-    {
-      "name": "OutboxService",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/OutboxService/",
-      "status": "staged"
-    },
-    {
-      "name": "PrometheusMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/PrometheusMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "PushService",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/PushService/",
-      "status": "staged"
     },
     {
       "name": "RateLimiter",
@@ -7255,15 +6040,6 @@
       "status": "stable"
     },
     {
-      "name": "RecorderMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/RecorderMiddleware/",
-      "status": "staged"
-    },
-    {
       "name": "Redactor",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -7276,96 +6052,6 @@
       ],
       "module_path": "core/venous/resiliency/Redactor/Redactor.py",
       "status": "stable"
-    },
-    {
-      "name": "Refund",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/Refund/",
-      "status": "staged"
-    },
-    {
-      "name": "RefundStatus",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/RefundStatus/",
-      "status": "staged"
-    },
-    {
-      "name": "RegistryService",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/RegistryService/",
-      "status": "staged"
-    },
-    {
-      "name": "ReportEngine",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ReportEngine/",
-      "status": "staged"
-    },
-    {
-      "name": "RequestFingerprinter",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/RequestFingerprinter/",
-      "status": "staged"
-    },
-    {
-      "name": "RequestMetrics",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/RequestMetrics/",
-      "status": "staged"
-    },
-    {
-      "name": "RequestRecorder",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/RequestRecorder/",
-      "status": "staged"
-    },
-    {
-      "name": "RequestReplayer",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/RequestReplayer/",
-      "status": "staged"
-    },
-    {
-      "name": "ResendProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ResendProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "ResponseArmorMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ResponseArmorMiddleware/",
-      "status": "staged"
     },
     {
       "name": "RetryBudget",
@@ -7396,177 +6082,6 @@
       "status": "stable"
     },
     {
-      "name": "S3Client",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/S3Client/",
-      "status": "staged"
-    },
-    {
-      "name": "S3CostEstimator",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/S3CostEstimator/",
-      "status": "staged"
-    },
-    {
-      "name": "SMTPProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SMTPProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "Saga",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/Saga/",
-      "status": "staged"
-    },
-    {
-      "name": "SagaCoordinator",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SagaCoordinator/",
-      "status": "staged"
-    },
-    {
-      "name": "SagaInstance",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SagaInstance/",
-      "status": "staged"
-    },
-    {
-      "name": "SagaStepExecution",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SagaStepExecution/",
-      "status": "staged"
-    },
-    {
-      "name": "SanitizeMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SanitizeMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "SchedulerFactory",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SchedulerFactory/",
-      "status": "staged"
-    },
-    {
-      "name": "SecretProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SecretProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "SecurityEvent",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SecurityEvent/",
-      "status": "staged"
-    },
-    {
-      "name": "SeedDataStep",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SeedDataStep/",
-      "status": "staged"
-    },
-    {
-      "name": "SendWelcomeEmailStep",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SendWelcomeEmailStep/",
-      "status": "staged"
-    },
-    {
-      "name": "SendgridProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SendgridProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "SensitivePattern",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/SensitivePattern/",
-      "status": "staged"
-    },
-    {
-      "name": "ShutdownHealthGate",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ShutdownHealthGate/",
-      "status": "staged"
-    },
-    {
-      "name": "ShutdownMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/ShutdownMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "StorageConfig",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/StorageConfig/",
-      "status": "staged"
-    },
-    {
-      "name": "TemporalClientFactory",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/TemporalClientFactory/",
-      "status": "staged"
-    },
-    {
       "name": "TimeoutBudget",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -7581,33 +6096,6 @@
       "status": "stable"
     },
     {
-      "name": "TimeoutInjector",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/TimeoutInjector/",
-      "status": "staged"
-    },
-    {
-      "name": "TimeoutRegistry",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/TimeoutRegistry/",
-      "status": "staged"
-    },
-    {
-      "name": "TimingCollector",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/TimingCollector/",
-      "status": "staged"
-    },
-    {
       "name": "TracingBuffer",
       "namespace": "resiliency",
       "concern": "resiliency",
@@ -7620,60 +6108,6 @@
       ],
       "module_path": "core/venous/resiliency/TracingBuffer/TracingBuffer.py",
       "status": "stable"
-    },
-    {
-      "name": "TracingMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/TracingMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "UploadSizeMiddleware",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/UploadSizeMiddleware/",
-      "status": "staged"
-    },
-    {
-      "name": "UsageRecord",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/UsageRecord/",
-      "status": "staged"
-    },
-    {
-      "name": "VaultSecretProvider",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/VaultSecretProvider/",
-      "status": "staged"
-    },
-    {
-      "name": "WorkerFactory",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/WorkerFactory/",
-      "status": "staged"
-    },
-    {
-      "name": "WorkerSettings",
-      "namespace": "resiliency",
-      "concern": "resiliency",
-      "purpose": "**Status:** extracted-staged (needs human review).",
-      "compose_with": [],
-      "module_path": "core/venous/_staging/resiliency/WorkerSettings/",
-      "status": "staged"
     },
     {
       "name": "ContentSecurityPolicy",
@@ -12111,10 +10545,10 @@
     "tools_total": 207,
     "tools_local": 207,
     "tools_federated": 0,
-    "primitives": 298,
+    "primitives": 124,
     "recipes": 392,
     "skills": 1,
     "bundles": 6
   },
-  "stable_hash": "42fa4bb9967b68adbd7f1511111d5684256b746ee4215f78eecab35cd8e87aae"
+  "stable_hash": "5a9b30b1ba2028c42cedac0c31ebae876a8da85d9ea479eb9c5ea76024b42240"
 }

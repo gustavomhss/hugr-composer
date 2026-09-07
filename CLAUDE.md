@@ -34,7 +34,7 @@ HuGR_Arsenal/
 │       │   └── proactive/              # 4 proactive tools
 │       ├── modules/                    # 28 feature packages prontos
 │       ├── primitives/                 # 174 FastAPI-native primitives (api, auth, data, resiliency, extras)
-│       ├── core/venous/                # 124 registered primitives + 18 FastAPI adapters (+1 redis, +1 stripe) + 41 quarantined em _staging/
+│       ├── core/venous/                # 124 registered primitives + 18 FastAPI adapters (+1 redis, +1 stripe) + 0 quarantined em _staging/ (+0 quarantined)
 │       ├── mcp_tools/                  # Tier-1 meta + tree dispatchers + auto-discovery
 │       │   ├── tier1.py + compose.py   # 8 meta tools (home/search/describe/scaffold/list_bundle/activate_bundle/audit/verify)
 │       │   └── tree/                   # 9 domain dispatchers (auth, data, api, realtime, resiliency, obs, compliance, deployment, testing)
@@ -72,15 +72,16 @@ A skill principal. Convention over Configuration para FastAPI.
 > Drift entre este bloco e INVENTORY.md = bug de audit.
 
 ```
-213  arquivos definem MCP_TOOL   (superfície agent)
-202  tools indexados no catalog.json
+434  arquivos definem MCP_TOOL   (superfície agent)
+207  tools indexados no catalog.json
 124  primitivos registrados      (core/venous/<ns>/<Name>/)
 174  primitivos FastAPI-native   (primitives/<ns>/<Name>/)
- 41  primitivos quarantined      (core/venous/_staging/_quarantine/)
+  0  primitivos staged           (core/venous/_staging/)
+  0   primitivos quarantined      (core/venous/_staging/_quarantine/)
  18  FastAPI adapters            (production-wired; +1 Redis, +1 Stripe adapter outside fastapi/)
 135  adapt tools                 (105 extend + 8 operate + 8 evolve + 6 verify + 4 contracts + 4 proactive)
  24  extend add_* Rails-connected (§B1.3 floor = 22, non-regressive)
- 61  generators
+  66  generators
  28  modules/ packages           (auth, payments, caching, db, deployment, obs, security, background_jobs, websockets)
  20  examples/ apps completos    (5 baseline + 10 mid + 5 adversarial, repo-root /examples/)
  20  benchmark specs             (plan 100.00, code 100.00)
@@ -94,7 +95,7 @@ A skill principal. Convention over Configuration para FastAPI.
 |---|---|---:|---|
 | Primitivos registrados | `core/venous/<ns>/<Name>/` | 124 | Peças framework-free |
 | Primitivos FastAPI-native | `primitives/<ns>/<Name>/` | 174 | Prontos para uso (FastAPI/SQLAlchemy), skill-local |
-| Primitivos quarantined | `core/venous/_staging/_quarantine/` | 41 | Rejeitados pelo gate de promoção |
+| Primitivos quarantined | `core/venous/_staging/_quarantine/` | 0 | Rejeitados pelo gate de promoção |
 | Adapters FastAPI | `core/venous/_adapters/fastapi/` | 18 | Wiring production-grade |
 | Adapters Redis / Stripe | `core/venous/_adapters/{redis,stripe}/` | 2 | Provider glue sobre motores `events.PubSub` / `billing.Billing` |
 | EXTEND tools | `adapt/extend/` | 105 | Slice generators (add_*) |

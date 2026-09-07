@@ -37,7 +37,7 @@ tool / primitive renames going forward (CONTRACT §A10).
 - **2 provider adapters** beyond fastapi/: `_adapters/redis/PubSubAdapter.py`
   + `_adapters/stripe/BillingAdapter.py`. Both ship with lazy SDK
   imports and hermetic behavioural test suites (13 Redis + 22 Stripe).
-- **174 staged primitives** (`_staging/`, `status="staged"`) —
+- **0 staged primitives** (`_staging/`, `status="staged"`) —
   discoverable, not promoted. Wave 1.5 deleted 3 (+3 quarantined
   copies) that the new motor+adapter pair replaced.
 - **20 complete examples** at `/examples/` (5 baseline + 10 mid + 5 adversarial).

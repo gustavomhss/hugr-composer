@@ -93,11 +93,11 @@ the command says 125, the doc is wrong, not the command.
 | Registered primitives | 124 | `core/venous/<ns>/<Name>/` — framework-free, full shell |
 | FastAPI adapters | 18 | Production-wired in `core/venous/_adapters/fastapi/` |
 | Provider adapters | 2 | `_adapters/redis/PubSubAdapter.py` + `_adapters/stripe/BillingAdapter.py` |
-| Staged primitives | 174 | `_staging/<ns>/`, surfaced as `status="staged"` |
-| Quarantined primitives | 41 | `_staging/_quarantine/`, hidden from catalog |
+| Staged primitives | 0 | `_staging/<ns>/`, surfaced as `status="staged"` |
+| Quarantined primitives | 0 | `_staging/_quarantine/`, hidden from catalog |
 | Recipes | 392 | Parsed from primitive `.md` `## Compose with:` sections |
 | Benchmark specs | 20 | 5 baseline / 10 mid / 5 adversarial |
-| Ledger entries | 215 | Post-Wave-1.5 triage state; Projector deleted (redundant vs MaterializedView) on 2026-06-09 |
+| Ledger entries | 41 | Current promotion ledger; Projector deleted (redundant vs MaterializedView) on 2026-06-09 |
 | Contract rules passing | 47/47 | Machine-verified by `engine.audit.contract_check` |
 | Plan-level benchmark | 100.00 | 20/20 specs, v3 best-of-ensemble |
 | Code-level benchmark | 100.00 | 20/20 specs, executable pytest rubric |

@@ -6,10 +6,10 @@
 
 ## Headline
 
-- **218 files define `MCP_TOOL` metadata** (agent-visible surface).
-- **Catalog:** 1 skill, 6 bundles, 207 tools (207 local + 0 federated), 298 primitives, 392 recipes.
+- **434 files define `MCP_TOOL` metadata** (agent-visible surface).
+- **Catalog:** 1 skill, 6 bundles, 207 tools (207 local + 0 federated), 124 primitives, 392 recipes.
 - **124 registered primitives** (`core/venous/<ns>/<Name>/`).
-- **174 staged primitives** in `_staging/` (plus 41 quarantined).
+- **0 staged primitives** in `_staging/` (plus 0 quarantined).
 - **18 FastAPI adapters** (production-wired).
 - **28 `modules/` packages** (pre-built feature bundles).
 - **20 populated examples** (0 empty scaffolds), 125 specs, 20 benchmark specs.
@@ -57,7 +57,7 @@ the full surface.
 | `realtime` | 7 | streaming, sse, websocket |
 | `testing_tools` | 12 | testing, fixtures |
 
-## 3. generators/ — 207 tools
+## 3. generators/ — 66 tools
 
 | category | count |
 |---|---:|
@@ -114,16 +114,10 @@ the full surface.
 
 Plus **18 FastAPI adapters** under `core/venous/_adapters/fastapi/`.
 
-## 6. core/venous/_staging — staged primitives (174 + 41 quarantined)
+## 6. core/venous/_staging — staged primitives (0 + 0 quarantined)
 
 | namespace | count |
 |---|---:|
-| `_quarantine` | 41 |
-| `api` | 18 |
-| `auth` | 25 |
-| `data` | 14 |
-| `extras` | 14 |
-| `resiliency` | 103 |
 
 Staged primitives have HuGR shell (contract.json, protocol, md, tests,
 dashboard) but carry `REPLACE_ME` stubs — promote via extraction pipeline

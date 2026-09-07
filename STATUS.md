@@ -32,13 +32,13 @@ surfaces are MCP-registered and JIT-discoverable via
 | Slice tools under `adapt/extend/` | 105 | `PYTHONPATH=. .venv/bin/python -m engine.inventory` → §1 extend |
 | Total tools in `adapt/` (all verbs + categories) | 135 | `PYTHONPATH=. .venv/bin/python -m engine.inventory` → §1 adapt |
 | FastAPI adapters (`core/venous/_adapters/fastapi/`) | 18 | `find core/venous/_adapters/fastapi -maxdepth 1 -name '*Adapter.py' ! -name 'test_*' \| wc -l` |
-| Generator files (`generators/`) | 61 | `PYTHONPATH=. .venv/bin/python -m engine.inventory` → §3 |
-| MCP-registered tools (catalog) | 202 | `jq '.tools \| length' engine/index/catalog.json` |
-| agent-visible surface (catalog + tier-1 + tree) | 219 | 202 catalog + 8 tier-1 + 9 tree dispatchers |
+| Generator files (`generators/`) | 66 | `PYTHONPATH=. .venv/bin/python -m engine.inventory` → §3 |
+| MCP-registered tools (catalog) | 207 | `jq '.tools \| length' engine/index/catalog.json` |
+| agent-visible surface (catalog + tier-1 + tree) | 224 | 207 catalog + 8 tier-1 + 9 tree dispatchers |
 | Production primitives (registered) | 124 | `grep -c '^- name:' engine/primitives_by_concern.yaml` |
 | Production primitive directories | 124 | `find core/venous -mindepth 2 -maxdepth 2 -type d ! -path '*_staging*' ! -path '*_adapters*' ! -path '*__pycache__*' \| wc -l` |
-| Staged primitives (PascalCase, promotable) | 174 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
-| Quarantined primitives (rejected by extraction gate) | 41 | `find core/venous/_staging/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
+| Staged primitives (PascalCase, promotable) | 0 | `jq '[.primitives[] \| select(.status=="staged")] \| length' engine/index/catalog.json` |
+| Quarantined primitives (rejected by extraction gate) | 0 | `find core/venous/_staging/_quarantine -mindepth 2 -maxdepth 2 -type d \| wc -l` |
 | Provider adapters (`_adapters/{redis,stripe}/`) | 2 | `find core/venous/_adapters -maxdepth 2 -name '*Adapter.py' ! -path '*fastapi*' ! -name 'test_*' \| wc -l` |
 | Benchmark specs (Phase 3) | 20 | `find benchmarks/specs -name '*.md' ! -name 'README.md' \| wc -l` |
 | Contract items green | 47/47 | `PYTHONPATH=. .venv/bin/python -m engine.audit.contract_check` |
@@ -46,7 +46,7 @@ surfaces are MCP-registered and JIT-discoverable via
 | Benchmark score (plan-level, best-of ensemble) | 100.00 | `jq '.overall' benchmarks/latest_score.json` |
 | Benchmark score (code-level, 20/20 specs) | 100.00 | `jq '.overall' benchmarks/code_level_latest.json` |
 
-The 219 agent-visible surfaces are: 202 auto-discovered catalog tools
+The 224 agent-visible surfaces are: 207 auto-discovered catalog tools
 (indexed in `engine/index/catalog.json`) + 8 tier-1 meta tools
 (`mcp_tools/tier1.py`) + 9 domain-tree dispatchers (`mcp_tools/tree/`).
 All auto-discovered via `MCP_TOOL` metadata scan — CONTRACT §B1.5 forbids
