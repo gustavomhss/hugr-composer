@@ -35,6 +35,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from mcp_tools.error_codes import require_code
 from mcp_tools.path_guard import output_dir as guard_output_dir
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -53,9 +54,11 @@ def _envelope(
     result: Any,
     next_steps: list[str],
     t0: float,
+    code: str | None = None,
 ) -> dict:
     return {
         "ok": ok,
+        "code": require_code(ok, code),
         "what_happened": what,
         "result": result,
         "next_steps": next_steps[:5],  # cap — cognition says 3-5
@@ -289,6 +292,7 @@ def fastapi_meta_search(
     if not q_tokens:
         return _envelope(
             ok=False,
+            code="empty-query",
             what="empty query",
             result={"hits": []},
             next_steps=["Pass a non-empty `query` string."],
@@ -400,6 +404,7 @@ def fastapi_meta_describe(name: str) -> dict:
             )
     return _envelope(
         ok=False,
+        code="not-found",
         what=f"no match for {name!r}",
         result={"kind": None},
         next_steps=[
@@ -450,12 +455,23 @@ def fastapi_meta_scaffold(
     with_auth: bool | None = None,
 ) -> dict:
     t0 = time.perf_counter()
-    output_dir = guard_output_dir(output_dir)
+    try:
+        output_dir = guard_output_dir(output_dir)
+    except ValueError as exc:
+        return _envelope(
+            ok=False,
+            code="path-rejected",
+            what=str(exc),
+            result={},
+            next_steps=["Pass an output_dir inside the native worktree."],
+            t0=t0,
+        )
     try:
         from generators.orchestrator import generate_project
     except ImportError as exc:
         return _envelope(
             ok=False,
+            code="backend-unavailable",
             what=f"generators.orchestrator unavailable: {exc}",
             result={},
             next_steps=[],
@@ -477,6 +493,7 @@ def fastapi_meta_scaffold(
     except Exception as exc:  # noqa: BLE001
         return _envelope(
             ok=False,
+            code="scaffold-failed",
             what=f"scaffold failed: {exc}",
             result={},
             next_steps=[
@@ -555,6 +572,7 @@ def fastapi_meta_audit() -> dict:
         next_steps.append("Rerun fastapi_meta_audit() after each fix.")
     return _envelope(
         ok=ok,
+        code=None if ok else "audit-failed",
         what=summary or ("audit passed" if ok else f"audit exited {out.returncode}"),
         result={"summary": summary, "failures": failures, "returncode": out.returncode},
         next_steps=next_steps,
@@ -602,6 +620,7 @@ def fastapi_meta_verify(primitive: str | None = None) -> dict:
     text = (out.stdout or "") + (out.stderr or "")
     return _envelope(
         ok=out.returncode == 0,
+        code=None if out.returncode == 0 else "verify-failed",
         what=f"10-tier gate exit={out.returncode}"
         + (f" on {primitive}" if primitive else " on all primitives"),
         result={"returncode": out.returncode, "tail": text[-1500:]},
@@ -664,6 +683,7 @@ def fastapi_meta_list_bundle(bundle_name: str, skill: str | None = None) -> dict
     if not skills_list:
         return _envelope(
             ok=False,
+            code="catalog-invalid",
             what="catalog has no skills entry",
             result={"bundle": None, "tools": []},
             next_steps=["Regenerate catalog: python -m engine.index.manifest build"],
@@ -675,6 +695,7 @@ def fastapi_meta_list_bundle(bundle_name: str, skill: str | None = None) -> dict
     if skill_entry is None:
         return _envelope(
             ok=False,
+            code="unknown-skill",
             what=f"unknown skill {skill!r}",
             result={"bundle": None, "tools": []},
             next_steps=[
@@ -690,6 +711,7 @@ def fastapi_meta_list_bundle(bundle_name: str, skill: str | None = None) -> dict
         available = [b.get("name") for b in skill_entry.get("bundles", [])]
         return _envelope(
             ok=False,
+            code="unknown-bundle",
             what=f"unknown bundle {bundle_name!r} in {skill}",
             result={"bundle": None, "tools": [], "available": available},
             next_steps=[
@@ -781,6 +803,7 @@ def fastapi_meta_activate_bundle(bundle_name: str, skill: str | None = None) -> 
     if skill_entry is None:
         return _envelope(
             ok=False,
+            code="unknown-skill",
             what=f"unknown skill {skill!r}",
             result={"activated_bundles": [], "tool_count": 0},
             next_steps=["Call fastapi_meta_home() to list skills."],
@@ -790,6 +813,7 @@ def fastapi_meta_activate_bundle(bundle_name: str, skill: str | None = None) -> 
     if bundle_name not in available:
         return _envelope(
             ok=False,
+            code="unknown-bundle",
             what=f"unknown bundle {bundle_name!r}",
             result={"activated_bundles": [], "tool_count": 0, "available": sorted(available)},
             next_steps=[
