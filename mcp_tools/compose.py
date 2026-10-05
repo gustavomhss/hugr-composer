@@ -40,6 +40,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from mcp_tools.error_codes import require_code
 from mcp_tools.path_guard import output_dir as guard_output_dir
 
 SKILL_ROOT = Path(__file__).resolve().parents[1]
@@ -68,9 +69,12 @@ DOMAIN_PRIMITIVE_BLACKLIST: frozenset[str] = frozenset(
 # ---------------------------------------------------------------------------
 
 
-def _envelope(*, ok: bool, what: str, result: Any, next_steps: list[str], t0: float) -> dict:
+def _envelope(
+    *, ok: bool, what: str, result: Any, next_steps: list[str], t0: float, code: str | None = None
+) -> dict:
     return {
         "ok": ok,
+        "code": require_code(ok, code),
         "what_happened": what,
         "result": result,
         "next_steps": next_steps[:5],
@@ -140,10 +144,10 @@ def _validate_inputs(
     primitives: list[str] | None,
     recipe_id: str | None,
     catalog: dict,
-) -> tuple[list[str], str | None, str | None]:
+) -> tuple[list[str], str | None, tuple[str, str] | None]:
     """Resolve (primitives, recipe_id) against the catalog.
 
-    Returns (resolved_primitives, resolved_recipe_id, error_msg_or_None).
+    Returns (resolved_primitives, resolved_recipe_id, (error_code, error_msg) or None).
     """
     registered_prim_names = {p["name"] for p in catalog["primitives"]}
     recipes_by_id = {r["id"]: r for r in catalog["recipes"]}
@@ -155,7 +159,7 @@ def _validate_inputs(
             return (
                 [],
                 None,
-                f"unknown recipe_id {recipe_id!r}. Call fastapi_meta_search to find a valid id.",
+                ("unknown-recipe", f"unknown recipe_id {recipe_id!r}. Call fastapi_meta_search to find a valid id."),
             )
         recipe_prims = list(rec["primitives"])
         # If caller ALSO passed primitives, treat as subset-assertion.
@@ -165,20 +169,23 @@ def _validate_inputs(
                 return (
                     [],
                     None,
-                    f"recipe {recipe_id} does not contain primitives {sorted(missing)}; "
-                    f"recipe's primitives are {sorted(recipe_prims)}.",
+                    (
+                        "recipe-mismatch",
+                        f"recipe {recipe_id} does not contain primitives {sorted(missing)}; "
+                        f"recipe's primitives are {sorted(recipe_prims)}.",
+                    ),
                 )
         return (recipe_prims, recipe_id, None)
 
     # Case B — only primitives passed
     if not primitives:
-        return ([], None, "pass either recipe_id or primitives (non-empty list).")
+        return ([], None, ("missing-selection", "pass either recipe_id or primitives (non-empty list)."))
     unknown = [p for p in primitives if p not in registered_prim_names]
     if unknown:
         return (
             [],
             None,
-            f"unknown primitive name(s): {unknown}. Call fastapi_meta_search to find valid names.",
+            ("unknown-primitive", f"unknown primitive name(s): {unknown}. Call fastapi_meta_search to find valid names."),
         )
     return (list(primitives), None, None)
 
@@ -482,7 +489,17 @@ def fastapi_meta_compose(
 ) -> dict:
     """See MCP_TOOL description."""
     t0 = time.perf_counter()
-    output_dir = guard_output_dir(output_dir)
+    try:
+        output_dir = guard_output_dir(output_dir)
+    except ValueError as exc:
+        return _envelope(
+            ok=False,
+            code="path-rejected",
+            what=str(exc),
+            result={},
+            next_steps=["Pass an output_dir inside the native worktree."],
+            t0=t0,
+        )
 
     # 1. Load catalog + validate inputs
     catalog = _load_catalog()
@@ -490,7 +507,8 @@ def fastapi_meta_compose(
     if err is not None:
         return _envelope(
             ok=False,
-            what=err,
+            code=err[0],
+            what=err[1],
             result={},
             next_steps=[
                 "fastapi_meta_search(query='<what you need>') to find valid names.",
@@ -504,6 +522,7 @@ def fastapi_meta_compose(
     if err is not None:
         return _envelope(
             ok=False,
+            code="domain-boundary",
             what=err,
             result={},
             next_steps=[
@@ -520,6 +539,7 @@ def fastapi_meta_compose(
     if target_file.exists() and not force:
         return _envelope(
             ok=False,
+            code="target-exists",
             what=f"composition already exists at {target_file.relative_to(output_dir) if target_file.is_relative_to(output_dir) else target_file}; pass force=True to overwrite",
             result={"slug": slug, "existing_path": str(target_file)},
             next_steps=[
@@ -613,6 +633,7 @@ def fastapi_meta_compose(
     if not ok_ast:
         return _envelope(
             ok=False,
+            code="invalid-output",
             what=f"emitted source has syntax error: {ast_err}",
             result={
                 "mode": mode,
