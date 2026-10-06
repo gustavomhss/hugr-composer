@@ -73,4 +73,4 @@ PYTHONPATH=. .venv/bin/python -m engine.verify_registry   # T0/T1 gate (124)
 
 ## License
 
-MIT
+[FSL-1.1-ALv2](LICENSE) (Functional Source License): free to use, modify and run for any purpose, including in production, except to offer a competing commercial product or service. Each version becomes Apache-2.0 two years after its release. Third-party components keep their own licenses (see [LICENSES.md](LICENSES.md)).
