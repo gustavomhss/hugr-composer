@@ -60,8 +60,8 @@ def generate_provenance(
             },
         },
     }
-    provenance_path = Path("provenance.json")
-    Path("provenance.json").write_text(
+    provenance_path = out / "provenance.json"
+    provenance_path.write_text(
         json.dumps(provenance, indent=2, sort_keys=True)
     )
     files_created = ["provenance.json"]
@@ -117,7 +117,7 @@ def generate_provenance(
         The CI pipeline includes a license check step that fails if any
         non-permissive license is detected in the dependency tree.
     """
-    license_md_path = Path("LICENSES.md")
+    license_md_path = out / "LICENSES.md"
     license_md_path.write_text(textwrap.dedent(license_report))
     files_created = ["provenance.json", "LICENSES.md"]
     notes = [

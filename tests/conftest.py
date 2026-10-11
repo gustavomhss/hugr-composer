@@ -4,6 +4,9 @@ Pytest configuration and fixtures.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -94,3 +97,36 @@ def mock_httpx_client():
     """Mock httpx AsyncClient."""
     client = AsyncMock(spec=httpx.AsyncClient)
     return client
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _outside_repo(module: object) -> bool:
+    file = getattr(module, "__file__", None)
+    if not file:
+        return False
+    try:
+        Path(file).resolve().relative_to(_REPO_ROOT)
+    except ValueError:
+        return not any(part in ("site-packages", "lib-dynload") for part in Path(file).parts) and "python3" not in file
+    return False
+
+
+@pytest.fixture(autouse=True)
+def _isolate_generated_imports():
+    """Generated projects imported by a test (their own `app`/`core` packages) must not leak into later tests.
+
+    Without this, a scenario test leaves the generated project's `core` in sys.modules and a later
+    `from core.models import ...` in a Composer generator fails with ModuleNotFoundError.
+    """
+    path_before = list(sys.path)
+    modules_before = dict(sys.modules)
+    yield
+    for name, module in list(sys.modules.items()):
+        if modules_before.get(name) is module or not _outside_repo(module):
+            continue
+        if name in modules_before:
+            sys.modules[name] = modules_before[name]
+        else:
+            del sys.modules[name]
+    sys.path[:] = path_before
