@@ -51,8 +51,9 @@ class TestAnthropicToOpenAI:
         ]
         openai_msgs, _ = anthropic_to_openai(messages, None)
 
-        # Should have system, user, assistant with tool_calls, tool
-        assert len(openai_msgs) == 4
+        # No system message in the input, so: user, assistant with tool_calls, tool
+        assert [m["role"] for m in openai_msgs] == ["user", "assistant", "tool"]
+        assert openai_msgs[1]["tool_calls"][0]["id"] == "call_1"
         # Check tool result became function role
         tool_msg = openai_msgs[-1]
         assert tool_msg["role"] == "tool"

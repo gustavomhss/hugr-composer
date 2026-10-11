@@ -77,8 +77,8 @@ def generate_security_scan(
           - id: bandit
             args: ["-r", "app", "-ll"]
     """)
-    pre_commit_path = Path("pre-commit-config.yaml")
-    Path("pre-commit-config.yaml").write_text(textwrap.dedent(pre_commit_config))
+    pre_commit_path = out / "pre-commit-config.yaml"
+    pre_commit_path.write_text(textwrap.dedent(pre_commit_config))
     files_created = ["pre-commit-config.yaml"]
     notes.append("pre-commit-config.yaml with bandit, isort, black, flake8, flake8-bandit, flake8-bugbear")
 
@@ -126,9 +126,9 @@ def generate_security_scan(
                   - "github-actions"
                   - "dependencies"
     """)
-        dependabot_path = Path(".github/dependabot.yml")
-        Path(".github").mkdir(parents=True, exist_ok=True)
-        Path(".github/dependabot.yml").write_text(textwrap.dedent(dependabot_config))
+        dependabot_path = out / ".github" / "dependabot.yml"
+        dependabot_path.parent.mkdir(parents=True, exist_ok=True)
+        dependabot_path.write_text(textwrap.dedent(dependabot_config))
         files_created.append(".github/dependabot.yml")
         notes.append("dependabot.yml for automated dependency updates (pip + github-actions)")
 
@@ -170,8 +170,8 @@ def generate_security_scan(
             cache:
               dir: "/tmp/trivy-cache"
         """)
-        trivy_path = Path("trivy.yaml")
-        Path("trivy.yaml").write_text(textwrap.dedent(trivy_config))
+        trivy_path = out / "trivy.yaml"
+        trivy_path.write_text(textwrap.dedent(trivy_config))
         files_created.append("trivy.yaml")
         notes.append("trivy.yaml for container vulnerability scanning (HIGH/CRITICAL only)")
 
@@ -181,6 +181,7 @@ def generate_security_scan(
         """Run pip-audit locally with same settings as CI."""
         import subprocess
         import sys
+        from pathlib import Path
 
         def run(cmd: list[str]) -> int:
             result = subprocess.run(cmd, capture_output=True, text=True)
@@ -225,9 +226,9 @@ def generate_security_scan(
             import sys
             sys.exit(main())
     '''
-    audit_script_path = Path("scripts/audit_deps.py")
-    Path("scripts").mkdir(parents=True, exist_ok=True)
-    Path("scripts/audit_deps.py").write_text(textwrap.dedent(audit_script))
+    audit_script_path = out / "scripts" / "audit_deps.py"
+    audit_script_path.parent.mkdir(parents=True, exist_ok=True)
+    audit_script_path.write_text(textwrap.dedent(audit_script))
     files_created.append("scripts/audit_deps.py")
     notes.append("scripts/audit_deps.py for local pip-audit runs")
 
