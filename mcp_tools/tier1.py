@@ -35,9 +35,11 @@ import time
 from pathlib import Path
 from typing import Any
 
+from mcp_tools import owned_envelope
 from mcp_tools.error_codes import require_code
 from mcp_tools.path_guard import output_dir as guard_output_dir
 
+TOOL = "hugr-scaffold"
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = SKILL_ROOT / "engine" / "index" / "catalog.json"
 
@@ -55,6 +57,7 @@ def _envelope(
     next_steps: list[str],
     t0: float,
     code: str | None = None,
+    owned: dict | None = None,
 ) -> dict:
     return {
         "ok": ok,
@@ -63,6 +66,7 @@ def _envelope(
         "result": result,
         "next_steps": next_steps[:5],  # cap — cognition says 3-5
         "elapsed_ms": int((time.perf_counter() - t0) * 1000),
+        **(owned or {}),
     }
 
 
@@ -461,6 +465,7 @@ def fastapi_meta_scaffold(
         return _envelope(
             ok=False,
             code="path-rejected",
+            owned=owned_envelope.blocked(TOOL, "path-rejected"),
             what=str(exc),
             result={},
             next_steps=["Pass an output_dir inside the native worktree."],
@@ -472,6 +477,7 @@ def fastapi_meta_scaffold(
         return _envelope(
             ok=False,
             code="backend-unavailable",
+            owned=owned_envelope.blocked(TOOL, "backend-unavailable"),
             what=f"generators.orchestrator unavailable: {exc}",
             result={},
             next_steps=[],
@@ -488,18 +494,56 @@ def fastapi_meta_scaffold(
         kwargs["shared_models"] = set(shared_models)
     if with_auth is not None:
         kwargs["with_auth"] = with_auth
+    # The change inventory is what the filesystem shows under output_dir afterwards, not generate_project's claim.
+    before = owned_envelope.snapshot(output_dir)
     try:
         res = generate_project(**kwargs)
     except Exception as exc:  # noqa: BLE001
+        after = owned_envelope.snapshot(output_dir)
+        seen = owned_envelope.changes(before, after)
+        # A ValueError that left no trace is a rejected input (unknown profile, bad shared_models), decided before any write.
+        invalid_input = isinstance(exc, ValueError) and seen == []
         return _envelope(
             ok=False,
             code="scaffold-failed",
+            owned=(
+                owned_envelope.owned(
+                    tool=TOOL, status="blocked", effects="none", code="INVALID_INPUT", producer_code="scaffold-failed"
+                )
+                if invalid_input
+                else owned_envelope.failed(
+                    TOOL,
+                    "PERMISSION_DENIED" if isinstance(exc, PermissionError) else "PRODUCER_FAILED",
+                    "scaffold-failed",
+                    before,
+                    after,
+                )
+            ),
             what=f"scaffold failed: {exc}",
             result={},
             next_steps=[
                 "Check that `models` is a dict of model_name → field-type map.",
                 "Call fastapi_meta_home() for the expected signature.",
             ],
+            t0=t0,
+        )
+    seen = owned_envelope.changes(before, owned_envelope.snapshot(output_dir))
+    if not seen:
+        # Nothing observed (or nothing observable) is not generation evidence, whatever generate_project returned.
+        return _envelope(
+            ok=False,
+            code="scaffold-failed",
+            owned=owned_envelope.owned(
+                tool=TOOL,
+                status="failed",
+                effects="none" if seen == [] else "unknown",
+                mode=profile,
+                code="INVALID_PRODUCER_RESULT",
+                producer_code="scaffold-failed",
+            ),
+            what="scaffold reported success but no file change could be observed",
+            result={},
+            next_steps=["Inspect output_dir before retrying; the scaffold is not replayed automatically."],
             t0=t0,
         )
     files = res.get("files_created") if isinstance(res, dict) else None
@@ -513,6 +557,14 @@ def fastapi_meta_scaffold(
     ]
     return _envelope(
         ok=True,
+        owned=owned_envelope.owned(
+            tool=TOOL,
+            status="generated",
+            effects="observed",
+            observed_changes=seen,
+            mode=profile,
+            artifact_kind="scaffold",
+        ),
         what=f"scaffold emitted {files_count} files at {output_dir}",
         result={
             "files_created": files,

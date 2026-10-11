@@ -26,6 +26,7 @@ ERROR_CODES = frozenset(
         "target-exists",
         # backend execution
         "invalid-output",
+        "write-failed",
         "scaffold-failed",
         "backend-unavailable",
         "catalog-invalid",

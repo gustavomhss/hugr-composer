@@ -40,9 +40,11 @@ import time
 from pathlib import Path
 from typing import Any
 
+from mcp_tools import owned_envelope
 from mcp_tools.error_codes import require_code
 from mcp_tools.path_guard import output_dir as guard_output_dir
 
+TOOL = "hugr-compose"
 SKILL_ROOT = Path(__file__).resolve().parents[1]
 CATALOG_PATH = SKILL_ROOT / "engine" / "index" / "catalog.json"
 ADAPTERS_DIR = SKILL_ROOT / "core" / "venous" / "_adapters" / "fastapi"
@@ -70,7 +72,14 @@ DOMAIN_PRIMITIVE_BLACKLIST: frozenset[str] = frozenset(
 
 
 def _envelope(
-    *, ok: bool, what: str, result: Any, next_steps: list[str], t0: float, code: str | None = None
+    *,
+    ok: bool,
+    what: str,
+    result: Any,
+    next_steps: list[str],
+    t0: float,
+    code: str | None = None,
+    owned: dict | None = None,
 ) -> dict:
     return {
         "ok": ok,
@@ -79,6 +88,7 @@ def _envelope(
         "result": result,
         "next_steps": next_steps[:5],
         "elapsed_ms": int((time.perf_counter() - t0) * 1000),
+        **(owned or {}),
     }
 
 
@@ -495,6 +505,7 @@ def fastapi_meta_compose(
         return _envelope(
             ok=False,
             code="path-rejected",
+            owned=owned_envelope.blocked(TOOL, "path-rejected"),
             what=str(exc),
             result={},
             next_steps=["Pass an output_dir inside the native worktree."],
@@ -508,6 +519,7 @@ def fastapi_meta_compose(
         return _envelope(
             ok=False,
             code=err[0],
+            owned=owned_envelope.blocked(TOOL, err[0]),
             what=err[1],
             result={},
             next_steps=[
@@ -523,6 +535,7 @@ def fastapi_meta_compose(
         return _envelope(
             ok=False,
             code="domain-boundary",
+            owned=owned_envelope.blocked(TOOL, "domain-boundary"),
             what=err,
             result={},
             next_steps=[
@@ -536,10 +549,15 @@ def fastapi_meta_compose(
     slug = _derive_slug(resolved_recipe, resolved_prims, name)
     target_file = Path(output_dir) / "app" / "compositions" / f"{slug}.py"
 
+    # The change inventory is what the filesystem shows under <output_dir>/app after the call, not what this
+    # function believes it wrote.
+    before = owned_envelope.snapshot(output_dir, "app")
+
     if target_file.exists() and not force:
         return _envelope(
             ok=False,
             code="target-exists",
+            owned=owned_envelope.blocked(TOOL, "target-exists"),
             what=f"composition already exists at {target_file.relative_to(output_dir) if target_file.is_relative_to(output_dir) else target_file}; pass force=True to overwrite",
             result={"slug": slug, "existing_path": str(target_file)},
             next_steps=[
@@ -564,6 +582,13 @@ def fastapi_meta_compose(
         if matching_tool is not None:
             return _envelope(
                 ok=True,
+                owned=owned_envelope.owned(
+                    tool=TOOL,
+                    status="blocked",
+                    effects="none",
+                    mode="tool_delegate",
+                    code="UNSUPPORTED_OUTPUT",
+                ),
                 what=(
                     f"tool {matching_tool['name']!r} already emits this exact "
                     f"primitive set ({len(resolved_prims)} primitives) — call "
@@ -634,6 +659,14 @@ def fastapi_meta_compose(
         return _envelope(
             ok=False,
             code="invalid-output",
+            owned=owned_envelope.owned(
+                tool=TOOL,
+                status="failed",
+                effects="none",
+                mode=mode,
+                code="INVALID_PRODUCER_RESULT",
+                producer_code="invalid-output",
+            ),
             what=f"emitted source has syntax error: {ast_err}",
             result={
                 "mode": mode,
@@ -646,17 +679,64 @@ def fastapi_meta_compose(
             t0=t0,
         )
 
-    # 6. Write (unless dry_run)
+    # 6. Write (unless dry_run).
     files_written: list[str] = []
     if not dry_run:
-        target_file.parent.mkdir(parents=True, exist_ok=True)
-        target_file.write_text(source, encoding="utf-8")
-        # Emit an __init__.py to make compositions/ a package.
         init = target_file.parent / "__init__.py"
-        if not init.exists():
-            init.write_text("", encoding="utf-8")
-            files_written.append(str(init.relative_to(output_dir)))
-        files_written.append(str(target_file.relative_to(output_dir)))
+        try:
+            target_file.parent.mkdir(parents=True, exist_ok=True)
+            # Exclusive create unless forced: a file that appeared after the check above must not be overwritten.
+            with open(target_file, "w" if force else "x", encoding="utf-8") as handle:
+                handle.write(source)
+            # Emit an __init__.py to make compositions/ a package.
+            if not init.exists():
+                init.write_text("", encoding="utf-8")
+                files_written.append(str(init.relative_to(output_dir)))
+            files_written.append(str(target_file.relative_to(output_dir)))
+        except OSError as exc:
+            after = owned_envelope.snapshot(output_dir, "app")
+            if isinstance(exc, FileExistsError) and target_file.is_file():
+                producer, f4 = "target-exists", "OUTPUT_CONFLICT"
+            elif isinstance(exc, PermissionError):
+                producer, f4 = "write-failed", "PERMISSION_DENIED"
+            else:
+                producer, f4 = "write-failed", "PRODUCER_FAILED"
+            return _envelope(
+                ok=False,
+                code=producer,
+                owned=owned_envelope.failed(TOOL, f4, producer, before, after, mode),
+                what=f"could not write composition: {exc.__class__.__name__}",
+                result={"slug": slug, "mode": mode},
+                next_steps=["Reconcile app/compositions before calling again; the write is not retried."],
+                t0=t0,
+            )
+    seen = owned_envelope.changes(before, owned_envelope.snapshot(output_dir, "app"))
+    relative_target = str(target_file.relative_to(output_dir))
+    kind = "composition" if mode == "adapter_reuse" else "skeleton"
+    if dry_run and seen == []:
+        canonical = owned_envelope.owned(
+            tool=TOOL,
+            status="previewed",
+            effects="none",
+            mode=mode,
+            artifact_kind=kind,
+            artifacts=[{"kind": "source", "path": relative_target, "content": source}],
+            planned_files=[relative_target],
+        )
+    elif not dry_run and seen:
+        canonical = owned_envelope.owned(
+            tool=TOOL, status="generated", effects="observed", observed_changes=seen, mode=mode, artifact_kind=kind
+        )
+    else:
+        # A dry run that changed files, or a write nobody can see: the result cannot be trusted.
+        canonical = owned_envelope.owned(
+            tool=TOOL,
+            status="failed",
+            effects="unknown",
+            observed_changes=seen,
+            mode=mode,
+            code="INVALID_PRODUCER_RESULT",
+        )
 
     # 7. Return envelope
     result = {
@@ -678,6 +758,7 @@ def fastapi_meta_compose(
     }
     return _envelope(
         ok=True,
+        owned=canonical,
         what=(
             f"composed {len(resolved_prims)} primitive(s) via mode={mode}; "
             f"{'dry-run (no files)' if dry_run else f'wrote {len(files_written)} file(s)'}"
