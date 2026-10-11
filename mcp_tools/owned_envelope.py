@@ -9,8 +9,8 @@ stays the Composer closed set (``error_codes.py``); the canonical failure code l
 ``observed_changes`` is measured, not claimed: the tool stats the tree it may write before and
 after the write and reports the difference. Its reach is that tree (compose: ``<output_dir>/app``,
 scaffold: ``<output_dir>``); writes outside it are not observable. When the tree cannot be
-walked within ``MAX_ENTRIES`` the effects are ``unknown``. Directories appear with a trailing
-``/``.
+walked (more than ``MAX_ENTRIES`` entries, or a directory it cannot list) the effects are
+``unknown``. Directories appear with a trailing ``/``; a symlink is a leaf and has none.
 
 ``interrupted`` is never produced here: cancellation and timeout are decided by the caller.
 """
@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from stat import S_ISLNK
 from typing import Any
 
 SCHEMA = "hugr-owned-tool-v1"
@@ -65,7 +66,14 @@ BLOCKED_BY_PRODUCER_CODE = {
     "backend-unavailable": "CAPABILITY_UNAVAILABLE",
 }
 
-Snapshot = dict[str, tuple[int, int]]
+# size, mtime, ctime, mode, inode: ctime cannot be set back with utime, so a same-size rewrite inside one clock tick
+# or with a restored mtime still shows; mode and inode catch chmod and replace-by-rename.
+Snapshot = dict[str, tuple[int, int, int, int, int]]
+
+
+def _unwalkable(error: OSError) -> None:
+    # os.walk skips a directory it cannot list unless told otherwise; a silently partial tree must be unobservable.
+    raise error
 
 
 def snapshot(base: str | Path, sub: str = ".") -> Snapshot | None:
@@ -76,14 +84,20 @@ def snapshot(base: str | Path, sub: str = ".") -> Snapshot | None:
     try:
         if not os.path.lexists(start):
             return entries
-        entries[os.path.relpath(start, root).replace(os.sep, "/") + "/"] = (0, 0)
-        for dirpath, dirnames, filenames in os.walk(start):
-            for name, suffix in [(n, "/") for n in dirnames] + [(n, "") for n in filenames]:
+        entries[os.path.relpath(start, root).replace(os.sep, "/") + "/"] = (0, 0, 0, 0, 0)
+        for dirpath, dirnames, filenames in os.walk(start, onerror=_unwalkable):
+            for name, in_dirs in [(n, True) for n in dirnames] + [(n, False) for n in filenames]:
                 full = os.path.join(dirpath, name)
                 stat = os.lstat(full)
+                # A symlink to a directory is listed with the directories but is never walked: it is a leaf whose
+                # retargeting must show, so it carries no directory marker.
+                suffix = "/" if in_dirs and not S_ISLNK(stat.st_mode) else ""
                 entries[os.path.relpath(full, root).replace(os.sep, "/") + suffix] = (
                     stat.st_size,
                     stat.st_mtime_ns,
+                    stat.st_ctime_ns,
+                    stat.st_mode,
+                    stat.st_ino,
                 )
                 if len(entries) > MAX_ENTRIES:
                     return None

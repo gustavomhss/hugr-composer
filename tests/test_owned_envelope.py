@@ -379,3 +379,61 @@ def test_unknown_tool_is_refused() -> None:
         owned_envelope.owned(
             tool="hugr-search", status="blocked", effects="none", code="INVALID_INPUT"
         )
+
+
+# ---- snapshot reach ----------------------------------------------------------------------------------------------
+
+
+def diff(root: Path, mutate) -> list[dict[str, str]] | None:
+    before = owned_envelope.snapshot(root)
+    mutate()
+    return owned_envelope.changes(before, owned_envelope.snapshot(root))
+
+
+def test_snapshot_sees_a_deleted_file(tmp_path: Path) -> None:
+    (tmp_path / "gone.txt").write_text("x")
+    assert diff(tmp_path, lambda: (tmp_path / "gone.txt").unlink()) == [
+        {"path": "gone.txt", "change": "deleted"}
+    ]
+
+
+def test_snapshot_sees_a_same_size_rewrite_with_the_mtime_put_back(tmp_path: Path) -> None:
+    target = tmp_path / "f.txt"
+    target.write_text("aaaa")
+    stamp = target.stat()
+
+    def rewrite() -> None:
+        target.write_text("bbbb")
+        os.utime(target, ns=(stamp.st_atime_ns, stamp.st_mtime_ns))
+
+    assert diff(tmp_path, rewrite) == [{"path": "f.txt", "change": "modified"}]
+
+
+def test_snapshot_sees_a_permission_change(tmp_path: Path) -> None:
+    (tmp_path / "f.txt").write_text("x")
+    assert diff(tmp_path, lambda: os.chmod(tmp_path / "f.txt", 0o600)) == [
+        {"path": "f.txt", "change": "modified"}
+    ]
+
+
+def test_snapshot_sees_a_directory_symlink_being_retargeted(tmp_path: Path) -> None:
+    (tmp_path / "one").mkdir()
+    (tmp_path / "two").mkdir()
+    os.symlink(tmp_path / "one", tmp_path / "link")
+
+    def retarget() -> None:
+        (tmp_path / "link").unlink()
+        os.symlink(tmp_path / "two", tmp_path / "link")
+
+    assert diff(tmp_path, retarget) == [{"path": "link", "change": "modified"}]
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root can list any directory")
+def test_snapshot_of_a_tree_with_an_unlistable_directory_is_unobservable(tmp_path: Path) -> None:
+    hidden = tmp_path / "hidden"
+    hidden.mkdir()
+    hidden.chmod(0)
+    try:
+        assert owned_envelope.snapshot(tmp_path) is None
+    finally:
+        hidden.chmod(0o700)
